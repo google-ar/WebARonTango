@@ -1,0 +1,6 @@
+[
+	RuntimeEnabled=WebVR
+] interface VRPointCloud {
+  readonly attribute unsigned long vertexCount;
+  readonly attribute Float32Array vertices;
+};

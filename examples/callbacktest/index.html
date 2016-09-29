@@ -1,0 +1,33 @@
+<html>
+<body>
+Hello. Goodbye
+<script>
+window.addEventListener('error', function(event) {
+    var errorMessage = event.message;
+    var url = event.filename;
+    var lineNumber = event.lineno;
+    var columnNumber = event.colno;
+    alert("ERROR: " + errorMessage + " at " + url + " : " + lineNumber + " : " + columnNumber);
+});
+</script>
+<script>
+if (navigator.getVRDisplays) {
+	navigator.getVRDisplays().then(function(displays) {
+		if (displays && displays.length > 0) {
+			alert("Before calling setEventListener")
+			displays[0].setEventListener(function() {
+				alert("Event called!!!");
+			});
+			alert("After calling setEventListener");
+			var pose = displays[0].getPose();
+			alert("pose = " + pose);
+
+		}
+	});
+}
+else {
+	alert("No navigator.getVRDisplays");
+}
+</script>
+</body>
+</html>

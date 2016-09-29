@@ -1,0 +1,183 @@
+<html>
+<body>
+<div id="container"></div>
+<script src="three.min.js"></script>
+<script src="stats.min.js"></script>
+<script src="VRControls.js"></script>
+<script>
+window.addEventListener('error', function(event) {
+    var errorMessage = event.message;
+    var url = event.filename;
+    var lineNumber = event.lineno;
+    var columnNumber = event.colno;
+    alert("ERROR: " + errorMessage + " at " + url + " : " + lineNumber + " : " + columnNumber);
+});
+</script>
+<script>
+
+function VRPointCloud(vrDisplay, usePointCloudVerticesDirectly) {
+
+	this._vrDisplay = vrDisplay;
+
+	this._lastPointCloudVertexCount = 0;
+
+	this._usePointCloudVerticesDirectly = usePointCloudVerticesDirectly;
+
+	this._bufferGeometry = new THREE.BufferGeometry();
+	this._bufferGeometry.frustumCulled = false;
+
+	var positions = usePointCloudVerticesDirectly ? vrDisplay.getPointCloud().vertices : new Float32Array( vrDisplay.getMaxPointCloudVertexCount() * 3 );
+	var colors = new Float32Array( positions.length );
+
+	var color = new THREE.Color();
+
+	for ( var i = 0; i < colors.length; i += 3 ) {
+		positions[ i ]     = Infinity;
+		positions[ i + 1 ] = Infinity;
+		positions[ i + 2 ] = Infinity;
+		color.setRGB( 1, 1, 1 );
+
+		colors[ i ]     = color.r;
+		colors[ i + 1 ] = color.g;
+		colors[ i + 2 ] = color.b;
+	}
+
+	this._positions = new THREE.BufferAttribute( positions, 3 );
+	this._bufferGeometry.addAttribute( 'position', this._positions );
+	this._colors = new THREE.BufferAttribute( colors, 3 );
+	this._bufferGeometry.addAttribute( 'color', this._colors );
+
+	this._bufferGeometry.computeBoundingSphere();
+
+	return this;
+}
+
+VRPointCloud.prototype.getBufferGeometry = function() {
+	return this._bufferGeometry;
+};
+
+VRPointCloud.prototype.update = function(camera) { // TODO: Camera should not be needed to be passed when the getPose problem is solved.
+	var pointCloud = this._vrDisplay.getPointCloud();
+	if (!this._usePointCloudVerticesDirectly) {
+		if (pointCloud.vertices != null && pointCloud.vertexCount > 0) {
+			var vertexCount = Math.min(pointCloud.vertexCount, this._positions.length);
+			var pointCloudValueCount = vertexCount * 3;
+			for (var i = 0; i < pointCloudValueCount; i++) {
+				this._positions.array[i] = pointCloud.vertices[i];
+			}
+			var lastPointCloudValueCount = this._lastPointCloudVertexCount * 3;
+			for (var i = pointCloudValueCount; i < lastPointCloudValueCount; i++) {
+				this._positions.array[i] = Infinity;
+			}
+			this._lastPointCloudVertexCount = vertexCount;
+			this._positions.needsUpdate = true;
+		}
+	}
+	else {
+		this._positions.needsUpdate = true;
+	}
+};
+
+var stats;
+
+var camera, scene, renderer;
+
+var controls = null;
+
+var pointCloud = null;
+
+function init(vrDisplay) {
+	var container = document.getElementById( 'container' );
+
+	//
+	scene = new THREE.Scene();
+	scene.fog = new THREE.Fog( 0x050505, 1, 10 );
+
+	camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.00001, 1000 );
+
+	scene.add(camera);
+
+	controls = new THREE.VRControls(camera);
+
+	//
+
+	var room = new THREE.Mesh(
+		new THREE.BoxGeometry( 6, 3, 6, 8, 8, 8 ),
+		new THREE.MeshBasicMaterial( { color: 0x404040, wireframe: true } )
+	);
+	scene.add( room );
+
+	var material = new THREE.PointsMaterial( { size: 0.01, vertexColors: THREE.VertexColors } );
+
+	pointCloud = new VRPointCloud(vrDisplay, true);
+
+	var points = new THREE.Points( pointCloud.getBufferGeometry(), material );
+
+	points.frustumCulled = false;
+
+	scene.add( points );
+
+	//
+
+	renderer = new THREE.WebGLRenderer( { antialias: false } );
+	renderer.setClearColor( scene.fog.color );
+	renderer.setPixelRatio( window.devicePixelRatio );
+	renderer.setSize( window.innerWidth, window.innerHeight );
+
+	container.appendChild( renderer.domElement );
+
+	//
+
+	stats = new Stats();
+	container.appendChild( stats.dom );
+
+	//
+
+	window.addEventListener( 'resize', onWindowResize, false );
+}
+
+function onWindowResize() {
+
+	camera.aspect = window.innerWidth / window.innerHeight;
+	camera.updateProjectionMatrix();
+
+	renderer.setSize( window.innerWidth, window.innerHeight );
+
+}
+
+//
+
+function updateAndRender() {
+
+	controls.update();
+
+	pointCloud.update();
+
+	renderer.render( scene, camera );
+
+	stats.update();
+
+	requestAnimationFrame( updateAndRender );
+}
+
+if (navigator.getVRDisplays) {
+
+	navigator.getVRDisplays().then(function(vrDisplays) {
+		if (vrDisplays && vrDisplays.length > 0) {
+			for (var i = 0; i < vrDisplays.length; i++) {
+				var vrDisplay = vrDisplays[i];
+				if (vrDisplay.displayName === "Tango VR Device") {
+					init(vrDisplay);
+					requestAnimationFrame(updateAndRender);
+					break;
+				}
+			}
+		}
+	});
+}
+else {
+	alert("No navigator.getVRDisplays");
+}
+</script>
+</body>
+</html>

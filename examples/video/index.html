@@ -1,0 +1,333 @@
+<html>
+
+<head>
+    
+    <!-- Error handling -->
+    <script>
+        window.addEventListener('error', function(event) {
+            var errorMessage = event.message;
+            var url = event.filename;
+            var lineNumber = event.lineno;
+            var columnNumber = event.colno;
+            alert("ERROR: " + errorMessage + " at " + url + " : " + lineNumber + " : " + columnNumber);
+        });
+    </script>
+
+<title>Learning WebGL &mdash; lesson 1</title>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+<!-- <meta name="viewport" content="initial-scale=1.0, user-scalable=no"> -->
+
+<script type="text/javascript" src="glMatrix-0.9.5.min.js"></script>
+
+<script id="shader-fs-oes" type="x-shader/x-fragment">
+    #extension GL_OES_EGL_image_external : require
+
+    precision mediump float;
+
+    varying vec2 vTextureCoord;
+
+    uniform samplerExternalOES uSampler;
+
+    void main(void) {
+        gl_FragColor = texture2D(uSampler, vTextureCoord);
+    }
+</script>
+
+<script id="shader-fs" type="x-shader/x-fragment">
+    precision mediump float;
+
+    varying vec2 vTextureCoord;
+
+    uniform sampler2D uSampler;
+
+    void main(void) {
+        gl_FragColor = texture2D(uSampler, vTextureCoord);
+    }
+</script>
+
+<script id="shader-vs" type="x-shader/x-vertex">
+    attribute vec3 aVertexPosition;
+    attribute vec2 aTextureCoord;
+
+    uniform mat4 uMVMatrix;
+    uniform mat4 uPMatrix;
+
+    varying vec2 vTextureCoord;
+
+
+    void main(void) {
+        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+        vTextureCoord = aTextureCoord;
+    }
+</script>
+
+<script type="text/javascript">
+
+    function calculateProjectionMatrix(width, height, fx, fy, cx, cy, near, far) {
+        var xscale = near / fx;
+        var yscale = near / fy;
+
+        var xoffset = (cx - (width / 2.0)) * xscale;
+        // Color camera's coordinates has y pointing downwards so we negate this term.
+        var yoffset = -(cy - (height / 2.0)) * yscale;
+
+        var projectionMatrix = mat4.frustum(xscale * -width / 2.0 - xoffset, xscale * width / 2.0 - xoffset,yscale * -height / 2.0 - yoffset, yscale * height / 2.0 - yoffset, near, far);
+        return projectionMatrix;
+    }
+
+    function VideoQuad(gl, vrDisplay, program) {
+
+        this.program = program;
+        this.vrDisplay = vrDisplay;
+
+        this.seeThroughCamera = vrDisplay.getSeeThroughCamera();
+
+        gl.useProgram(program);
+
+        this.vertexPositionAttribute = gl.getAttribLocation(program, "aVertexPosition");
+        this.textureCoordAttribute = gl.getAttribLocation(program, "aTextureCoord");
+        this.projectionMatrixUniform = gl.getUniformLocation(program, "uPMatrix");
+        this.mvMatrixUniform = gl.getUniformLocation(program, "uMVMatrix");
+        this.samplerUniform = gl.getUniformLocation(program, "uSampler");
+
+        this.vertexPositionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexPositionBuffer);
+        var vertices = [
+            -1.0,  1.0,  0.0,
+             1.0,  1.0,  0.0,
+             1.0, -1.0,  0.0,
+            -1.0, -1.0,  0.0
+        ];
+        var f32Vertices = new Float32Array(vertices);
+        gl.bufferData(gl.ARRAY_BUFFER, f32Vertices, gl.STATIC_DRAW);
+        this.vertexPositionBuffer.itemSize = 3;
+        this.vertexPositionBuffer.numItems = 12;
+
+        this.textureCoordBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.textureCoordBuffer);
+        var textureCoords = [
+            0.0, 0.0,
+            this.seeThroughCamera.width / this.seeThroughCamera.textureWidth, 0.0, 
+            this.seeThroughCamera.width / this.seeThroughCamera.textureWidth, this.seeThroughCamera.height / this.seeThroughCamera.textureHeight,
+            0.0, this.seeThroughCamera.height / this.seeThroughCamera.textureHeight
+        ];
+        var f32TextureCoords = new Float32Array(textureCoords);
+        gl.bufferData(gl.ARRAY_BUFFER, f32TextureCoords, gl.STATIC_DRAW);
+        this.textureCoordBuffer.itemSize = 2;
+        this.textureCoordBuffer.numItems = 8;
+
+        this.indexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+        var indices = [
+            0, 1, 2, 0, 2, 3
+        ];
+        var ui16Indices = new Uint16Array(indices);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, ui16Indices, gl.STATIC_DRAW);
+        this.indexBuffer.itemSize = 1;
+        this.indexBuffer.numItems = 6;
+
+        this.texture = gl.createTexture();
+
+        gl.useProgram(null);
+
+//        this.projectionMatrix = calculateProjectionMatrix(this.seeThroughCamera.width, this.seeThroughCamera.height, this.seeThroughCamera.focalLengthX, this.seeThroughCamera.focalLengthY, this.seeThroughCamera.pointX, this.seeThroughCamera.pointY, 0.1, 100.0); //mat4.create();
+//        this.mvMatrix = mat4.create();
+//        mat4.identity(this.mvMatrix);
+//        mat4.translate(this.mvMatrix, [0.0, 0.0, -15.0]);
+        this.projectionMatrix = mat4.create();
+        mat4.identity(this.projectionMatrix);
+        this.mvMatrix = mat4.create();
+        mat4.identity(this.mvMatrix);
+
+        return this;
+    }
+
+    VideoQuad.prototype.update = function(gl) {
+
+//        mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, this.projectionMatrix);
+
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
+        // gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+        // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        // gl.generateMipmap(gl.TEXTURE_2D);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, this.seeThroughCamera);
+        gl.bindTexture(gl.TEXTURE_2D, null);
+
+        return this;
+    };
+
+    VideoQuad.prototype.render = function(gl) {
+        gl.useProgram(this.program);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexPositionBuffer);
+        gl.enableVertexAttribArray(this.vertexPositionAttribute);
+        gl.vertexAttribPointer(this.vertexPositionAttribute, this.vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.textureCoordBuffer);
+        gl.enableVertexAttribArray(this.textureCoordAttribute);
+        gl.vertexAttribPointer(this.textureCoordAttribute, this.textureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
+        gl.uniform1i(this.samplerUniform, 0);
+
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+
+        gl.uniformMatrix4fv(this.projectionMatrixUniform, false, this.projectionMatrix);
+        gl.uniformMatrix4fv(this.mvMatrixUniform, false, this.mvMatrix);
+
+        gl.drawElements(gl.TRIANGLES, this.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+
+        // Disable enabled states to forbid other draw calls 
+        gl.disableVertexAttribArray(this.vertexPositionAttribute);
+        gl.disableVertexAttribArray(this.textureCoordAttribute);
+        gl.bindBuffer(gl.ARRAY_BUFFER, null);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+        gl.useProgram(null);
+        return this;
+    };
+
+    function getGL(canvas) {
+        var gl;
+        try {
+            gl = canvas.getContext("experimental-webgl");
+            gl.viewportWidth = canvas.width;
+            gl.viewportHeight = canvas.height;
+        } catch (e) {
+            alert(e);
+        }
+        if (!gl) {
+            alert("Could not initialise WebGL, sorry :-(");
+        }
+        return gl;
+    }
+
+    function getShader(gl, id) {
+        var shaderScript = document.getElementById(id);
+        if (!shaderScript) {
+            return null;
+        }
+
+        var str = "";
+        var k = shaderScript.firstChild;
+        while (k) {
+            if (k.nodeType == 3) {
+                str += k.textContent;
+            }
+            k = k.nextSibling;
+        }
+
+        var shader;
+        if (shaderScript.type == "x-shader/x-fragment") {
+            shader = gl.createShader(gl.FRAGMENT_SHADER);
+        } else if (shaderScript.type == "x-shader/x-vertex") {
+            shader = gl.createShader(gl.VERTEX_SHADER);
+        } else {
+            return null;
+        }
+
+        gl.shaderSource(shader, str);
+        gl.compileShader(shader);
+
+        var result = gl.getShaderParameter(shader, gl.COMPILE_STATUS)
+        // alert("getShaderParameter result = " + result);
+        if (!result) {
+            alert(gl.getShaderInfoLog(shader));
+            return null;
+        }
+
+        return shader;
+    }
+
+    function getProgram(gl) {
+        var fragmentShader = getShader(gl, "shader-fs-oes");
+        var vertexShader = getShader(gl, "shader-vs");
+
+        var shaderProgram = gl.createProgram();
+        gl.attachShader(shaderProgram, vertexShader);
+        gl.attachShader(shaderProgram, fragmentShader);
+        gl.linkProgram(shaderProgram);
+
+        var result = gl.getProgramParameter(shaderProgram, gl.LINK_STATUS);
+        // alert("getProgramParameter result = " + result);
+        if (!result) {
+            alert("Could not initialise shaders");
+        }
+
+        return shaderProgram;
+    }
+
+    var videoQuad = null;
+
+    function initVideoQuad(gl, program, readyCallback) {
+        if (navigator.getVRDisplays) {
+            navigator.getVRDisplays().then(function(vrDisplays) {
+                if (vrDisplays && vrDisplays.length > 0) {
+                    for (var i = 0; i < vrDisplays.length; i++) {
+                        var vrDisplay = vrDisplays[i];
+                        if (vrDisplay.displayName === "Tango VR Device") {
+                            videoQuad = new VideoQuad(gl, vrDisplay, program);
+                            readyCallback();
+                            break;
+                        }
+                    }
+                }
+            });
+        }
+        else {
+            alert("No navigator.getVRDisplays");
+        }
+    }
+
+    window.addEventListener("touchstart", function(event) {
+        if (event.touches.length > 0 && videoQuad) {
+            var x = event.touches[0].pageX / window.innerWidth;
+            var y = event.touches[0].pageY / window.innerHeight;
+            var pointAndPlane = videoQuad.vrDisplay.getPickingPointAndPlaneInPointCloud(x, y);
+            console.log("x = " + event.touches[0].pageX + ", y = " + event.touches[0].pageY + ", window.innerWidth = " + window.innerWidth + ", window.innerHeight = " + window.innerHeight + ", uvx = " + x + ", uvy = " + y + ", point[0] = " + pointAndPlane.point[0] + ", point[1] = " + pointAndPlane.point[1] + ", point[2] = " + pointAndPlane.point[2] + ", plane[0] = " + pointAndPlane.plane[0] + ", plane[1] = " + pointAndPlane.plane[1] + ", plane[2] = " + pointAndPlane.plane[2] + ", plane[3] = " + pointAndPlane.plane[3]);            
+        }
+    });
+
+    function raf() {
+        videoQuad.update(gl);
+
+        gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+        videoQuad.render(gl);
+
+        requestAnimationFrame(raf);
+    }
+
+</script>
+
+
+</head>
+
+
+<body onload="webGLStart();">
+    <!-- <canvas id="lesson01-canvas" style="border: none;" width="100%" height="100%"></canvas> -->
+    <script>
+        function webGLStart() {
+            // var canvas = document.getElementById("lesson01-canvas");
+            var canvas = document.createElement("canvas");
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            document.body.appendChild(canvas);
+            var gl = getGL(canvas);
+            var program = getProgram(gl);
+            window.gl = gl;
+            window.program = program;
+            initVideoQuad(gl, program, function() {
+                requestAnimationFrame(raf);
+            });
+            gl.clearColor(0.2, 0.2, 0.2, 1.0);
+        }
+    </script>
+</body>
+
+</html>

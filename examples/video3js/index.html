@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+
+	<link rel="stylesheet" href="css/normalize.css">
+	<link rel="stylesheet" href="css/main.css">
+
+    <!-- Error handling -->
+    <script>
+        window.addEventListener('error', function(event) {
+            var errorMessage = event.message;
+            var url = event.filename;
+            var lineNumber = event.lineno;
+            var columnNumber = event.colno;
+            alert("ERROR: " + errorMessage + " at " + url + " : " + lineNumber + " : " + columnNumber);
+        });
+    </script>
+
+<script type="text/javascript" src="glMatrix-0.9.5.min.js"></script>
+
+		<title>three.js webgl - collada</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #000000;
+				margin: 0px;
+				overflow: hidden;
+			}
+
+			#info {
+				color: #fff;
+				position: absolute;
+				bottom: 10px;
+				width: 100%;
+				text-align: center;
+				z-index: 100;
+				display:block;
+
+			}
+
+			a { color: skyblue }
+		</style>
+	</head>
+	<body>
+		<div id="loader-wrapper">
+			<div id="loader"></div>
+			<div class="loader-section section-left"></div>
+            <div class="loader-section section-right"></div>
+		</div>
+
+		<div id="info">
+			<a href="http://threejs.org" target="_blank">three.js</a> -
+			Tango Chrome prototype <a href="https://github.com/judax" target="_blank">Iker Jamardo</a>
+		</div>
+
+		<script src="three.min.js"></script>
+		<script src="Detector.js"></script>
+		<script src="stats.min.js"></script>
+		<script src="VRControls.js"></script>
+		<script src="THREE.Tango.js"></script>
+		<script src="dat.gui.min.js"></script>
+		<script src="ColladaLoader.js"></script>
+
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+		<script>window.jQuery || document.write('<script src="jquery-1.9.1.min.js"><\/script>')</script>
+
+		<script>
+
+			function GUI() {
+				this.showPointCloud = true;
+				this.showSeeThroughCamera = true;
+				return this;
+			}
+
+			var datGUI = new dat.GUI();
+			var gui = new GUI();
+			datGUI.add(gui, "showPointCloud").onFinishChange(function(value) {
+				if (value) {
+					scene.add(points)
+				}
+				else {
+					scene.remove(points);
+				}
+			});
+			datGUI.add(gui, "showSeeThroughCamera");
+
+			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+
+			var container, stats;
+
+			var cameraOrtho, cameraPersp, sceneCamera, scene, renderer;
+
+			var pointCloud;
+			var vrDisplay;
+			var model;
+
+			var lastX, lastY;
+
+			var USE_CUBE_AS_MODEL = false;
+
+	        if (navigator.getVRDisplays) {
+	            navigator.getVRDisplays().then(function(vrDisplays) {
+	                if (vrDisplays && vrDisplays.length > 0) {
+	                    for (var i = 0; i < vrDisplays.length; i++) {
+	                        vrDisplay = vrDisplays[i];
+	                        if (vrDisplay.displayName === "Tango VR Device") {
+	                        	if (!USE_CUBE_AS_MODEL) {
+									var loader = new THREE.ColladaLoader();
+									loader.options.convertUpAxis = true;
+									loader.load( 'geometry_5.dae', function ( collada ) {
+
+										$('body').addClass('loaded');
+										$('h1').css('color','#222222');
+
+										var colladaScene = collada.scene;
+										colladaScene.rotateX(THREE.Math.degToRad(90));
+										colladaScene.updateMatrix();
+										model = new THREE.Object3D();
+										model.add(colladaScene);
+										init(vrDisplay);
+										animate();
+									} );
+								}
+								else {
+									init(vrDisplay);
+									animate();									
+								}
+	                            break;
+	                        }
+	                    }
+	                }
+	            });
+	        }
+	        else {
+	            alert("No navigator.getVRDisplays");
+				$('body').addClass('loaded');
+				$('h1').css('color','#222222');
+	            init();
+	            animate();
+	        }
+
+			function init(vrDisplay) {
+
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				sceneCamera = new THREE.Scene();
+				cameraOrtho = new THREE.OrthographicCamera( -1, 1, 1, -1, 0, 1000 );
+				sceneCamera.add(THREE.createVRSeeThroughCameraMesh(vrDisplay));
+
+				// 
+
+				scene = new THREE.Scene();
+				cameraPersp = THREE.createVRSeeThroughCamera(vrDisplay, 0.00001, 1000);
+				if (!model) {
+					model = new THREE.Mesh(new THREE.BoxBufferGeometry(0.1, 0.1, 0.1), new THREE.MeshLambertMaterial( {color: 0x888888 } ));
+				}
+				model.position.set(Infinity, Infinity, Infinity);
+				scene.add(model);
+				var material = new THREE.PointsMaterial( { size: 0.01, vertexColors: THREE.VertexColors } );
+				material.depthWrite = false;
+				pointCloud = new THREE.VRPointCloud(vrDisplay, true);
+				points = new THREE.Points( pointCloud.getBufferGeometry(), material );
+				points.frustumCulled = false;
+				points.renderDepth = 0;
+				scene.add(points);
+				vrControls = new THREE.VRControls(cameraPersp);
+				var directionalLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
+				directionalLight.position.set( 0, 1, 0);
+				scene.add( directionalLight );
+
+				// 
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.autoClear = false;
+				document.body.appendChild( renderer.domElement );
+
+				stats = new Stats();
+				container.appendChild( stats.dom );
+
+			}
+
+			//
+			function animate() {
+
+				stats.update();
+
+				vrControls.update();
+
+				pointCloud.update();
+
+				render();
+
+				requestAnimationFrame( animate );
+
+			}
+
+			function render() {
+
+				renderer.clear();
+				if (gui.showSeeThroughCamera)
+					renderer.render( sceneCamera, cameraOrtho );
+				renderer.clearDepth();
+				renderer.render( scene, cameraPersp );
+
+			}
+
+		    window.addEventListener("click", function(event) {
+		        if (vrDisplay) {
+		            var x = event.pageX / window.innerWidth;
+		            var y = event.pageY / window.innerHeight;
+		            var pointAndPlane = vrDisplay.getPickingPointAndPlaneInPointCloud(x, y);
+		            console.log("x = " + lastX + ", y = " + lastY + ", window.innerWidth = " + window.innerWidth + ", window.innerHeight = " + window.innerHeight + ", uvx = " + x + ", uvy = " + y + ", point[0] = " + pointAndPlane.point[0] + ", point[1] = " + pointAndPlane.point[1] + ", point[2] = " + pointAndPlane.point[2] + ", plane[0] = " + pointAndPlane.plane[0] + ", plane[1] = " + pointAndPlane.plane[1] + ", plane[2] = " + pointAndPlane.plane[2] + ", plane[3] = " + pointAndPlane.plane[3]);  
+
+		            THREE.positionAndRotateObject3DWithPickingPointAndPlaneInPointCloud(pointAndPlane, model, 0.0);
+		        }
+		    });
+
+		    window.addEventListener("touchstart", function(event) {
+		    	if (event.changedTouches.length > 0)
+		    		lastX = event.changedTouches[0].pageX;
+		    });
+
+		    window.addEventListener("touchmove", function(event) {
+		        if (event.changedTouches.length > 0 && vrDisplay) {
+		        	var x = event.changedTouches[0].pageX;
+		        	var diffX = x - lastX;
+		        	lastX = x;
+		        	model.rotateZ(THREE.Math.degToRad(diffX));
+		        }
+		    });
+
+		</script>
+	</body>
+</html>

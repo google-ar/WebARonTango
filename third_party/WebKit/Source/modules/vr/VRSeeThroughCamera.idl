@@ -1,0 +1,12 @@
+[
+	RuntimeEnabled=WebVR
+] interface VRSeeThroughCamera {
+	readonly attribute unsigned long width;
+	readonly attribute unsigned long height;
+	readonly attribute unsigned long textureWidth;
+	readonly attribute unsigned long textureHeight;
+	readonly attribute double focalLengthX;
+	readonly attribute double focalLengthY;
+	readonly attribute double pointX;
+	readonly attribute double pointY;
+};
