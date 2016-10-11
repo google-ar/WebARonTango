@@ -79,6 +79,10 @@ Open a terminal window to be able
 2.2.- Build the project
 -----------------------
 
+IMPORTANT: some changes have been done to the Chromium command buffer. These changes may require to rebuild the command buffer. The Python script to do so does not execute along with the regular building process so if further changes are done to the command buffer, this script needs to be executed with the following command:
+
+	~/chromium/src/python gpu/command_buffer/build_gles2_cmd_buffer.py
+
 The out folder that has been created has the same name as the branch. This is no coincidence, as the "build_install_run.sh" shell script provided along with this documentation allows to build the Chromium project depending on the current git branch name that is currently checked out. This script not only compiles Chromium but also the Tango use native library called tango_chromium. This script, apart of building the project it installs it and runs it, so it is convenient that you connect the Tango device via USB. The built project is the Chromium WebView project.
 	~/chromium/src/build_install_run.sh
 
