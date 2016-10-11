@@ -18,6 +18,7 @@ group("test") {
 # GYP: //android_webview/android_webview_tests.gypi:android_webview_apk
 android_apk("android_webview_apk") {
   deps = [
+    ":android_support_javalib",
     ":android_webview_apk_assets",
     ":android_webview_apk_resources",
     "//android_webview:android_webview_java",
@@ -306,4 +307,9 @@ shared_library("libdrawgl") {
     "shell/src/draw_gl/draw_gl.cc",
   ]
   configs -= [ "//build/config/android:hide_native_jni_exports" ]
+}
+
+android_java_prebuilt("android_support_javalib") {
+#  jar_path = "../../third_party/android_tools/sdk/extras/android/support/v4/android-support-v4.jar"
+  jar_path = "../../third_party/android_tools/sdk/extras/android/support/v7/appcompat/libs/android-support-v4.jar"
 }

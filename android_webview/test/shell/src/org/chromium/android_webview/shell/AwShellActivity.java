@@ -4,6 +4,7 @@
 
 package org.chromium.android_webview.shell;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -12,6 +13,7 @@ import android.content.SharedPreferences.Editor;
 import android.content.ServiceConnection;
 import android.content.ComponentName;
 import android.content.DialogInterface;
+import android.content.pm.PackageManager;
 import android.os.IBinder;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -33,6 +35,9 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.ActivityCompat.OnRequestPermissionsResultCallback;
 
 import org.chromium.android_webview.AwBrowserContext;
 import org.chromium.android_webview.AwBrowserProcess;
@@ -61,11 +66,12 @@ import java.net.URISyntaxException;
 /**
  * This is a lightweight activity for tests that only require WebView functionality.
  */
-public class AwShellActivity extends Activity {
+public class AwShellActivity extends Activity implements OnRequestPermissionsResultCallback {
     private static final String TAG = "cr.AwShellActivity";
     private static final String PREFERENCES_NAME = "AwShellPrefs";
     private static final String INITIAL_URL = "about:blank";
     private static final String LAST_USED_URL_PREFERENCE_NAME = "url";
+    private static final int CAMERA_PERMISSION_ID = 1;
     private AwBrowserContext mBrowserContext;
     private AwDevToolsServer mDevToolsServer;
     private AwTestContainerView mAwTestContainerView;
@@ -101,9 +107,55 @@ public class AwShellActivity extends Activity {
         }
     }       
 
+    private void requestCameraPermission() 
+    {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) 
+        {
+            // Should we show an explanation?
+            // if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_CONTACTS)) 
+            // {
+
+            //     // Show an expanation to the user *asynchronously* -- don't block
+            //     // this thread waiting for the user's response! After the user
+            //     // sees the explanation, try again to request the permission.
+
+            // } 
+            // else 
+            {
+
+                // No explanation needed, we can request the permission.
+
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.CAMERA},
+                        CAMERA_PERMISSION_ID);
+
+                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
+                // app-defined int constant. The callback method gets the
+                // result of the request.
+            }
+        }
+    }    
+
+   @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+
+        if (requestCode == CAMERA_PERMISSION_ID) {
+
+            // Received permission result for camera permission.est.");
+            // Check if the only required permission has been granted
+            if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            } else {
+            }
+        }
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        requestCameraPermission();
+
+        TangoJniNative.onCreate(this);
 
         CommandLine.init(new String[] { "chrome", "--ignore-gpu-blacklist", "--enable-webvr" });
 
@@ -145,8 +197,6 @@ public class AwShellActivity extends Activity {
         mAwTestContainerView.getAwContents().loadUrl(startupUrl);
         AwContents.setShouldDownloadFavicons();
         mUrlTextView.setText(startupUrl);
-
-        TangoJniNative.onCreate(this);
     }
 
     @Override
