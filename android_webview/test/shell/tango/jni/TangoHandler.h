@@ -29,7 +29,7 @@
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
 // Some preprocessor symbols that allow to control some of the TangoHandler features/capabilities.
-#define TANGO_USE_YUV_CAMERA
+// #define TANGO_USE_YUV_CAMERA
 #define TANGO_USE_POINT_CLOUD
 #define TANGO_USE_CAMERA
 #define TANGO_USE_POWER_OF_TWO
@@ -99,6 +99,8 @@ private:
 	uint32_t cameraImageTextureWidth;
 	uint32_t cameraImageTextureHeight;
 	bool cameraImageYUVHasChanged;
+
+	bool textureIdConnected;
 };
 }  // namespace tango_4_chromium
 

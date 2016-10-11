@@ -4672,7 +4672,8 @@ void WebGLRenderingContextBase::texImageHelperVRSeeThroughCamera(TexImageFunctio
 
     if (m_cameraImageTextureId != 0) 
     {
-        TangoHandler::getInstance()->updateCameraImageIntoTexture(m_cameraImageTextureId);
+        contextGL()->UpdateTextureExternalOes(m_cameraImageTextureId);
+        // TangoHandler::getInstance()->updateCameraImageIntoTexture(m_cameraImageTextureId);
     }
 
 #endif

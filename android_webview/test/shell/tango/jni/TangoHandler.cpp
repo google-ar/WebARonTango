@@ -234,6 +234,7 @@ TangoHandler::TangoHandler(): connected(false)
 	, cameraImageTextureWidth(0)
 	, cameraImageTextureHeight(0)
 	, cameraImageYUVHasChanged(false)
+	, textureIdConnected(false)
 {
     pthread_mutexattr_t	attr;
     pthread_mutexattr_init( &attr );
@@ -423,6 +424,9 @@ bool TangoHandler::getPose(TangoPoseData* tangoPoseData)
 	bool result = connected;
 	if (connected)
 	{
+
+		LOGI("TangoHandler::getPose lastTangoImageBufferTimestamp = %lf", lastTangoImageBufferTimestamp);
+
 		result = TangoSupport_getPoseAtTime(
 			0.0, TANGO_COORDINATE_FRAME_START_OF_SERVICE,
 			TANGO_COORDINATE_FRAME_CAMERA_COLOR, TANGO_SUPPORT_ENGINE_OPENGL,
@@ -438,22 +442,14 @@ bool TangoHandler::getPose(TangoPoseData* tangoPoseData)
 bool TangoHandler::getPoseMatrix(float* matrix)
 {
 	bool result = false;
-	if (!latestTangoXYZijRetrieved)
-	{
-		TangoSupport_getLatestPointCloud(pointCloudManager, &latestTangoXYZij);
-	}
-	else 
-	{
-		latestTangoXYZijRetrieved = false;
-	}
 	TangoMatrixTransformData tangoMatrixTransformData;
 	TangoSupport_getMatrixTransformAtTime(
-		latestTangoXYZij->timestamp, TANGO_COORDINATE_FRAME_AREA_DESCRIPTION,
+		lastTangoImageBufferTimestamp, TANGO_COORDINATE_FRAME_AREA_DESCRIPTION,
 		TANGO_COORDINATE_FRAME_CAMERA_COLOR, TANGO_SUPPORT_ENGINE_OPENGL,
 		TANGO_SUPPORT_ENGINE_TANGO, ROTATION_0, &tangoMatrixTransformData);
 	if (tangoMatrixTransformData.status_code != TANGO_POSE_VALID) {
 		LOGE("TangoHandler::getPoseMatrix: Could not find a valid matrix transform at "
-		"time %lf for the color camera.", latestTangoXYZij->timestamp);
+		"time %lf for the color camera.", lastTangoImageBufferTimestamp);
 		return result;
 	}
 	memcpy(matrix, tangoMatrixTransformData.matrix, 16 * sizeof(float));
@@ -499,7 +495,7 @@ bool TangoHandler::getPointCloud(uint32_t* count, float* xyz)
 			LOGE(
 				"TangoHandler::getXYZ: Could not find a valid matrix transform at "
 				"time %lf for the depth camera.",
-				latestTangoXYZij->timestamp);
+				lastTangoImageBufferTimestamp);
 		}
 
 		// pthread_mutex_unlock( &pointCloudMutex );
@@ -537,7 +533,7 @@ bool TangoHandler::getPickingPointAndPlaneInPointCloud(float x, float y, double*
 
 	// TangoPoseData tangoPoseData;
 	// if (TangoSupport_getPoseAtTime(
-	// 	latestTangoXYZij->timestamp, TANGO_COORDINATE_FRAME_START_OF_SERVICE,
+	// 	lastTangoImageBufferTimestamp, TANGO_COORDINATE_FRAME_START_OF_SERVICE,
 	// 	TANGO_COORDINATE_FRAME_CAMERA_COLOR, TANGO_SUPPORT_ENGINE_OPENGL,
 	// 	ROTATION_0, &tangoPoseData) != TANGO_SUCCESS)
 	// {
@@ -556,7 +552,7 @@ bool TangoHandler::getPickingPointAndPlaneInPointCloud(float x, float y, double*
 
 	TangoMatrixTransformData tangoMatrixTransformData;
 	TangoSupport_getMatrixTransformAtTime(
-		latestTangoXYZij->timestamp, TANGO_COORDINATE_FRAME_START_OF_SERVICE,
+		lastTangoImageBufferTimestamp, TANGO_COORDINATE_FRAME_START_OF_SERVICE,
 		TANGO_COORDINATE_FRAME_CAMERA_COLOR, TANGO_SUPPORT_ENGINE_OPENGL,
 		TANGO_SUPPORT_ENGINE_TANGO, ROTATION_0, &tangoMatrixTransformData);
 	if (tangoMatrixTransformData.status_code != TANGO_POSE_VALID) {
@@ -742,11 +738,19 @@ bool TangoHandler::getCameraImageRGB(uint8_t* image)
 
 bool TangoHandler::updateCameraImageIntoTexture(uint32_t textureId)
 {
-	LOGI("TangoHandler::updateCameraImageIntoTexture begin: textureId = %d", textureId);
-
+	if (!textureIdConnected)
+	{
+	    TangoErrorType result = TangoService_connectTextureId(TANGO_CAMERA_COLOR, textureId, nullptr, nullptr);
+	    if (result != TANGO_SUCCESS) 
+	    {
+			LOGE("TangoHandler::updateCameraImageIntoTexture: Failed to connect the texture id with error code: %d", result);
+			return false;
+		}
+		textureIdConnected = true;
+	}
 	TangoErrorType result = TangoService_updateTextureExternalOes(TANGO_CAMERA_COLOR, textureId, &lastTangoImageBufferTimestamp);
-
-	LOGI("TangoHandler::updateCameraImageIntoTexture end: textureId = %d, correct = %s", textureId, (result == TANGO_SUCCESS ? "YES" : "NO"));
+	
+	LOGI("TangoHandler::updateCameraImageIntoTexture lastTangoImageBufferTimestamp = %lf", lastTangoImageBufferTimestamp);
 
 	return result == TANGO_SUCCESS;
 }
