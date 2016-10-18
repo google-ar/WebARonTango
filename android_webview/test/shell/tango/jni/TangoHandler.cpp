@@ -195,6 +195,31 @@ inline void transformPlane(const double* p, const float* m, double* pr)
   //               -glm::dot(glm::vec3(out_origin), glm::vec3(out_normal)));
 }
 
+int combineOrientations(int activityOrientation, int sensorOrientation) 
+{
+  int sensorOrientationIndex = 0;
+  switch (sensorOrientation) {
+    case 90:
+      sensorOrientationIndex = 1;
+      break;
+    case 180:
+      sensorOrientationIndex = 2;
+      break;
+    case 270:
+      sensorOrientationIndex = 3;
+      break;
+    default:
+      sensorOrientationIndex = 0;
+      break;
+  }
+
+  int ret = activityOrientation - sensorOrientationIndex;
+  if (ret < 0) {
+    ret += 4;
+  }
+  return (ret % 4);
+}
+
 }
 
 namespace tango_chromium {
@@ -252,7 +277,7 @@ TangoHandler::~TangoHandler()
     pthread_cond_destroy( &cameraImageCondition );
 }
 
-void TangoHandler::onCreate(JNIEnv* env, jobject activity) 
+void TangoHandler::onCreate(JNIEnv* env, jobject activity, int activityOrientation, int sensorOrientation) 
 {
 	// Check the installed version of the TangoCore.  If it is too old, then
 	// it will not support the most up to date features.
@@ -266,6 +291,10 @@ void TangoHandler::onCreate(JNIEnv* env, jobject activity)
 		LOGE("TangoHandler::OnCreate, Tango Core version is out of date.");
 		std::exit (EXIT_SUCCESS);
 	}
+
+	this->activityOrientation = activityOrientation;
+	this->sensorOrientation = sensorOrientation;
+	combinedOrientation = static_cast<TangoSupportDisplayRotation>(combineOrientations(activityOrientation, sensorOrientation));
 }
 
 void TangoHandler::onTangoServiceConnected(JNIEnv* env, jobject binder) 
@@ -414,6 +443,13 @@ void TangoHandler::onPause()
 	connected = false;
 }
 
+void TangoHandler::onDeviceRotationChanged(int activityOrientation, int sensorOrientation)
+{
+	this->activityOrientation = activityOrientation;
+	this->sensorOrientation = sensorOrientation;
+	combinedOrientation = static_cast<TangoSupportDisplayRotation>(combineOrientations(activityOrientation, sensorOrientation));
+}
+
 bool TangoHandler::isConnected() const
 {
 	return connected;
@@ -428,9 +464,9 @@ bool TangoHandler::getPose(TangoPoseData* tangoPoseData)
 		LOGI("TangoHandler::getPose lastTangoImageBufferTimestamp = %lf", lastTangoImageBufferTimestamp);
 
 		result = TangoSupport_getPoseAtTime(
-			0.0, TANGO_COORDINATE_FRAME_START_OF_SERVICE,
+			lastTangoImageBufferTimestamp, TANGO_COORDINATE_FRAME_START_OF_SERVICE,
 			TANGO_COORDINATE_FRAME_CAMERA_COLOR, TANGO_SUPPORT_ENGINE_OPENGL,
-			ROTATION_0, tangoPoseData) == TANGO_SUCCESS;
+			combinedOrientation, tangoPoseData) == TANGO_SUCCESS;
 		if (!result) 
 		{
 			LOGE("TangoHandler::getPose: Failed to get a the pose.");
@@ -446,7 +482,7 @@ bool TangoHandler::getPoseMatrix(float* matrix)
 	TangoSupport_getMatrixTransformAtTime(
 		lastTangoImageBufferTimestamp, TANGO_COORDINATE_FRAME_AREA_DESCRIPTION,
 		TANGO_COORDINATE_FRAME_CAMERA_COLOR, TANGO_SUPPORT_ENGINE_OPENGL,
-		TANGO_SUPPORT_ENGINE_TANGO, ROTATION_0, &tangoMatrixTransformData);
+		TANGO_SUPPORT_ENGINE_TANGO, combinedOrientation, &tangoMatrixTransformData);
 	if (tangoMatrixTransformData.status_code != TANGO_POSE_VALID) {
 		LOGE("TangoHandler::getPoseMatrix: Could not find a valid matrix transform at "
 		"time %lf for the color camera.", lastTangoImageBufferTimestamp);
@@ -477,7 +513,7 @@ bool TangoHandler::getPointCloud(uint32_t* count, float* xyz)
 		TangoSupport_getDoubleMatrixTransformAtTime(
 			latestTangoXYZij->timestamp, TANGO_COORDINATE_FRAME_START_OF_SERVICE,
 			TANGO_COORDINATE_FRAME_CAMERA_DEPTH, TANGO_SUPPORT_ENGINE_OPENGL,
-			TANGO_SUPPORT_ENGINE_TANGO, ROTATION_0, &matrixTransform);
+			TANGO_SUPPORT_ENGINE_TANGO, combinedOrientation, &matrixTransform);
 		if (matrixTransform.status_code == TANGO_POSE_VALID) 
 		{
 			TangoXYZij transformedLatestTangoXYZij;
@@ -535,7 +571,7 @@ bool TangoHandler::getPickingPointAndPlaneInPointCloud(float x, float y, double*
 	// if (TangoSupport_getPoseAtTime(
 	// 	lastTangoImageBufferTimestamp, TANGO_COORDINATE_FRAME_START_OF_SERVICE,
 	// 	TANGO_COORDINATE_FRAME_CAMERA_COLOR, TANGO_SUPPORT_ENGINE_OPENGL,
-	// 	ROTATION_0, &tangoPoseData) != TANGO_SUCCESS)
+	// 	combinedOrientation, &tangoPoseData) != TANGO_SUCCESS)
 	// {
 	// 	LOGE("ERROR: TangoHandler::getPickingPointAndPlaneInPointCloud. Could not retrieve the pose.");
 	// 	return result;
@@ -554,7 +590,7 @@ bool TangoHandler::getPickingPointAndPlaneInPointCloud(float x, float y, double*
 	TangoSupport_getMatrixTransformAtTime(
 		lastTangoImageBufferTimestamp, TANGO_COORDINATE_FRAME_START_OF_SERVICE,
 		TANGO_COORDINATE_FRAME_CAMERA_COLOR, TANGO_SUPPORT_ENGINE_OPENGL,
-		TANGO_SUPPORT_ENGINE_TANGO, ROTATION_0, &tangoMatrixTransformData);
+		TANGO_SUPPORT_ENGINE_TANGO, combinedOrientation, &tangoMatrixTransformData);
 	if (tangoMatrixTransformData.status_code != TANGO_POSE_VALID) {
 		LOGE("TangoHandler::getPickingPointAndPlaneInPointCloud: Could not find a valid matrix transform at "
 		"time %lf for the color camera.", latestTangoXYZij->timestamp);
@@ -813,4 +849,9 @@ void TangoHandler::onCameraFrameAvailable(const TangoImageBuffer* buffer)
 	pthread_mutex_unlock( &cameraImageMutex );
 }
 
-}  // namespace hello_motion_tracking
+int TangoHandler::getSensorOrientation() const
+{
+	return sensorOrientation;
+}
+
+}  // namespace tango_chromium

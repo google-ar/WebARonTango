@@ -172,4 +172,9 @@ mojo::Array<float> TangoVRDevice::GetPoseMatrix()
   return poseMatrix;
 }
 
+int TangoVRDevice::GetSeeThroughCameraOrientation()
+{
+  return TangoHandler::getInstance()->getSensorOrientation();
+}
+
 }  // namespace device

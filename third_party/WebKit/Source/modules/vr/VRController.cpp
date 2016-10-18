@@ -109,6 +109,16 @@ mojo::WTFArray<float> VRController::getPoseMatrix(unsigned index)
     return poseMatrix;
 }
 
+int VRController::getSeeThroughCameraOrientation(unsigned index)
+{
+    if (!m_service)
+        return 0;
+
+    int32_t result;
+    m_service->GetSeeThroughCameraOrientation(index, &result);
+    return static_cast<int>(result);
+}
+
 void VRController::resetPose(unsigned index)
 {
     if (!m_service)

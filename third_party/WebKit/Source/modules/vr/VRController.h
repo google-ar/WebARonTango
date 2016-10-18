@@ -34,6 +34,7 @@ public:
     device::blink::VRPickingPointAndPlanePtr getPickingPointAndPlaneInPointCloud(unsigned index, float x, float y);
     device::blink::VRSeeThroughCameraPtr getSeeThroughCamera(unsigned index);
     mojo::WTFArray<float> getPoseMatrix(unsigned index);
+    int getSeeThroughCameraOrientation(unsigned index);
 
     void resetPose(unsigned index);
 

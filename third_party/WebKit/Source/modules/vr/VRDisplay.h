@@ -78,6 +78,8 @@ public:
 
     DOMFloat32Array* getPoseMatrix();
 
+    int getSeeThroughCameraOrientation();
+
     DECLARE_VIRTUAL_TRACE();
 
 protected:

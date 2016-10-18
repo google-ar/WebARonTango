@@ -43,7 +43,7 @@ public class TangoJniNative {
      *
      * @param callerActivity the caller activity of this function.
      */
-    public static native void onCreate(Activity callerActivity);
+    public static native void onCreate(Activity callerActivity, int activityOrientation, int sensorOrientation);
 
     /*
      * Called when the Tango service is connected.
@@ -58,4 +58,6 @@ public class TangoJniNative {
     public static native void onPause();
 
     public static native void onDestroy();
+
+    public static native void onConfigurationChanged(int activityOrientation, int sensorOrientation);
 }

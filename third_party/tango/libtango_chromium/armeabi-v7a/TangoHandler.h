@@ -49,9 +49,10 @@ public:
 
 	~TangoHandler();
 
-	void onCreate(JNIEnv* env, jobject activity);
+	void onCreate(JNIEnv* env, jobject activity, int activityOrientation, int sensorOrientation);
 	void onTangoServiceConnected(JNIEnv* env, jobject binder);
 	void onPause();
+	void onDeviceRotationChanged(int activityOrientation, int sensorOrientation);
 
 	bool isConnected() const;
 
@@ -71,6 +72,8 @@ public:
 
 	void onTangoXYZijAvailable(const TangoXYZij* tangoXYZij);
 	void onCameraFrameAvailable(const TangoImageBuffer* buffer);
+
+	int getSensorOrientation() const;
 
 private:
 	static TangoHandler* instance;
@@ -101,6 +104,10 @@ private:
 	bool cameraImageYUVHasChanged;
 
 	bool textureIdConnected;
+
+	int activityOrientation;
+	int sensorOrientation;
+	TangoSupportDisplayRotation combinedOrientation;
 };
 }  // namespace tango_4_chromium
 

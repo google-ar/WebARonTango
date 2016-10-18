@@ -6,7 +6,8 @@
 
 namespace blink {
 
-VRSeeThroughCamera::VRSeeThroughCamera(): m_width(0)
+VRSeeThroughCamera::VRSeeThroughCamera(VRDisplay* vrDisplay): m_vrDisplay(vrDisplay)
+	, m_width(0)
 	, m_height(0)
 	, m_textureWidth(0)
 	, m_textureHeight(0)
@@ -17,44 +18,49 @@ VRSeeThroughCamera::VRSeeThroughCamera(): m_width(0)
 {
 }
 
-unsigned long VRSeeThroughCamera::width()
+unsigned long VRSeeThroughCamera::width() const
 {
 	return m_width;
 }
 
-unsigned long VRSeeThroughCamera::height()
+unsigned long VRSeeThroughCamera::height() const
 {
 	return m_height;
 }
 
-unsigned long VRSeeThroughCamera::textureWidth()
+unsigned long VRSeeThroughCamera::textureWidth() const
 {
 	return m_textureWidth;
 }
 
-unsigned long VRSeeThroughCamera::textureHeight()
+unsigned long VRSeeThroughCamera::textureHeight() const
 {
 	return m_textureHeight;
 }
 
-double VRSeeThroughCamera::focalLengthX()
+double VRSeeThroughCamera::focalLengthX() const
 {
 	return m_focalLengthX;
 }
 
-double VRSeeThroughCamera::focalLengthY()
+double VRSeeThroughCamera::focalLengthY() const
 {
 	return m_focalLengthY;
 }
 
-double VRSeeThroughCamera::pointX()
+double VRSeeThroughCamera::pointX() const
 {
 	return m_pointX;
 }
 
-double VRSeeThroughCamera::pointY()
+double VRSeeThroughCamera::pointY() const
 {
 	return m_pointY;
+}
+
+long VRSeeThroughCamera::orientation()
+{
+	return m_vrDisplay->getSeeThroughCameraOrientation();
 }
 
 void VRSeeThroughCamera::setSeeThroughCamera(const device::blink::VRSeeThroughCameraPtr& seeThroughCameraPtr)
@@ -71,6 +77,7 @@ void VRSeeThroughCamera::setSeeThroughCamera(const device::blink::VRSeeThroughCa
 
 DEFINE_TRACE(VRSeeThroughCamera)
 {
+    visitor->trace(m_vrDisplay);
 }
 
 } // namespace blink

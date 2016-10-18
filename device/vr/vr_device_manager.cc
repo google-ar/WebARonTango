@@ -204,4 +204,13 @@ void VRDeviceManager::GetPoseMatrix(uint32_t index, const GetPoseMatrixCallback&
   }
 }
 
+void VRDeviceManager::GetSeeThroughCameraOrientation(uint32_t index, const GetSeeThroughCameraOrientationCallback& callback) {
+  VRDevice* device = GetDevice(index);
+  if (device) {
+    callback.Run(device->GetSeeThroughCameraOrientation());
+  } else {
+    callback.Run(0);
+  }
+}
+
 }  // namespace device

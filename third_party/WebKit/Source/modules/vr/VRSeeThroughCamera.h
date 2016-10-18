@@ -5,6 +5,7 @@
 #ifndef VRSeeThroughCamera_h
 #define VRSeeThroughCamera_h
 
+#include "modules/vr/VRDisplay.h"
 #include "bindings/core/v8/ScriptWrappable.h"
 #include "device/vr/vr_service.mojom-blink.h"
 
@@ -13,21 +14,23 @@ namespace blink {
 class VRSeeThroughCamera final : public GarbageCollected<VRSeeThroughCamera>, public ScriptWrappable {
     DEFINE_WRAPPERTYPEINFO();
 public:
-    VRSeeThroughCamera();
+    VRSeeThroughCamera(VRDisplay* vrDisplay);
 
-    unsigned long width();
-    unsigned long height();
-    unsigned long textureWidth();
-    unsigned long textureHeight();
-    double focalLengthX();
-    double focalLengthY();
-    double pointX();
-    double pointY();
+    unsigned long width() const;
+    unsigned long height() const;
+    unsigned long textureWidth() const;
+    unsigned long textureHeight() const;
+    double focalLengthX() const;
+    double focalLengthY() const;
+    double pointX() const;
+    double pointY() const;
+    long orientation();
 
     void setSeeThroughCamera(const device::blink::VRSeeThroughCameraPtr&);
 
     DECLARE_VIRTUAL_TRACE()
 private:
+    Member<VRDisplay> m_vrDisplay; // NOTE: Is there a weak member?
 	unsigned long m_width;
 	unsigned long m_height;
 	unsigned long m_textureWidth;

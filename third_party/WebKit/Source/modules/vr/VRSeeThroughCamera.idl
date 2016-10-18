@@ -9,4 +9,5 @@
 	readonly attribute double focalLengthY;
 	readonly attribute double pointX;
 	readonly attribute double pointY;
+	readonly attribute long orientation;
 };

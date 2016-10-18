@@ -93,4 +93,6 @@ interface VRService {
   GetPickingPointAndPlaneInPointCloud(uint32 index, float x, float y) => (VRPickingPointAndPlane? pointAndPlane);
   [Sync]
   GetPoseMatrix(uint32 index) => (array<float, 16> poseMatrix);
+  [Sync]
+  GetSeeThroughCameraOrientation(uint32 index) => (int32 orientation);
 };

@@ -81,7 +81,7 @@ void VRDisplay::update(const device::blink::VRDisplayPtr& display)
     }
 
     if (display->capabilities->hasSeeThroughCamera) {
-        m_seeThroughCamera = new VRSeeThroughCamera();
+        m_seeThroughCamera = new VRSeeThroughCamera(this);
     }
 }
 
@@ -241,6 +241,11 @@ DOMFloat32Array* VRDisplay::getPoseMatrix()
         memcpy(m_poseMatrix->data(), &(poseMatrix.front()), 16 * sizeof(float));    
     }
     return m_poseMatrix;
+}
+
+int VRDisplay::getSeeThroughCameraOrientation()
+{
+    return controller()->getSeeThroughCameraOrientation(m_displayId);
 }
 
 void VRDisplay::didProcessTask()

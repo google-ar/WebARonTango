@@ -181,4 +181,9 @@ mojo::Array<float> CardboardVRDevice::GetPoseMatrix()
   return nullptr;
 }
 
+int CardboardVRDevice::GetSeeThroughCameraOrientation()
+{
+  return 0;
+}
+
 }  // namespace device

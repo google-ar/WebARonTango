@@ -28,6 +28,7 @@ class TangoVRDevice : public VRDevice {
   VRSeeThroughCameraPtr GetSeeThroughCamera() override;
   VRPickingPointAndPlanePtr GetPickingPointAndPlaneInPointCloud(float x, float y) override;
   mojo::Array<float> GetPoseMatrix() override;
+  int GetSeeThroughCameraOrientation() override;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(TangoVRDevice);

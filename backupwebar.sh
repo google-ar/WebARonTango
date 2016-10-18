@@ -16,6 +16,9 @@ cp src/third_party/WebKit/Source/modules/webgl/WebGL2RenderingContextBase.* Back
 # ThirdParty Tango
 mkdir -p Backup_WebAR/third_party/tango
 cp -r src/third_party/tango Backup_WebAR/third_party/
+# ThirdParty ZXing
+mkdir -p Backup_WebAR/third_party/zxing
+cp -r src/third_party/zxing Backup_WebAR/third_party/
 # VR device Tango
 # NOTE: Could copy only the elements that have been changed.
 mkdir -p Backup_WebAR/device/vr
@@ -40,8 +43,6 @@ cp src/build_install_run.sh Backup_WebAR
 cp src/Notes*.txt Backup_WebAR/
 mkdir -p Backup_WebAR/examples
 cp ./backupwebar.sh Backup_WebAR
-#cp -r ~/Coding/www/tango/* Backup_WebAR/examples
 
-# NOTE: This is a hack and should not be needed. Remember to remove it from the backup once the right way to solve it is achieved.
-mkdir -p Backup_WebAR/build/android/gyp
-cp src/build/android/gyp/dex.py Backup_WebAR/build/android/gyp
+cp -r ~/Coding/judax.github.io/webar/* Backup_WebAR/examples
+

@@ -28,6 +28,7 @@ class CardboardVRDevice : public VRDevice {
   VRSeeThroughCameraPtr GetSeeThroughCamera() override;
   VRPickingPointAndPlanePtr GetPickingPointAndPlaneInPointCloud(float x, float y) override;
   mojo::Array<float> GetPoseMatrix() override;
+  int GetSeeThroughCameraOrientation() override;
 
  private:
   base::android::ScopedJavaGlobalRef<jobject> j_cardboard_device_;

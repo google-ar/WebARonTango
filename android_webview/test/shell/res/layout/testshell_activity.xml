@@ -16,6 +16,13 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal">
         <!--suppress LabelFor -->
+        <ImageButton
+            android:id="@+id/qrcodeImageButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:background="@drawable/button_qrcode0"
+            android:src="@drawable/button_qrcodereader_states" />        
         <EditText android:id="@+id/url"
             android:layout_width="0dp"
             android:layout_height="wrap_content"

@@ -39,6 +39,7 @@ class VRDevice {
   virtual VRSeeThroughCameraPtr GetSeeThroughCamera() = 0;
   virtual VRPickingPointAndPlanePtr GetPickingPointAndPlaneInPointCloud(float x, float y) = 0;
   virtual mojo::Array<float> GetPoseMatrix() = 0;
+  virtual int GetSeeThroughCameraOrientation() = 0;
 
  private:
   VRDeviceProvider* provider_;

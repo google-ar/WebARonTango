@@ -58,6 +58,7 @@ class VRDeviceManager : public VRService {
   void GetPickingPointAndPlaneInPointCloud(uint32_t index, float x, float y, const GetPickingPointAndPlaneInPointCloudCallback& callback) override;
   void GetSeeThroughCamera(uint32_t index, const GetSeeThroughCameraCallback& callback) override;
   void GetPoseMatrix(uint32_t index, const GetPoseMatrixCallback& callback) override;
+  void GetSeeThroughCameraOrientation(uint32_t index, const GetSeeThroughCameraOrientationCallback& callback) override;
 
   // Mojo connection error handler.
   void OnConnectionError();

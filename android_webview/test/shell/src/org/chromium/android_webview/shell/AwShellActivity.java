@@ -14,6 +14,7 @@ import android.content.ServiceConnection;
 import android.content.ComponentName;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.os.IBinder;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -25,6 +26,7 @@ import android.view.View.OnFocusChangeListener;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
+import android.view.Display;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.GeolocationPermissions;
@@ -38,6 +40,8 @@ import android.widget.TextView.OnEditorActionListener;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityCompat.OnRequestPermissionsResultCallback;
+import android.graphics.Point;
+import android.hardware.Camera;
 
 import org.chromium.android_webview.AwBrowserContext;
 import org.chromium.android_webview.AwBrowserProcess;
@@ -61,7 +65,12 @@ import org.chromium.content_public.browser.NavigationController;
 import org.chromium.content_public.browser.WebContents;
 
 import java.net.URI;
+import java.net.URL;
 import java.net.URISyntaxException;
+import java.net.MalformedURLException;
+
+import com.google.zxing.integration.android.IntentIntegrator;
+import com.google.zxing.integration.android.IntentResult;
 
 /**
  * This is a lightweight activity for tests that only require WebView functionality.
@@ -72,6 +81,8 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
     private static final String INITIAL_URL = "about:blank";
     private static final String LAST_USED_URL_PREFERENCE_NAME = "url";
     private static final int CAMERA_PERMISSION_ID = 1;
+    private static final int CAMERA_ID = 0;
+    private Point mScreenSize = new Point();
     private AwBrowserContext mBrowserContext;
     private AwDevToolsServer mDevToolsServer;
     private AwTestContainerView mAwTestContainerView;
@@ -80,6 +91,7 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
     private EditText mUrlTextView;
     private ImageButton mPrevButton;
     private ImageButton mNextButton;
+    private ImageButton mQRCodeButton;
 
     // Tango Service connection.
     ServiceConnection mTangoServiceConnection = new ServiceConnection()
@@ -155,7 +167,12 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
 
         requestCameraPermission();
 
-        TangoJniNative.onCreate(this);
+        WindowManager windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        Display display = windowManager.getDefaultDisplay();
+        display.getSize(mScreenSize);
+        Camera.CameraInfo info = new Camera.CameraInfo();
+        Camera.getCameraInfo(CAMERA_ID, info);
+        TangoJniNative.onCreate(this, display.getRotation(), info.orientation);
 
         CommandLine.init(new String[] { "chrome", "--ignore-gpu-blacklist", "--enable-webvr" });
 
@@ -460,6 +477,15 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
                 }
             }
         });
+
+        mQRCodeButton = (ImageButton) findViewById(R.id.qrcodeImageButton);
+        mQRCodeButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                IntentIntegrator intentIntegrator = new IntentIntegrator(AwShellActivity.this);
+                intentIntegrator.initiateScan();
+            }
+        });
     }
 
     @Override
@@ -472,6 +498,43 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
         }
 
         return super.onKeyUp(keyCode, event);
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
+        WindowManager windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        Display display = windowManager.getDefaultDisplay();
+        display.getSize(mScreenSize);
+        Camera.CameraInfo info = new Camera.CameraInfo();
+        Camera.getCameraInfo(CAMERA_ID, info);
+
+        TangoJniNative.onConfigurationChanged(display.getRotation(), info.orientation);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent intent) 
+    {
+        IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, intent);
+        if (scanResult != null && scanResult.getContents() != null) 
+        {
+            String url = scanResult.getContents();
+            try
+            {
+                new URL(url);
+                mUrlTextView.setText(url);
+                mAwTestContainerView.getAwContents().loadUrl(url);
+                mUrlTextView.clearFocus();
+                setKeyboardVisibilityForUrl(false);
+                mAwTestContainerView.requestFocus();
+                saveStringToPreferences(LAST_USED_URL_PREFERENCE_NAME, url);
+            }
+            catch(MalformedURLException e)
+            {               
+                Utils.createAlertDialog(this, "Not an URL", "The read QRCode does not represent a valid URL.", null, 1, "Ok", null, null).show();
+            }
+        }
     }
 
 /*

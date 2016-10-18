@@ -25,27 +25,33 @@ extern "C" {
 #endif
 
 JNIEXPORT void JNICALL
-Java_org_chromium_android_1webview_shell_TangoJniNative_onCreate(
-		JNIEnv* env, jobject obj, jobject caller_activity) {
-	TangoHandler::getInstance()->onCreate(env, caller_activity);
+Java_org_chromium_android_1webview_shell_TangoJniNative_onCreate(JNIEnv* env, jobject obj, jobject caller_activity, jint activityOrientation, jint sensorOrientation) 
+{
+	TangoHandler::getInstance()->onCreate(env, caller_activity, activityOrientation, sensorOrientation);
 }
 
 JNIEXPORT void JNICALL
-Java_org_chromium_android_1webview_shell_TangoJniNative_onDestroy(
-		JNIEnv* env, jobject obj) {
+Java_org_chromium_android_1webview_shell_TangoJniNative_onDestroy(JNIEnv* env, jobject obj) 
+{
 	TangoHandler::releaseInstance();
 }
 
 JNIEXPORT void JNICALL
-Java_org_chromium_android_1webview_shell_TangoJniNative_onTangoServiceConnected(
-		JNIEnv* env, jobject, jobject iBinder) {
+Java_org_chromium_android_1webview_shell_TangoJniNative_onTangoServiceConnected(JNIEnv* env, jobject, jobject iBinder) 
+{
 	TangoHandler::getInstance()->onTangoServiceConnected(env, iBinder);
 }
 
 JNIEXPORT void JNICALL
-Java_org_chromium_android_1webview_shell_TangoJniNative_onPause(
-		JNIEnv*, jobject) {
+Java_org_chromium_android_1webview_shell_TangoJniNative_onPause(JNIEnv*, jobject) 
+{
 	TangoHandler::getInstance()->onPause();
+}
+
+JNIEXPORT void JNICALL
+Java_org_chromium_android_1webview_shell_TangoJniNative_onConfigurationChanged(JNIEnv*, jobject, int activityOrientation, int sensorOrientation) 
+{
+	TangoHandler::getInstance()->onDeviceRotationChanged(activityOrientation, sensorOrientation);
 }
 
 #ifdef __cplusplus

@@ -1,0 +1,7 @@
+if (is_android) {
+  import("//build/config/android/rules.gni")
+}
+
+android_java_prebuilt("zxing_javalib") {
+  jar_path = "android-integration-2.3.0-supportv4.jar"
+}
