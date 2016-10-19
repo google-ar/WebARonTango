@@ -91,3 +91,34 @@ The out folder that has been created has the same name as the branch. This is no
 
 Under construction
 
+4.- DEVELOPING A WEBAR THREEJS APP
+==================================
+
+IMPORTANT NOTE: In order to use the external image OES extension, a modification to the ThreeJS engine is required. In the getSingularSetter function that is able to identify the set functions for the different types of uniforms/attributes in a shader, a new type needs to be added as follows:
+
+	function getSingularSetter( type ) {
+
+		switch ( type ) {
+
+			case 0x1406: return setValue1f; // FLOAT
+			case 0x8b50: return setValue2fv; // _VEC2
+			case 0x8b51: return setValue3fv; // _VEC3
+			case 0x8b52: return setValue4fv; // _VEC4
+
+			case 0x8b5a: return setValue2fm; // _MAT2
+			case 0x8b5b: return setValue3fm; // _MAT3
+			case 0x8b5c: return setValue4fm; // _MAT4
+
+			case 0x8b5e: case 36198: return setValueT1; // SAMPLER_2D  // case 36198: ADDED by WebAR
+			case 0x8b60: return setValueT6; // SAMPLER_CUBE
+
+			case 0x1404: case 0x8b56: return setValue1i; // INT, BOOL
+			case 0x8b53: case 0x8b57: return setValue2iv; // _VEC2
+			case 0x8b54: case 0x8b58: return setValue3iv; // _VEC3
+			case 0x8b55: case 0x8b59: return setValue4iv; // _VEC4
+
+		}
+
+	}
+
+
