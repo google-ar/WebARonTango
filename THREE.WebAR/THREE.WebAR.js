@@ -2,6 +2,7 @@ var THREE = THREE || require("three");
 
 /**
 * The WebAR namespace inside the THREE namespace. Inside this namespace, different utilities to be able to handle WebAR functionalities on top of the ThreeJS framework/engine.
+* NOTE: As a coding standard all the variables/functions starting with an underscore '_' are considered as private and should not be used/called outside of the namespace/class they are defined in.
 * @namespace
 */
 THREE.WebAR = {};
@@ -14,7 +15,7 @@ THREE.WebAR = {};
 * @param {window.VRDisplay} vrDisplay - The reference to the VRDisplay instance that is capable of providing the point cloud.
 * @param {boolean} usePointCloudVerticesDirectly - A flag to specify if a new TypedArray will be used in each frame with the exact number of points in the cloud or reuse a single reference to a TypedArray with the maximum number of points provided by the underlying hardware (non correct values are filled with Inifinity).
 *
-* NOTE: The buffer geometry that can be retrieved from instances of this class can be used along with THREE.PointGeometry to render the point cloud using points. This class represents the vertices colors with the color white.
+* NOTE: The buffer geometry that can be retrieved from instances of this class can be used along with THREE.Point and THREE.PointMaterial to render the point cloud using points. This class represents the vertices colors with the color white.
 */
 THREE.WebAR.VRPointCloud = function(vrDisplay, usePointCloudVerticesDirectly) {
 
@@ -57,12 +58,21 @@ THREE.WebAR.VRPointCloud = function(vrDisplay, usePointCloudVerticesDirectly) {
 /**
 * Returns the THREE.BufferGeometry instance that represents the points in the pont cloud.
 * @return {THREE.BufferGeometry} - The buffer geometry that represents the points in the point cloud.
+*
+* NOTE: A possible way to render the point cloud could be to use the THREE.BufferGeometry instance returned by this method along with THREE.Points and THREE.PointMaterial.
+
+	var pointCloud = new THREE.VRPointCloud(vrDisplay, true);
+	var material = new THREE.PointsMaterial( { size: 0.01, vertexColors: THREE.VertexColors } );
+	var points = new THREE.Points( pointCloud.getBufferGeometry(), material );
 */
 THREE.WebAR.VRPointCloud.prototype.getBufferGeometry = function() {
 	return this._bufferGeometry;
 };
 
-THREE.WebAR.VRPointCloud.prototype.update = function(camera) { // TODO: Camera should not be needed to be passed when the getPose problem is solved.
+/**
+* Update the point cloud. The THREE.BufferGeometry that this class provides will automatically be updated with the point cloud retrieved by the underlying hardware.
+*/
+THREE.WebAR.VRPointCloud.prototype.update = function() {
 	if (!this._vrDisplay) return;
 	var pointCloud = this._vrDisplay.getPointCloud();
 	if (!this._usePointCloudVerticesDirectly) {
@@ -85,56 +95,197 @@ THREE.WebAR.VRPointCloud.prototype.update = function(camera) { // TODO: Camera s
 	}
 };
 
+/**
+* A utility function that helps create a THREE.Mesh instance to be able to show the VRSeeThroughCamera as a background quad with the correct texture coordinates and a THREE.VideoTexture instance.
+* @param {VRDisplay} vrDisplay - The VRDisplay that is capable to provide a correct VRSeeThroughCamera instance.
+* @return {THREE.Mesh} - The THREE.Mesh instance that represents a quad to be able to present the see through camera.
+*/
 THREE.WebAR.createVRSeeThroughCameraMesh = function(vrDisplay) {
-	var uvs;
+
+	function getTextureCoordIndexBasedOnOrientation(vrDisplay) {
+		var screenOrientation = screen.orientation.angle;
+		var seeThroughCameraOrientation = vrDisplay ? vrDisplay.getSeeThroughCamera().orientation : 0;
+	    seeThroughCameraOrientationIndex = 0;
+	    switch (seeThroughCameraOrientation) {
+	        case 90:
+	            seeThroughCameraOrientationIndex = 1;
+	            break;
+	        case 180:
+	            seeThroughCameraOrientationIndex = 2;
+	            break;
+	        case 270:
+	            seeThroughCameraOrientationIndex = 3;
+	            break;
+	        default:
+	            seeThroughCameraOrientationIndex = 0;
+	            break;
+	    }
+	    screenOrientationIndex = 0;
+	    switch (screenOrientation) {
+	        case 90:
+	            screenOrientationIndex = 1;
+	            break;
+	        case 180:
+	            screenOrientationIndex = 2;
+	            break;
+	        case 270:
+	            screenOrientationIndex = 3;
+	            break;
+	        default:
+	            screenOrientationIndex = 0;
+	            break;
+	    }
+	    ret = screenOrientationIndex - seeThroughCameraOrientationIndex;
+	    if (ret < 0) {
+	        ret += 4;
+	    }
+	    return (ret % 4);
+	}
+
 	var video;
+	var geometry = new THREE.BufferGeometry();
+
+	// The camera or video and the texture coordinates may vary depending if the vrDisplay has the see through camera.
 	if (vrDisplay) {
 		var seeThroughCamera = vrDisplay.getSeeThroughCamera();
 		video = seeThroughCamera;
 		// HACK: Needed to tell the THEE.VideoTextue that the video is ready and that the texture needs update.
 		video.readyState = 2;
 		video.HAVE_CURRENT_DATA = 2;
-        uvs = new Float32Array([
-            0.0, 0.0,
-            seeThroughCamera.width / seeThroughCamera.textureWidth, 0.0, 
-            seeThroughCamera.width / seeThroughCamera.textureWidth, seeThroughCamera.height / seeThroughCamera.textureHeight,
-            0.0, seeThroughCamera.height / seeThroughCamera.textureHeight
-        ]);
+
+		// All the possible texture coordinates for the 4 possible orientations.
+		// The ratio between the texture size and the camera size is used in order to be compatible with the YUV to RGB conversion option (not recommended but still available).
+        geometry.WebAR_textureCoords = [
+            new Float32Array([ 
+                0.0, 0.0,
+                0.0, seeThroughCamera.height / seeThroughCamera.textureHeight,
+                seeThroughCamera.width / seeThroughCamera.textureWidth, 0.0,
+                seeThroughCamera.width / seeThroughCamera.textureWidth, seeThroughCamera.height / seeThroughCamera.textureHeight
+            ]),
+            new Float32Array([ 
+                seeThroughCamera.width / seeThroughCamera.textureWidth, 0.0,
+                0.0, 0.0,
+                seeThroughCamera.width / seeThroughCamera.textureWidth, seeThroughCamera.height / seeThroughCamera.textureHeight,
+                0.0, seeThroughCamera.height / seeThroughCamera.textureHeight
+            ]),
+            new Float32Array([
+                seeThroughCamera.width / seeThroughCamera.textureWidth, seeThroughCamera.height / seeThroughCamera.textureHeight,
+                seeThroughCamera.width / seeThroughCamera.textureWidth, 0.0,
+                0.0, seeThroughCamera.height / seeThroughCamera.textureHeight,
+                0.0, 0.0
+            ]),
+            new Float32Array([
+                0.0, seeThroughCamera.height / seeThroughCamera.textureHeight,
+                seeThroughCamera.width / seeThroughCamera.textureWidth, seeThroughCamera.height / seeThroughCamera.textureHeight,
+                0.0, 0.0,
+                seeThroughCamera.width / seeThroughCamera.textureWidth, 0.0
+            ])
+        ];
 	}
 	else {
 		var video = document.createElement("video");
 		video.src = "sintel.webm";
 		video.play();
-		uvs = new Float32Array([
-			0.0, 0.0, 
-			1.0, 0.0,
-			1.0, 1.0,
-			0.0, 1.0
-        ]);
+
+		// All the possible texture coordinates for the 4 possible orientations.
+        geometry.WebAR_textureCoords = [
+            new Float32Array([0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0]),
+            new Float32Array([1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0]),
+            new Float32Array([1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0]),
+            new Float32Array([0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0])
+        ];
 	}
 
-	var geometry = new THREE.BufferGeometry();
 	geometry.addAttribute("position", new THREE.BufferAttribute( new Float32Array([
-		-1.0,  1.0,  0.0,
-         1.0,  1.0,  0.0,
-         1.0, -1.0,  0.0,
-        -1.0, -1.0,  0.0
+		-1.0,  1.0, 0.0, 
+		-1.0, -1.0, 0.0,
+		 1.0,  1.0, 0.0, 
+		 1.0, -1.0, 0.0
 	]), 3));
-	geometry.setIndex(new THREE.BufferAttribute( new Uint16Array([0, 1, 2, 0, 2, 3]), 1));
-	geometry.addAttribute("uv", new THREE.BufferAttribute( uvs, 2 ));
+
+	geometry.setIndex(new THREE.BufferAttribute( new Uint16Array([0, 1, 2, 2, 1, 3]), 1));
+	geometry.WebAR_textureCoordIndex = getTextureCoordIndexBasedOnOrientation(vrDisplay);
+	var textureCoords = geometry.WebAR_textureCoords[geometry.WebAR_textureCoordIndex];
+
+	geometry.addAttribute("uv", new THREE.BufferAttribute( new Float32Array(textureCoords), 2 ));
 	geometry.computeBoundingSphere();
 
 	var videoTexture = new THREE.VideoTexture(video);
-	videoTexture.minFilter = THREE.LinearFilter;
-	videoTexture.magFilter = THREE.LinearFilter;
+	videoTexture.minFilter = THREE.NearestFilter;
+	videoTexture.magFilter = THREE.NearestFilter;
 	videoTexture.format = THREE.RGBFormat;			
 	videoTexture.flipY = false;
 
-	var material = new THREE.MeshBasicMaterial( {color: 0xFFFFFF, side: THREE.DoubleSide, map: videoTexture } );
+	// The material is different if the see through camera is provided inside the vrDisplay or not.
+	var material;
+	if (vrDisplay) {
+	    var vertexShaderSource = [
+	        'attribute vec3 position;',
+	        'attribute vec2 uv;',
+	        '',
+	        'uniform mat4 modelViewMatrix;',
+	        'uniform mat4 projectionMatrix;',
+	        '',
+	        'varying vec2 vUV;',
+	        '',
+	        'void main(void) {',
+	        '    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
+	        '    vUV = uv;',
+	        '}'
+	    ];
+
+	    var fragmentShaderSource = [
+	        '#extension GL_OES_EGL_image_external : require',
+	        'precision mediump float;',
+	        '',
+	        'varying vec2 vUV;',
+	        '',
+	        'uniform samplerExternalOES map;',
+	        '',
+	        'void main(void) {',
+	        '   gl_FragColor = texture2D(map, vUV);',
+	        '}'
+	    ];
+
+	    material = new THREE.RawShaderMaterial({
+	        uniforms: {
+	            map: {type: 't', value: videoTexture},
+	        },
+	        vertexShader: vertexShaderSource.join( '\r\n' ),
+	        fragmentShader: fragmentShaderSource.join( '\r\n' ),
+	        side: THREE.DoubleSide,
+	    });
+	}
+	else {
+		material = new THREE.MeshBasicMaterial( {color: 0xFFFFFF, side: THREE.DoubleSide, map: videoTexture } );
+	}
+
 	var mesh = new THREE.Mesh(geometry, material);
+
+	// This function allows to use the correct texture coordinates depending on the device and camera orientation.
+	mesh.update = function() {
+		var textureCoordIndex = getTextureCoordIndexBasedOnOrientation(vrDisplay);
+		if (textureCoordIndex != this.geometry.WebAR_textureCoordIndex) {
+			var uvs = this.geometry.getAttribute("uv");
+			var textureCoords = this.geometry.WebAR_textureCoords[textureCoordIndex];
+			this.geometry.WebAR_textureCoordIndex = textureCoordIndex;
+			for (var i = 0; i < uvs.length; i++) {
+				uvs.array[i] = textureCoords[i];
+			}
+			uvs.needsUpdate = true;
+		}
+	};
+
 	return mesh;
 };
 
+/**
+* A utility function to create a THREE.Camera instance with as frustum that is obtainer from the underlying vrdisplay see through camera information. This camera can be used to correctly render 3D objects on top of the underlying camera image.
+* @param {VRDisplay} vrDisplay - The VRDisplay that is capable to provide a correct VRSeeThroughCamera instance in order to obtain the camera lens information and create the correct projection matrix/frustum.
+* @param {number} near - The near plane value to be used to create the correct projection matrix frustum.
+* @param {number} far - The far plane value to be used to create the correct projection matrix frustum.
+* @return {THREE.Camera} - A camera instance to be used to correctly render a scene on top of the camera video feed.
+*/
 THREE.WebAR.createVRSeeThroughCamera = function(vrDisplay, near, far) {
 	var camera;
 	if (vrDisplay) {
@@ -167,6 +318,12 @@ THREE.WebAR._normalY = new THREE.Vector3();
 THREE.WebAR._normalZ = new THREE.Vector3();
 THREE.WebAR._rotationMatrix = new THREE.Matrix4();
 
+/**
+* Transform a given THREE.Object3D instance to be correctly positioned and oriented according to a given VRPickingPointAndPlane and a scale (half the size of the object3d).
+* @param {VRPickingPointandPlane} pointAndPlane - The point and plane retrieved using the VRDisplay.getPickingPointAndPlaneInPointCloud function.
+* @param {THREE.Object3D} object3d - The object3d to be transformed so it is positioned and oriented according to the given point and plane.
+* @param {number} scale - The value the object3d will be positioned in the direction of the normal of the plane to be correctly positioned. Objects usually have their position value referenced as the center of the geometry. In this case, positioning the object in the picking point would lead to have the object3d positioned in the plane, not on top of it. this scale value will allow to correctly position the object in the picking point and in the direction of the normal of the plane. Half the size of the object3d would be a correct value in this case.
+*/
 THREE.WebAR.positionAndRotateObject3DWithPickingPointAndPlaneInPointCloud = function(pointAndPlane, object3d, scale) {
 	var planeNormal = new THREE.Vector3(pointAndPlane.plane[0], pointAndPlane.plane[1], pointAndPlane.plane[2]);
 	THREE.WebAR._normalY.set(0.0, 1.0, 0.0);
@@ -212,3 +369,14 @@ THREE.WebAR.positionAndRotateObject3DWithPickingPointAndPlaneInPointCloud = func
 
 };
 
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['WebAR'], factory);
+    } else if (typeof exports === 'object') {
+        module.exports = factory();
+    } else {
+        root.WebAR = factory();
+    }
+}(this, function() {
+    return THREE.WebAR;
+}));
