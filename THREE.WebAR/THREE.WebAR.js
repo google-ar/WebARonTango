@@ -1,8 +1,13 @@
+/**
+@namespace THREE
+*/
+
 var THREE = THREE || require("three");
 
 /**
 * The WebAR namespace inside the THREE namespace. Inside this namespace, different utilities to be able to handle WebAR functionalities on top of the ThreeJS framework/engine.
 * NOTE: As a coding standard all the variables/functions starting with an underscore '_' are considered as private and should not be used/called outside of the namespace/class they are defined in.
+* @name THREE.WebAR
 * @namespace
 */
 THREE.WebAR = {};
@@ -12,7 +17,7 @@ THREE.WebAR = {};
 * 1.- Using a new TypedArray for every frame/update. The advantage is that the TypedArray is always of the correct size depending on the number of points detected. The disadvantage is that there is a performance hit from the creation and copying of the array (and future garbage collection).
 * 2.- Using the same reference to a single TypedArray. The advantage is that the performance is as good as it can get with no creation/destruction and copy penalties. The disadvantage is that the size of the array is the biggest possible point cloud provided by the underlying hardware. The non used values are filled with Infinity.
 * @constructor
-* @param {window.VRDisplay} vrDisplay - The reference to the VRDisplay instance that is capable of providing the point cloud.
+* @param {VRDisplay} vrDisplay - The reference to the VRDisplay instance that is capable of providing the point cloud.
 * @param {boolean} usePointCloudVerticesDirectly - A flag to specify if a new TypedArray will be used in each frame with the exact number of points in the cloud or reuse a single reference to a TypedArray with the maximum number of points provided by the underlying hardware (non correct values are filled with Inifinity).
 *
 * NOTE: The buffer geometry that can be retrieved from instances of this class can be used along with THREE.Point and THREE.PointMaterial to render the point cloud using points. This class represents the vertices colors with the color white.
