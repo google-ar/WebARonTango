@@ -103,14 +103,14 @@
 */
 
 /**
-* @name VRPickingPointAndPlane#vertexCount
+* @name VRPointCloud#vertexCount
 * @type {long}
 * @description The real number of vertices in the point cloud that have been identified by the underlying system.
 * @readonly
 */
 
 /**
-* @name VRPickingPointAndPlane#vertices
+* @name VRPointCloud#vertices
 * @type {Float32Array}
 * @description An array of triplets representing each 3D vertices of the point cloud.
 * @readonly
