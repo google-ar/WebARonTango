@@ -50,8 +50,7 @@ Open a terminal window to be able
  7. Create a folder for the final product compilation:
  	~/chromium/src$ mkdir -p out/webar_54.0.2796.3
  8. Edit the a new file `out/webar_54.0.2796.3/args.gn` file
- 	~/chromium/src$ gedit out/webar_54.0.2796.3/args.gn
- 	Copy and paste this content:
+ 	`~/chromium/src$ gedit out/webar_54.0.2796.3/args.gn` and copy and paste this content in it:
 	```
 	target_os = "android"
 	target_cpu = "arm"  # (default)
@@ -63,10 +62,10 @@ Open a terminal window to be able
 	symbol_level = 1  # Faster build with fewer symbols. -g1 rather than -g2
 	enable_incremental_javac = true  # Much faster; experimental
 	```
- 9. Copy and paste all the content from this folder into the chromium/src folder. Override every possible conflict that may arise if you use the file explorer.
+ 9. Copy and paste all the content from the current folder of WebAR into the chromium/src folder. Override every possible conflict that may arise if you use the file explorer.
  	`cp -r PATH_TO_THIS_FOLDER/* ~/chromium/src`
  10. `~/chromium/src$ gn args out/webar_54.0.2796.3`
-	NOTE: just exit "q!" in vi when it opens and shows args.gn (modified in the previous step using a proper editor ;))
+	**NOTE**: just exit "q!" in vi when it opens and shows args.gn (modified in the previous step using a proper editor ;))
  11. `~/chromium$ src/build/install-build-deps-android.sh` 
  12. Execute the following commands and select the right choice on each. Do not worry if some commands do not have any effect.
  	```
@@ -90,6 +89,147 @@ The out folder that has been created has the same name as the branch. This is no
 ```
 ~/chromium/src/build_install_run.sh
 ```
+
+### Resolving some possible Chromium WebView crashes on some Android versions
+
+Chromium webview seems to crash pretty consistently on some Android versions (5 and 6) on some internal checks/asserts related to both audio and touch handling. This is a list of some possible points in the chromium source code where these crashes may occur. It is recommended that some testing is performed before introducing these changes. The bright side of asserts/checks is that they show the specific line of code where the crash is happening so a simple review of the logcar when the crash happens should poing to the specific point where the assert is failing.
+
+**NOTE**: It is recommended that the changes are well documented (for example introducing a //WebAR BEGIN..//WebAR END block to correctly mark each change).
+
+* `ui/events/android/motion_event_android.cc`
+
+	Line 221:
+
+		// DCHECK_LT(pointer_index, cached_pointer_count_);
+
+	Line 231:
+
+		// DCHECK_LT(pointer_index, cached_pointer_count_);
+
+* `third_party/WebKit/Source/core/layout/LayoutBlockFlow.cpp`
+
+	Line 3351:
+
+		// ASSERT(!floatBox.hasSelfPaintingLayer());
+
+* `third_party/WebKit/Source/modules/webaudio/DeferredTaskHandler.cpp`
+
+	Line 313:
+
+		// ASSERT(!isMainThread());
+
+	Line 37:
+
+		// ASSERT(!isAudioThread());
+
+* `media/blink/multibuffer_data_source.cc`
+
+ 	Line 442:   
+
+		// DCHECK(render_task_runner_->BelongsToCurrentThread());
+		// DCHECK(reader_.get());
+
+* `third_party/WebKit/Source/modules/webaudio/AudioListener.cpp`
+
+	Line 207:
+
+	    // DCHECK(!isMainThread());
+
+* `third_party/WebKit/Source/modules/webaudio/BaseAudioContext.cpp`
+
+	Line 221:
+
+	    // DCHECK(!isAudioThread());
+
+* `content/browser/renderer_host/render_widget_host_impl.cc`
+
+	Line 1008:
+
+	    // DCHECK(*is_in_gesture_scroll ||
+	    //        (gesture_event.type == blink::WebInputEvent::GestureFlingStart &&
+	    //         gesture_event.sourceDevice ==
+	    //             blink::WebGestureDevice::WebGestureDeviceTouchpad));
+
+* `content/common/input/input_event_stream_validator.cc`
+
+	Line 31:
+
+		// DCHECK(ValidateImpl(event, &error_msg_))
+		//     << error_msg_
+		//     << "\nInvalid Event: " << WebInputEventTraits::ToString(event);
+	
+* `third_party/WebKit/Source/core/input/EventHandler.cpp`
+
+	Line 1406/1968/1993:
+
+		// ASSERT(result.isRectBasedTest());
+
+* `android_webview/browser/browser_view_renderer.cc`
+
+	Line 574:
+
+		// DCHECK_LE(0.f, scroll_offset_dip.x());
+		// DCHECK_LE(0.f, scroll_offset_dip.y());
+		// DCHECK(scroll_offset_dip.x() < max_scroll_offset_dip_.x() ||
+		//        scroll_offset_dip.x() - max_scroll_offset_dip_.x() < kEpsilon)
+		//     << scroll_offset_dip.x() << " " << max_scroll_offset_dip_.x();
+		// DCHECK(scroll_offset_dip.y() < max_scroll_offset_dip_.y() ||
+		//        scroll_offset_dip.y() - max_scroll_offset_dip_.y() < kEpsilon)
+		//     << scroll_offset_dip.y() << " " << max_scroll_offset_dip_.y();
+
+	Line 40:
+
+		// const double kEpsilon = 1e-8;
+
+* `ui/events/gesture_detection/gesture_detector.cc`
+
+	Line 585:
+
+		// Substituted these lines for the return of the current down event.
+		// NOTREACHED();
+		// return nullptr;
+		return &current_down_event;
+
+* `ui/events/gesture_detection/gesture_provider.cc`
+
+	Line 360:
+
+	    // DCHECK(scroll_event_sent_);
+
+	Line 695:
+
+		// DCHECK_GE(source_index, 0);
+
+* `thrid_party/WebKit/Source/core/layout/HitTestResult.cpp`
+
+	Line 468:
+
+		// ASSERT(isRectBasedTest());
+
+* `content/browser/renderer_host/input/input_router_impl.cc`
+
+	Line 503:
+
+		// Commented out the CHECK and added the conditional if.
+		// DCHECK_GT(active_renderer_fling_count_, 0);
+		// Note that we're only guaranteed to get a fling end notification from the
+		// renderer, not from any other consumers. Consequently, the GestureEventQueue
+		// cannot use this bookkeeping for logic like tap suppression.
+		if (active_renderer_fling_count_ > 0)
+			--active_renderer_fling_count_;
+
+* `content/browser/renderer_host/input/touch_event_queue.cc`
+
+	Line 33:
+
+		// const double kMaxConceivablePlatformSlopRegionLengthDipsSquared = 60. * 60.;
+
+	Line 315:
+
+	    // DCHECK_LT((gfx::PointF(event.touches[0].position) -
+	    //            touch_start_location_).LengthSquared(),
+	    //           kMaxConceivablePlatformSlopRegionLengthDipsSquared);
+
 ## USING THE NEW VR/AR JAVASCRIPT APIs
 
 ### Build the documentation
