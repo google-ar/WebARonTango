@@ -15,6 +15,7 @@
 #ifndef TANGO_SUPPORT_API_H_
 #define TANGO_SUPPORT_API_H_
 
+#include <jni.h>
 #include <tango_client_api.h>
 
 #include <stdint.h>
@@ -41,16 +42,47 @@ extern "C" {
 TangoErrorType TangoSupport_GetTangoVersion(JNIEnv* env, jobject activity,
                                             int* version);
 
+/// @brief Typedef for getPostAtTime function signature; required by the
+/// @c TangoSupport_initialize method.
+typedef TangoErrorType (*TangoSupport_GetPoseAtTimeFn)(
+    double timestamp, TangoCoordinateFramePair frame, TangoPoseData* pose);
+
+/// @brief Typedef for getCameraIntrinsics function signature; required by the
+/// @c TangoSupport_initialize method.
+typedef TangoErrorType (*TangoSupport_GetCameraIntrinsicsFn)(
+    TangoCameraId camera_id, TangoCameraIntrinsics* intrinsics);
+
+/// @brief Initialize the support library with any function pointers or values
+/// that are required for functionality provided by the library. This version
+/// requires providing each of the necessary initialization parameters and
+/// only needs to be used if specialized parameters are necessary. Generally
+/// either this version or @c TangoSupport_initializeLibrary should be called
+/// during application initialization, but not both.
+///
+/// @param getPoseAtTime The function to call to retrieve device pose
+///   information. In practice this is TangoService_getPoseAtTime, except
+///   for testing.
+/// @param getCameraIntrinsics The function to call to retrieve camera
+///   intrinsics information. In practice this is
+///   TangoService_getCameraIntrinsics, except for testing.
+void TangoSupport_initialize(
+    TangoSupport_GetPoseAtTimeFn getPoseAtTime,
+    TangoSupport_GetCameraIntrinsicsFn getCameraIntrinsics);
+
+/// @brief Initialize the support library with any function pointers or values
+/// that are required for functionality provided by the library. Generally
+/// either this version or @c TangoSupport_initialize should be called
+/// during application initialization, but not both.
+inline void TangoSupport_initializeLibrary() {
+  TangoSupport_initialize(TangoService_getPoseAtTime,
+                          TangoService_getCameraIntrinsics);
+}
+
 /// @}
 
 /// @defgroup CallbackHelpers Callback Data Support Functions
 /// @brief Functions for managing data received from callbacks.
 /// @{
-
-typedef TangoErrorType (*TangoSupport_GetPoseAtTimeFn)(
-    double timestamp, TangoCoordinateFramePair frame, TangoPoseData* pose);
-
-void TangoSupport_initialize(TangoSupport_GetPoseAtTimeFn getPoseAtTime);
 
 /// The TangoSupportImageBufferManager maintains a set of image buffers to
 /// manage transferring a TangoImageBuffer from the callback thread to a render
@@ -162,8 +194,8 @@ TangoErrorType TangoSupport_getLatestImageBuffer(
 ///   NULL.
 /// @return @c TANGO_SUCCESS on successful allocation, or @c TANGO_INVALID if
 ///   @p point_cloud is NULL.
-TangoErrorType TangoSupport_createXYZij(uint32_t max_point_cloud_size,
-                                        TangoXYZij* point_cloud);
+TangoErrorType TangoSupport_createPointCloud(uint32_t max_point_cloud_size,
+                                             TangoPointCloud* point_cloud);
 
 /// @brief Deletes a point cloud.
 ///
@@ -171,7 +203,7 @@ TangoErrorType TangoSupport_createXYZij(uint32_t max_point_cloud_size,
 ///   NULL.
 /// @return @c TANGO_SUCCESS if memory was freed successfully, or
 ///   @c TANGO_INVALID if @p point_cloud was NULL.
-TangoErrorType TangoSupport_freeXYZij(TangoXYZij* point_cloud);
+TangoErrorType TangoSupport_freePointCloud(TangoPointCloud* point_cloud);
 
 /// @brief Performs a deep copy between two point clouds. The point clouds must
 /// have been initialized with the same maximum size.
@@ -180,8 +212,9 @@ TangoErrorType TangoSupport_freeXYZij(TangoXYZij* point_cloud);
 /// @param output_point_cloud The output point cloud. Cannot be NULL.
 /// @return @c TANGO_SUCCESS if copy was successful, @c TANGO_INVALID if
 ///   @p input_point_cloud or @p output_point_cloud is NULL.
-TangoErrorType TangoSupport_copyXYZij(const TangoXYZij* input_point_cloud,
-                                      TangoXYZij* output_point_cloud);
+TangoErrorType TangoSupport_copyPointCloud(
+    const TangoPointCloud* input_point_cloud,
+    TangoPointCloud* output_point_cloud);
 
 /// @brief Fits a plane to a point cloud near a user-specified location. This
 /// occurs in two passes. First, all points are projected to the image plane
@@ -192,8 +225,6 @@ TangoErrorType TangoSupport_copyXYZij(const TangoXYZij* input_point_cloud,
 ///
 /// @param point_cloud The input point cloud. Cannot be NULL and must have at
 ///   least three points.
-/// @param camera_intrinsics The camera intrinsics for the color camera. Cannot
-///   be NULL.
 /// @param color_camera_T_point_cloud The pose of the point cloud relative to
 ///   the color camera used to obtain uv_coordinates.
 /// @param uv_coordinates The UV coordinates for the user selection. This is
@@ -207,9 +238,8 @@ TangoErrorType TangoSupport_copyXYZij(const TangoXYZij* input_point_cloud,
 ///   the point cloud. Cannot be NULL.
 /// @return @c TANGO_SUCCESS on success, @c TANGO_INVALID on invalid input, and
 ///   @c TANGO_ERROR on failure.
-TangoErrorType TangoSupport_fitPlaneModelNearClick(
-    const TangoXYZij* point_cloud,
-    const TangoCameraIntrinsics* camera_intrinsics,
+TangoErrorType TangoSupport_fitPlaneModelNearPoint(
+    const TangoPointCloud* point_cloud,
     const TangoPoseData* color_camera_T_point_cloud,
     const float uv_coordinates[2], double intersection_point[3],
     double plane_model[4]);
@@ -237,7 +267,7 @@ TangoErrorType TangoSupport_calculateRelativePose(
     TangoPoseData* base_frame_T_target_frame);
 
 /// The TangoSupportPointCloudManager maintains a set of point clouds to
-/// manage transferring a TangoXYZij from the callback thread to a render
+/// manage transferring a TangoPointCloud from the callback thread to a render
 /// or computation thread. This holds three buffers internally (back, swap,
 /// front). The back buffer is used as the destination for data copied from
 /// the callback thread. When the copy is complete the back buffer is swapped
@@ -249,7 +279,8 @@ struct TangoSupportPointCloudManager;
 /// @brief Create an object for maintaining a set of point clouds for a
 /// specified size.
 ///
-/// @param max_points Maximum number of points in TangoXYZij. Get value from
+/// @param max_points Maximum number of points in TangoPointCloud. Get value
+/// from
 ///   config.
 /// @param manager A handle to the manager object.
 /// @return @c TANGO_SUCCESS on successful creation, @c TANGO_INVALID if
@@ -273,7 +304,7 @@ TangoErrorType TangoSupport_freePointCloudManager(
 ///   or point_cloud are NULL. Returns @c TANGO_SUCCESS if update
 ///   is successful.
 TangoErrorType TangoSupport_updatePointCloud(
-    TangoSupportPointCloudManager* manager, const TangoXYZij* point_cloud);
+    TangoSupportPointCloudManager* manager, const TangoPointCloud* point_cloud);
 
 /// @brief Check if updated point cloud data is available. If so, swap new data
 /// to the front buffer and set latest_point_cloud to point to the front buffer.
@@ -285,7 +316,8 @@ TangoErrorType TangoSupport_updatePointCloud(
 /// @return @c TANGO_SUCCESS on successful assignment, @c TANGO_INVALID if
 ///   @p manager is NULL.
 TangoErrorType TangoSupport_getLatestPointCloud(
-    TangoSupportPointCloudManager* manager, TangoXYZij** latest_point_cloud);
+    TangoSupportPointCloudManager* manager,
+    TangoPointCloud** latest_point_cloud);
 
 /// @brief Check if updated point cloud data is available. If so, swap new data
 /// to the front buffer and set latest_point_cloud to point to the front buffer.
@@ -300,64 +332,8 @@ TangoErrorType TangoSupport_getLatestPointCloud(
 /// @return @c TANGO_SUCCESS on successful assignment, @c TANGO_INVALID if
 ///   @p manager is NULL.
 TangoErrorType TangoSupport_getLatestPointCloudAndNewDataFlag(
-    TangoSupportPointCloudManager* manager, TangoXYZij** latest_point_cloud,
-    bool* new_data);
-
-/// @}
-
-/// @defgroup SceneReconstructionSupport Scene Reconstruction Support Functions
-/// @brief Functions for managing mesh data from scene reconstruction.
-/// @{
-
-/// @brief Initializes an empty mesh. No new memory is allocated.
-///
-/// @param mesh A pointer to the mesh to be initialized. Cannot be NULL.
-/// @return @c TANGO_SUCCESS on successful initialization; @c TANGO_INVALID if
-///   @p mesh is NULL.
-TangoErrorType TangoSupport_initializeEmptyMesh(TangoMesh_Experimental* mesh);
-
-/// @brief Deletes a mesh. Memory will be deallocated.
-///
-/// @param mesh A pointer to the mesh to be deleted. Cannot be NULL.
-/// @return Returns @c TANGO_SUCCESS on successful free.
-TangoErrorType TangoSupport_freeMesh(TangoMesh_Experimental* mesh);
-
-/// @brief Creates a mesh, allocating memory for vertices, faces, and
-/// (optionally) normals and colors.
-///
-/// @param num_vertices The number of mesh vertices to be allocated.
-/// @param num_faces The number of mesh faces to be allocated.
-/// @param has_normals If true, will allocate space for per-vertex mesh normals.
-/// @param has_colors If true, will allocate space for per-vertex mesh colors.
-/// @param mesh A pointer to the mesh to be created. Cannot be NULL.
-/// @return @c TANGO_SUCCESS on successful allocation, @c TANGO_INVALID if
-///   @p mesh is NULL.
-TangoErrorType TangoSupport_createMesh(uint32_t num_vertices,
-                                       uint32_t num_faces, bool has_normals,
-                                       bool has_colors,
-                                       TangoMesh_Experimental* mesh);
-
-/// @brief Performs a deep copy between two meshes. Memory will be allocated
-/// for the output mesh.
-///
-/// @param input_mesh The mesh to be copied. Cannot be NULL.
-/// @param output_mesh The output mesh. Cannot be NULL.
-/// @return @c TANGO_SUCCESS on successful copy, @c TANGO_INVALID if input_mesh
-///   or output_mesh is NULL.
-TangoErrorType TangoSupport_copyMesh(const TangoMesh_Experimental* input_mesh,
-                                     TangoMesh_Experimental* output_mesh);
-
-/// @brief Creates a simplified mesh with a fewer number of faces, given a
-/// source mesh. Memory will be allocated for the output mesh.
-///
-/// @param input_mesh The input mesh. Cannot be NULL.
-/// @param target_num_faces The target number of faces in the output mesh.
-/// @param output_mesh The output mesh. Cannot be NULL.
-/// @return @c TANGO_SUCCESS on successful copy, @c TANGO_INVALID if
-///   @p input_mesh or @p output_mesh is NULL.
-TangoErrorType TangoSupport_createSimplifiedMesh(
-    const TangoMesh_Experimental* input_mesh, const uint32_t target_num_faces,
-    TangoMesh_Experimental* output_mesh);
+    TangoSupportPointCloudManager* manager,
+    TangoPointCloud** latest_point_cloud, bool* new_data);
 
 /// @}
 
@@ -554,7 +530,8 @@ TangoErrorType TangoSupport_doubleTransformPose(
     const double quaternion[4], double out_position[3],
     double out_quaternion[4]);
 
-/// @brief Multiplies a point cloud (represented as a TangoXYZij) by a matrix.
+/// @brief Multiplies a point cloud (represented as a TangoPointCloud) by a
+/// matrix.
 ///   No projective divide is done, the W component is dropped. We explicitly
 ///   support the case where point == out to do an in-place transform. The
 ///   points in the output point cloud must be allocated before calling this
@@ -565,8 +542,8 @@ TangoErrorType TangoSupport_doubleTransformPose(
 /// @param out The point cloud after translation.
 /// @return c TANGO_INVALID on invalid input; @c TANGO_SUCCESS otherwise.
 TangoErrorType TangoSupport_doubleTransformPointCloud(
-    const double matrix_transform[16], const TangoXYZij* point_cloud,
-    TangoXYZij* out);
+    const double matrix_transform[16], const TangoPointCloud* point_cloud,
+    TangoPointCloud* out);
 
 /// @brief Multiplies a point by a matrix. No projective divide is done, the W
 ///   component is dropped. We explicitly support the case where point == out to
@@ -596,32 +573,31 @@ TangoErrorType TangoSupport_transformPose(const float matrix_transform[16],
                                           float out_position[3],
                                           float out_quaternion[4]);
 
-/// @brief Multiplies a point cloud (represented as a TangoXYZij) by a matrix.
-///   No projective divide is done, the W component is dropped. We explicitly
-///   support the case where point == out to do an in-place transform. The
-///   points in the output point cloud must be allocated before calling this
-///   function.
+/// @brief Multiplies a point cloud (represented as a TangoPointCloud) by a
+///   matrix. No projective divide is done, the W component is dropped. We
+///   explicitly support the case where point == out to do an in-place
+///   transform. The points in the output point cloud must be allocated
+///   before calling this function.
 ///
 /// @param matrix_transform The matrix all the points are transformed by.
 /// @param point_cloud The original point cloud.
 /// @param out The point cloud after translation.
 /// @return c TANGO_INVALID on invalid input; @c TANGO_SUCCESS otherwise.
 TangoErrorType TangoSupport_transformPointCloud(
-    const float matrix_transform[16], const TangoXYZij* point_cloud,
-    TangoXYZij* out);
+    const float matrix_transform[16], const TangoPointCloud* point_cloud,
+    TangoPointCloud* out);
 
 /// @}
 
 /// @defgroup ProjectionSupport Projection and Unprojection Functions
 /// @brief Functions for projecting points or unprojecting pixels.
 /// @{
-///
+
 /// @brief Calculates the pixel coordinates in the camera frame of a
 /// user-specified 3D point expressed in the same camera frame, accounting for
 /// intrinsic distortion.
 ///
-/// @param camera_intrinsics The camera intrinsics for the camera. Cannot
-//    be NULL.
+/// @param camera_id The camera id the intrinsics are being queried for.
 /// @param camera_point The point (x, y, z) to be projected, expressed in the
 ///   camera frame. Cannot be NULL.
 /// @param pixel_coordinates The pixel coordinates of the projected point.
@@ -632,14 +608,13 @@ TangoErrorType TangoSupport_transformPointCloud(
 ///   0 otherwise.
 /// @return @c TANGO_SUCCESS on success or @c TANGO_INVALID on invalid input.
 TangoErrorType TangoSupport_projectCameraPointToDistortedPixel(
-    const TangoCameraIntrinsics* camera_intrinsics, const float camera_point[3],
+    const TangoCameraId camera_id, const float camera_point[3],
     float pixel_coordinates[2], int* is_distorted_pixel_in_image);
 
 /// @brief Calculates camera ray in the camera frame of a user-specified pixel
 /// expressed in the distorted image, accounting for intrinsic distortion.
 ///
-/// @param camera_intrinsics The camera intrinsics for the camera. Cannot
-//    be NULL.
+/// @param camera_id The camera id the intrinsics are being queried for.
 /// @param pixel_coordinates The pixel coordinates of the point to unproject.
 ///   This normally is between (0.0, 0.0) and (width, height).
 ///   Cannot be NULL.
@@ -648,8 +623,8 @@ TangoErrorType TangoSupport_projectCameraPointToDistortedPixel(
 /// @return @c TANGO_SUCCESS on success or @c TANGO_INVALID on invalid input for
 ///   the distortion model
 TangoErrorType TangoSupport_DistortedPixelToCameraRay(
-    const TangoCameraIntrinsics* camera_intrinsics,
-    const float pixel_coordinates[2], float camera_ray[3]);
+    const TangoCameraId camera_id, const float pixel_coordinates[2],
+    float camera_ray[3]);
 
 /// @}
 
@@ -662,8 +637,6 @@ TangoErrorType TangoSupport_DistortedPixelToCameraRay(
 ///
 /// @param point_cloud The point cloud. Cannot be NULL and must have at least
 ///   one point.
-/// @param camera_intrinsics The camera intrinsics for the color camera. Cannot
-//    be NULL.
 /// @param color_camera_T_point_cloud The pose of the point cloud relative to
 ///   the color camera used to obtain uv_coordinates.
 /// @param uv_coordinates The UV coordinates for the user selection. This is
@@ -680,8 +653,7 @@ TangoErrorType TangoSupport_DistortedPixelToCameraRay(
 ///   otherwise.
 /// @return @c TANGO_SUCCESS on success or @c TANGO_INVALID on invalid input.
 TangoErrorType TangoSupport_getDepthAtPointNearestNeighbor(
-    const TangoXYZij* point_cloud,
-    const TangoCameraIntrinsics* camera_intrinsics,
+    const TangoPointCloud* point_cloud,
     const TangoPoseData* color_camera_T_point_cloud,
     const float uv_coordinates[2], float color_camera_point[3],
     int* is_valid_point);
@@ -693,12 +665,10 @@ struct TangoSupportDepthInterpolator;
 
 /// @brief Create an object for depth interpolation.
 ///
-/// @param intrinsics The camera intrinsics for the camera to upsample.
 /// @param interpolator A handle to the interpolator object.
 /// @return @c TANGO_SUCCESS on successful creation, or @c TANGO_INVALID if
 ///   @p intrinsics was null.
 TangoErrorType TangoSupport_createDepthInterpolator(
-    const TangoCameraIntrinsics* intrinsics,
     TangoSupportDepthInterpolator** interpolator);
 
 /// @brief Free the depth interpolation object.
@@ -735,13 +705,13 @@ TangoErrorType TangoSupport_freeDepthInterpolator(
 ///   @c TANGO_ERROR on failure.
 TangoErrorType TangoSupport_getDepthAtPointBilateral(
     const TangoSupportDepthInterpolator* interpolator,
-    const TangoXYZij* point_cloud, const TangoImageBuffer* image_buffer,
+    const TangoPointCloud* point_cloud, const TangoImageBuffer* image_buffer,
     const TangoPoseData* color_camera_T_point_cloud,
     const float uv_coordinates[2], float color_camera_point[3],
     int* is_valid_point);
 
 /// @brief A structure to hold depth values for image upsampling. The units of
-/// the depth are the same as for @c TangoXYZij.
+/// the depth are the same as for @c TangoPointCloud.
 struct TangoSupportDepthBuffer {
   float* depths;
   uint32_t width;
@@ -788,7 +758,7 @@ TangoErrorType TangoSupport_freeDepthBuffer(
 ///   @c TANGO_ERROR on failure.
 TangoErrorType TangoSupport_upsampleImageNearestNeighbor(
     const TangoSupportDepthInterpolator* interpolator,
-    const TangoXYZij* point_cloud,
+    const TangoPointCloud* point_cloud,
     const TangoPoseData* color_camera_T_point_cloud,
     TangoSupportDepthBuffer* depth_buffer);
 
@@ -815,7 +785,7 @@ TangoErrorType TangoSupport_upsampleImageNearestNeighbor(
 ///   @c TANGO_ERROR on failure.
 TangoErrorType TangoSupport_upsampleImageBilateral(
     const TangoSupportDepthInterpolator* interpolator, int approximate,
-    const TangoXYZij* point_cloud, const TangoImageBuffer* image_buffer,
+    const TangoPointCloud* point_cloud, const TangoImageBuffer* image_buffer,
     const TangoPoseData* color_camera_T_point_cloud,
     TangoSupportDepthBuffer* depth_buffer);
 
@@ -858,8 +828,6 @@ struct TangoSupportEdge {
 /// @param point_cloud The point cloud. Cannot be NULL and must have sufficient
 ///   points to estimate the plane at the location of the input.
 /// @param image_buffer The RGB image buffer. Cannot be NULL.
-/// @param camera_intrinsics The camera intrinsics for the color camera. Cannot
-///   be NULL.
 /// @param uv_coordinates The UV coordinates of the input point. This is
 ///   expected to be between (0.0, 0.0) and (1.0, 1.0). Cannot be NULL.
 /// @param edges An array of 3D edges close to the input point and specified in
@@ -870,8 +838,7 @@ struct TangoSupportEdge {
 /// @return @c TANGO_SUCCESS on success, @c TANGO_INVALID on invalid input, and
 ///   @c TANGO_ERROR on failure.
 TangoErrorType TangoSupport_findEdgesNearPoint(
-    const TangoXYZij* point_cloud, const TangoImageBuffer* image_buffer,
-    const TangoCameraIntrinsics* camera_intrinsics,
+    const TangoPointCloud* point_cloud, const TangoImageBuffer* image_buffer,
     const float uv_coordinates[2], TangoSupportEdge** edges,
     int* number_of_edges);
 
@@ -883,6 +850,51 @@ TangoErrorType TangoSupport_freeEdgeList(TangoSupportEdge** edges);
 
 /// @}
 
+/// @defgroup CornerDetectionSupport Corner Detection Support Functions
+/// @brief Functions for detecting corners
+/// @{
+
+/// @brief A structure to define a corner, including the corner point, and
+/// indices to edges that are associated to the corner. The edges are input
+/// parameters to TangoSupport_detectCorners() routine.
+struct TangoSupportCorner {
+  float corner_point[3];
+  float distance_to_poi;
+  int* edges;
+  int edge_count;
+};
+
+/// @brief A structure that stores a list of corners. After calling
+/// TangoSupport_detectCorners() with a TangoSupportCornerList object, the
+/// object needs to be released by calling TangoSupport_freeCornerList()
+/// function.
+struct TangoSupportCornerList {
+  TangoSupportCorner* corners;
+  int corner_count;
+};
+
+/// @brief Detect corners among a list of edges.
+///
+/// @param point_of_interest The user-specified location.
+/// @param edges A list of edges, usually returned by
+/// TangoSupport_findEdgesNearPoint() routine.
+/// @param number_of_edges The number of edges in point_of_interest list.
+/// @param corner_list The structure to hold result corners. The structure
+/// should be deleted by calling TangoSupport_freeCornerList. Cannot be NULL.
+/// @return @c TANGO_SUCCESS on success, @c TANGO_INVALID on invalid input, and
+///   @c TANGO_ERROR on failure.
+TangoErrorType TangoSupport_detectCorners(const float point_of_interest[3],
+                                          const TangoSupportEdge** edges,
+                                          const int number_of_edges,
+                                          TangoSupportCornerList* corner_list);
+
+/// @brief Free memory allocated in TangoSupport_detectCorners.
+///
+/// @param Corner list to free.
+/// @return @c TANGO_SUCCESS on success.
+TangoErrorType TangoSupport_freeCornerList(TangoSupportCornerList* corner_list);
+
+/// @}
 #ifdef __cplusplus
 }
 #endif
