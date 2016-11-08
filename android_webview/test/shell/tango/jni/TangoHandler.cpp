@@ -28,14 +28,18 @@ namespace {
 
 constexpr int kTangoCoreMinimumVersion = 9377;
 
-void onTangoXYZijAvailable(void* context, const TangoXYZij* tangoXYZij)
+void onPointCloudAvailable(void* context, const TangoPointCloud* pointCloud) 
 {
-	tango_chromium::TangoHandler::getInstance()->onTangoXYZijAvailable(tangoXYZij);
+	tango_chromium::TangoHandler::getInstance()->onPointCloudAvailable(pointCloud);
 }
 
-void onCameraFrameAvailable(void* context, TangoCameraId, const TangoImageBuffer* buffer) 
+void onCameraFrameAvailable(void* context, TangoCameraId tangoCameraId, const TangoImageBuffer* buffer) 
 {
 	tango_chromium::TangoHandler::getInstance()->onCameraFrameAvailable(buffer);
+}
+
+void onTextureAvailable(void* context, TangoCameraId tangoCameraId) 
+{
 }
 
 // We could do this conversion in a fragment shader if all we care about is
@@ -220,7 +224,7 @@ int combineOrientations(int activityOrientation, int sensorOrientation)
   return (ret % 4);
 }
 
-}
+} // End anonymous namespace
 
 namespace tango_chromium {
 
@@ -244,8 +248,8 @@ void TangoHandler::releaseInstance()
 TangoHandler::TangoHandler(): connected(false)
 	, tangoConfig(nullptr)
 	, lastTangoImageBufferTimestamp(0)
-	, latestTangoXYZij(0)
-	, latestTangoXYZijRetrieved(false)
+	, latestTangoPointCloud(0)
+	, latestTangoPointCloudRetrieved(false)
 	, maxPointCloudVertexCount(0)
 	, pointCloudManager(0)
 	, cameraImageYUV(0)
@@ -302,7 +306,7 @@ void TangoHandler::onTangoServiceConnected(JNIEnv* env, jobject binder)
 	TangoErrorType result;
 
 	if (TangoService_setBinder(env, binder) != TANGO_SUCCESS) {
-		LOGE("TangoHandler::OnTangoServiceConnected, TangoService_setBinder error");
+		LOGE("TangoHandler::onTangoServiceConnected, TangoService_setBinder error");
 		std::exit (EXIT_SUCCESS);
 	}
 
@@ -311,15 +315,22 @@ void TangoHandler::onTangoServiceConnected(JNIEnv* env, jobject binder)
 	tangoConfig = TangoService_getConfig(TANGO_CONFIG_DEFAULT);
 	if (tangoConfig == nullptr) 
 	{
-		LOGE("TangoHandler::OnTangoServiceConnected, TangoService_getConfig error.");
+		LOGE("TangoHandler::onTangoServiceConnected, TangoService_getConfig error.");
 		std::exit (EXIT_SUCCESS);
+	}
+
+	// Setup depth perception
+	if (TangoConfig_setInt32(tangoConfig, "config_depth_mode", TANGO_POINTCLOUD_XYZC) != TANGO_SUCCESS) 
+	{
+		LOGE("TangoHandler::onTangoServiceConnected, TangoConfig_setInt32(\"config_depth_mode\", %d): Failed\n", 0);
+		std::exit(EXIT_SUCCESS);
 	}
 
 	// Enable Depth Perception.
 	result = TangoConfig_setBool(tangoConfig, "config_enable_depth", true);
 	if (result != TANGO_SUCCESS) 
 	{
-		LOGE("TangoHandler::OnTangoServiceConnected, config_enable_depth activation failed with error code: %d.", result);
+		LOGE("TangoHandler::onTangoServiceConnected, config_enable_depth activation failed with error code: %d.", result);
 		std::exit(EXIT_SUCCESS);
 	}
 
@@ -329,7 +340,7 @@ void TangoHandler::onTangoServiceConnected(JNIEnv* env, jobject binder)
 	// invalid poses when calling getPoseAtTime() for an image.
 	result = TangoConfig_setBool(tangoConfig, "config_enable_low_latency_imu_integration", true);
 	if (result != TANGO_SUCCESS) {
-		LOGE("TangoHandler::OnTangoServiceConnected, failed to enable low latency imu integration.");
+		LOGE("TangoHandler::onTangoServiceConnected, failed to enable low latency imu integration.");
 		std::exit(EXIT_SUCCESS);
 	}
 
@@ -339,7 +350,7 @@ void TangoHandler::onTangoServiceConnected(JNIEnv* env, jobject binder)
 	// base frame AREA_DESCRIPTION and target frame DEVICE.
 	result = TangoConfig_setBool(tangoConfig, "config_enable_drift_correction", true);
 	if (result != TANGO_SUCCESS) {
-		LOGE("TangoHandler::OnTangoServiceConnected, enabling config_enable_drift_correction "
+		LOGE("TangoHandler::onTangoServiceConnected, enabling config_enable_drift_correction "
 			"failed with error code: %d", result);
 		std::exit(EXIT_SUCCESS);
 	}
@@ -350,7 +361,7 @@ void TangoHandler::onTangoServiceConnected(JNIEnv* env, jobject binder)
 	result = TangoConfig_getInt32(tangoConfig, "max_point_cloud_elements", &maxPointCloudVertexCount_temp);
 	if (result != TANGO_SUCCESS) 
 	{
-		LOGE("TangoHandler::OnTangoServiceConnected, Get max_point_cloud_elements failed");
+		LOGE("TangoHandler::onTangoServiceConnected, Get max_point_cloud_elements failed");
 		std::exit(EXIT_SUCCESS);
 	}
 	maxPointCloudVertexCount = static_cast<uint32_t>(maxPointCloudVertexCount_temp);
@@ -358,34 +369,40 @@ void TangoHandler::onTangoServiceConnected(JNIEnv* env, jobject binder)
     result = TangoSupport_createPointCloudManager(maxPointCloudVertexCount, &pointCloudManager);
     if (result != TANGO_SUCCESS) 
     {
-		LOGE("TangoHandler::OnTangoServiceConnected, TangoSupport_createPointCloudManager failed");
+		LOGE("TangoHandler::onTangoServiceConnected, TangoSupport_createPointCloudManager failed");
 		std::exit(EXIT_SUCCESS);
     }
 
-	// Attach the OnXYZijAvailable callback to the onPointCloudAvailable
-	// function defined above. The callback will be called every time a new
-	// point cloud is acquired, after the service is connected.
-	result = TangoService_connectOnXYZijAvailable(::onTangoXYZijAvailable);
-	if (result != TANGO_SUCCESS) 
-	{
-		LOGE("TangoHandler::OnTangoServiceConnected, Failed to connect to point cloud callback with error code: %d", result);
+#ifdef TANGO_USE_POINT_CLOUD_CALLBACK
+	result = TangoService_connectOnPointCloudAvailable(::onPointCloudAvailable);
+	if (result != TANGO_SUCCESS) {
+		LOGE("TangoHandler::onTangoServiceConnected, Failed to connect to point cloud callback with error code: %d", result);
 		std::exit(EXIT_SUCCESS);
 	}
+#endif
+
 #endif
 
 #ifdef TANGO_USE_CAMERA	
 	// Enable color camera from config.
 	result = TangoConfig_setBool(tangoConfig, "config_enable_color_camera", true);
 	if (result != TANGO_SUCCESS) {
-		LOGE("TangoHandler::OnTangoServiceConnected, config_enable_color_camera() failed with error code: %d", result);
+		LOGE("TangoHandler::onTangoServiceConnected, config_enable_color_camera() failed with error code: %d", result);
 		std::exit(EXIT_SUCCESS);
 	}
 
-	result = TangoService_connectOnFrameAvailable(TANGO_CAMERA_COLOR, this, ::onCameraFrameAvailable);
-	if (result != TANGO_SUCCESS) {
-		LOGE("TangoHandler::OnTangoServiceConnected, Error connecting color frame %d", result);
+	result = TangoService_connectOnTextureAvailable(TANGO_CAMERA_COLOR, this, ::onTextureAvailable);
+	if (result != TANGO_SUCCESS) 
+	{
+		LOGE("TangoHandler::onTangoServiceConnected, failed to connect texture callback with error code: %d", result);
 		std::exit(EXIT_SUCCESS);
 	}
+
+	// result = TangoService_connectOnFrameAvailable(TANGO_CAMERA_COLOR, this, ::onCameraFrameAvailable);
+	// if (result != TANGO_SUCCESS) {
+	// 	LOGE("TangoHandler::onTangoServiceConnected, Error connecting color frame %d", result);
+	// 	std::exit(EXIT_SUCCESS);
+	// }
 #endif
 
 	if (TangoService_connect(this, tangoConfig) != TANGO_SUCCESS) 
@@ -408,7 +425,8 @@ void TangoHandler::onTangoServiceConnected(JNIEnv* env, jobject binder)
 	cameraImageHeight = cameraImageTextureHeight = tangoCameraIntrinsics.height;
 
 	// Initialize TangoSupport context.
-	TangoSupport_initialize(TangoService_getPoseAtTime);
+	// TangoSupport_initialize(TangoService_getPoseAtTime);
+	TangoSupport_initializeLibrary();
 
 	connected = true;
 }
@@ -416,9 +434,9 @@ void TangoHandler::onTangoServiceConnected(JNIEnv* env, jobject binder)
 void TangoHandler::onPause() 
 {
 	// pthread_mutex_lock( &pointCloudMutex );
-
+#ifdef TANGO_USE_POINT_CLOUD
 	TangoSupport_freePointCloudManager(pointCloudManager);
-
+#endif
 	// pthread_mutex_unlock( &pointCloudMutex );
 
 	TangoConfig_free(tangoConfig);
@@ -461,12 +479,12 @@ bool TangoHandler::getPose(TangoPoseData* tangoPoseData)
 	if (connected)
 	{
 
-		LOGI("TangoHandler::getPose lastTangoImageBufferTimestamp = %lf", lastTangoImageBufferTimestamp);
+		// LOGI("TangoHandler::getPose lastTangoImageBufferTimestamp = %lf", lastTangoImageBufferTimestamp);
 
 		result = TangoSupport_getPoseAtTime(
-			lastTangoImageBufferTimestamp, TANGO_COORDINATE_FRAME_START_OF_SERVICE,
+			0.0/*lastTangoImageBufferTimestamp*/, TANGO_COORDINATE_FRAME,
 			TANGO_COORDINATE_FRAME_CAMERA_COLOR, TANGO_SUPPORT_ENGINE_OPENGL,
-			combinedOrientation, tangoPoseData) == TANGO_SUCCESS;
+			ROTATION_0, tangoPoseData) == TANGO_SUCCESS;
 		if (!result) 
 		{
 			LOGE("TangoHandler::getPose: Failed to get a the pose.");
@@ -480,9 +498,9 @@ bool TangoHandler::getPoseMatrix(float* matrix)
 	bool result = false;
 	TangoMatrixTransformData tangoMatrixTransformData;
 	TangoSupport_getMatrixTransformAtTime(
-		lastTangoImageBufferTimestamp, TANGO_COORDINATE_FRAME_AREA_DESCRIPTION,
+		lastTangoImageBufferTimestamp, TANGO_COORDINATE_FRAME,
 		TANGO_COORDINATE_FRAME_CAMERA_COLOR, TANGO_SUPPORT_ENGINE_OPENGL,
-		TANGO_SUPPORT_ENGINE_TANGO, combinedOrientation, &tangoMatrixTransformData);
+		TANGO_SUPPORT_ENGINE_OPENGL, ROTATION_0, &tangoMatrixTransformData);
 	if (tangoMatrixTransformData.status_code != TANGO_POSE_VALID) {
 		LOGE("TangoHandler::getPoseMatrix: Could not find a valid matrix transform at "
 		"time %lf for the color camera.", lastTangoImageBufferTimestamp);
@@ -502,36 +520,52 @@ bool TangoHandler::getPointCloud(uint32_t* count, float* xyz)
 {
 	if (connected)
 	{
-		TangoDoubleMatrixTransformData matrixTransform;
-
-		// pthread_mutex_lock( &pointCloudMutex );
-
-		TangoSupport_getLatestPointCloud(pointCloudManager, &latestTangoXYZij);
-		latestTangoXYZijRetrieved = true;
-		// Get depth camera transform to start of service frame in OpenGL convention
-		// at the point cloud timestamp.
-		TangoSupport_getDoubleMatrixTransformAtTime(
-			latestTangoXYZij->timestamp, TANGO_COORDINATE_FRAME_START_OF_SERVICE,
-			TANGO_COORDINATE_FRAME_CAMERA_DEPTH, TANGO_SUPPORT_ENGINE_OPENGL,
-			TANGO_SUPPORT_ENGINE_TANGO, combinedOrientation, &matrixTransform);
-		if (matrixTransform.status_code == TANGO_POSE_VALID) 
+		TangoErrorType result = TangoSupport_getLatestPointCloud(pointCloudManager, &latestTangoPointCloud);
+		if (result == TANGO_SUCCESS)
 		{
-			TangoXYZij transformedLatestTangoXYZij;
-			transformedLatestTangoXYZij.xyz = new float[latestTangoXYZij->xyz_count][3];
-			transformedLatestTangoXYZij.xyz_count = latestTangoXYZij->xyz_count;
-			// Transform point cloud to OpenGL world
-			TangoSupport_doubleTransformPointCloud(matrixTransform.matrix,
-		       latestTangoXYZij, &transformedLatestTangoXYZij);
-			*count = latestTangoXYZij->xyz_count;
-			memcpy(xyz, transformedLatestTangoXYZij.xyz, sizeof(float) * latestTangoXYZij->xyz_count * 3);
-			delete [] transformedLatestTangoXYZij.xyz;
-		} 
-		else 
+			latestTangoPointCloudRetrieved = true;
+			TangoMatrixTransformData depthCameraMatrixTransform;
+			TangoSupport_getMatrixTransformAtTime(
+				latestTangoPointCloud->timestamp, TANGO_COORDINATE_FRAME,
+				TANGO_COORDINATE_FRAME_CAMERA_DEPTH, TANGO_SUPPORT_ENGINE_OPENGL,
+				TANGO_SUPPORT_ENGINE_TANGO, ROTATION_0, &depthCameraMatrixTransform);
+			if (depthCameraMatrixTransform.status_code == TANGO_POSE_VALID) 
+			{
+				TangoPointCloud tangoPointCloud;
+				tangoPointCloud.version = latestTangoPointCloud->version;
+				tangoPointCloud.timestamp = latestTangoPointCloud->timestamp;
+				tangoPointCloud.num_points = latestTangoPointCloud->num_points;
+				tangoPointCloud.points = new float[latestTangoPointCloud->num_points][4];
+				result = TangoSupport_transformPointCloud(depthCameraMatrixTransform.matrix, latestTangoPointCloud, &tangoPointCloud);
+				if (result == TANGO_SUCCESS)
+				{
+					*count = latestTangoPointCloud->num_points;
+					uint32_t offset;
+					float* points = tangoPointCloud.points[0];
+					for (uint32_t i = 0, j = 0; i < *count; i++, j += 3) 
+					{
+						offset = i * 4;
+						xyz[j    ] = points[offset    ];
+						xyz[j + 1] = points[offset + 1];
+						xyz[j + 2] = points[offset + 2];
+					}
+					// Cannot make this call anymore as the structure is a 4 value array per point (the fourth being the confidence factor).
+					// memcpy(xyz, latestTangoPointCloud->points[0], sizeof(float) * latestTangoPointCloud->num_points * 3);
+				}
+				else
+				{
+					LOGE("TangoHandler::getPointCloud, transforming the point cloud with the depth camera transform matrix failed.");
+				}
+				delete [] tangoPointCloud.points;
+			}
+			else
+			{
+				LOGE("TangoHandler::getPointCloud, rretrieving the depth camera transform matrix failed.");
+			}
+		}
+		else
 		{
-			LOGE(
-				"TangoHandler::getXYZ: Could not find a valid matrix transform at "
-				"time %lf for the depth camera.",
-				lastTangoImageBufferTimestamp);
+			LOGE("TangoHandler::getPointCloud, retrieving the latest point cloud failed.");
 		}
 
 		// pthread_mutex_unlock( &pointCloudMutex );
@@ -548,59 +582,38 @@ bool TangoHandler::getPointCloud(uint32_t* count, float* xyz)
 bool TangoHandler::getPickingPointAndPlaneInPointCloud(float x, float y, double* point, double* plane)
 {
 	bool result = false;
-	if (!latestTangoXYZijRetrieved)
-	{
-		TangoSupport_getLatestPointCloud(pointCloudManager, &latestTangoXYZij);
-	}
-	else 
-	{
-		latestTangoXYZijRetrieved = false;
-	}
-
-	TangoPoseData tangoPoseData;
+	
+	TangoPoseData tangoPose;
 	if (TangoSupport_calculateRelativePose(
 		lastTangoImageBufferTimestamp, TANGO_COORDINATE_FRAME_CAMERA_COLOR,
-		latestTangoXYZij->timestamp, TANGO_COORDINATE_FRAME_CAMERA_DEPTH,
-		&tangoPoseData) != TANGO_SUCCESS)
+		latestTangoPointCloud->timestamp, TANGO_COORDINATE_FRAME_CAMERA_DEPTH,
+		&tangoPose) != TANGO_SUCCESS) 
 	{
-	 	LOGE("ERROR: TangoHandler::getPickingPointAndPlaneInPointCloud. Could not retrieve the pose.");
-	 	return result;
+		LOGE("%s: could not calculate relative pose", __func__);
+		return result;
 	}
-
-	// TangoPoseData tangoPoseData;
-	// if (TangoSupport_getPoseAtTime(
-	// 	lastTangoImageBufferTimestamp, TANGO_COORDINATE_FRAME_START_OF_SERVICE,
-	// 	TANGO_COORDINATE_FRAME_CAMERA_COLOR, TANGO_SUPPORT_ENGINE_OPENGL,
-	// 	combinedOrientation, &tangoPoseData) != TANGO_SUCCESS)
-	// {
-	// 	LOGE("ERROR: TangoHandler::getPickingPointAndPlaneInPointCloud. Could not retrieve the pose.");
-	// 	return result;
-	// }
-
 	float uv[] = {x, y};
-	if (TangoSupport_fitPlaneModelNearClick(
-		latestTangoXYZij, &tangoCameraIntrinsics,
-		&tangoPoseData, uv,	point, plane) != TANGO_SUCCESS)
+	if (TangoSupport_fitPlaneModelNearPoint(
+		latestTangoPointCloud, &tangoPose,
+		uv, point, plane) != TANGO_SUCCESS) 
 	{
-		LOGE("ERROR: TangoHandler::getPickingPointAndPlaneInPointCloud. Could not calculate the picking point and plane.");
+		LOGE("%s: could not calculate picking point and plane", __func__);
 		return result;
 	}
-
-	TangoMatrixTransformData tangoMatrixTransformData;
+	TangoMatrixTransformData tangoDepthCameraTranformMatrix;
 	TangoSupport_getMatrixTransformAtTime(
-		lastTangoImageBufferTimestamp, TANGO_COORDINATE_FRAME_START_OF_SERVICE,
-		TANGO_COORDINATE_FRAME_CAMERA_COLOR, TANGO_SUPPORT_ENGINE_OPENGL,
-		TANGO_SUPPORT_ENGINE_TANGO, combinedOrientation, &tangoMatrixTransformData);
-	if (tangoMatrixTransformData.status_code != TANGO_POSE_VALID) {
+		latestTangoPointCloud->timestamp, TANGO_COORDINATE_FRAME,
+		TANGO_COORDINATE_FRAME_CAMERA_DEPTH, TANGO_SUPPORT_ENGINE_OPENGL,
+		TANGO_SUPPORT_ENGINE_TANGO, ROTATION_0, &tangoDepthCameraTranformMatrix);
+	if (tangoDepthCameraTranformMatrix.status_code != TANGO_POSE_VALID) {
 		LOGE("TangoHandler::getPickingPointAndPlaneInPointCloud: Could not find a valid matrix transform at "
-		"time %lf for the color camera.", latestTangoXYZij->timestamp);
+		"time %lf for the depth camera.", latestTangoPointCloud->timestamp);
 		return result;
 	}
-
-	multiplyMatrixWithVector(tangoMatrixTransformData.matrix, point, point);
+	multiplyMatrixWithVector(tangoDepthCameraTranformMatrix.matrix, point, point);
 
 //	LOGI("Before: %f, %f, %f, %f", plane[0], plane[1], plane[2], plane[3]);
-	transformPlane(plane, tangoMatrixTransformData.matrix, plane);
+	transformPlane(plane, tangoDepthCameraTranformMatrix.matrix, plane);
 //	LOGI("After: %f, %f, %f, %f", plane[0], plane[1], plane[2], plane[3]);
 
 	result = true;
@@ -724,11 +737,11 @@ bool TangoHandler::getCameraImageRGB(uint8_t* image)
 				// yuv_buffer_ buffer layout:
 				//   [y0, y1, y2, ..., yn, v0, u0, v1, u1, ..., v(n/4), u(n/4)]
 				yuv2Rgb(
-				cameraImageYUV[i * cameraImageWidth + j],
-				cameraImageYUV[cameraImageYUVOffset + (i / 2) * cameraImageWidth + x_index + 1],
-				cameraImageYUV[cameraImageYUVOffset + (i / 2) * cameraImageWidth + x_index],
-				&cameraImageRGB[rgb_index], &cameraImageRGB[rgb_index + 1],
-				&cameraImageRGB[rgb_index + 2]);
+					cameraImageYUV[i * cameraImageWidth + j],
+					cameraImageYUV[cameraImageYUVOffset + (i / 2) * cameraImageWidth + x_index + 1],
+					cameraImageYUV[cameraImageYUVOffset + (i / 2) * cameraImageWidth + x_index],
+					&cameraImageRGB[rgb_index], &cameraImageRGB[rgb_index + 1],
+					&cameraImageRGB[rgb_index + 2]);
 			}
 		}
 
@@ -784,21 +797,18 @@ bool TangoHandler::updateCameraImageIntoTexture(uint32_t textureId)
 		}
 		textureIdConnected = true;
 	}
+
 	TangoErrorType result = TangoService_updateTextureExternalOes(TANGO_CAMERA_COLOR, textureId, &lastTangoImageBufferTimestamp);
-	
-	LOGI("TangoHandler::updateCameraImageIntoTexture lastTangoImageBufferTimestamp = %lf", lastTangoImageBufferTimestamp);
 
 	return result == TANGO_SUCCESS;
 }
 
-void TangoHandler::onTangoXYZijAvailable(const TangoXYZij* tangoXYZij)
+#ifdef TANGO_USE_POINT_CLOUD_CALLBACK
+void TangoHandler::onPointCloudAvailable(const TangoPointCloud* pointCloud)
 {
-	// pthread_mutex_lock( &pointCloudMutex );
-
-	TangoSupport_updatePointCloud(pointCloudManager, tangoXYZij);
-
-	// pthread_mutex_unlock( &pointCloudMutex );
+	TangoSupport_updatePointCloud(pointCloudManager, pointCloud);
 }
+#endif
 
 void TangoHandler::onCameraFrameAvailable(const TangoImageBuffer* buffer) 
 {

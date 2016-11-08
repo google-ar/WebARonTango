@@ -31,9 +31,16 @@
 // Some preprocessor symbols that allow to control some of the TangoHandler features/capabilities.
 // #define TANGO_USE_YUV_CAMERA
 #define TANGO_USE_POINT_CLOUD
+#define TANGO_USE_POINT_CLOUD_CALLBACK
 #define TANGO_USE_CAMERA
 #define TANGO_USE_POWER_OF_TWO
-//#define TANGO_USE_DRIFT_CORRECTION
+// #define TANGO_USE_DRIFT_CORRECTION
+
+ #ifdef TANGO_USE_DRIFT_CORRECTION
+ #define TANGO_COORDINATE_FRAME TANGO_COORDINATE_FRAME_AREA_DESCRIPTION
+ #else
+ #define TANGO_COORDINATE_FRAME TANGO_COORDINATE_FRAME_START_OF_SERVICE
+ #endif
 
 namespace tango_chromium {
 // TangoHandler provides functionality to communicate with the Tango Service.
@@ -70,7 +77,10 @@ public:
 	bool getCameraImageRGB(uint8_t* image);
 	bool updateCameraImageIntoTexture(uint32_t textureId);
 
-	void onTangoXYZijAvailable(const TangoXYZij* tangoXYZij);
+#ifdef TANGO_USE_POINT_CLOUD_CALLBACK
+	void onPointCloudAvailable(const TangoPointCloud* pointCloud);
+#endif
+	
 	void onCameraFrameAvailable(const TangoImageBuffer* buffer);
 
 	int getSensorOrientation() const;
@@ -86,8 +96,8 @@ private:
 	// pthread_mutex_t pointCloudMutex;
 	uint32_t maxPointCloudVertexCount;
 	TangoSupportPointCloudManager* pointCloudManager;
-	TangoXYZij* latestTangoXYZij;
-	bool latestTangoXYZijRetrieved;
+	TangoPointCloud* latestTangoPointCloud;
+	bool latestTangoPointCloudRetrieved;
 
 	pthread_mutex_t cameraImageMutex;
     pthread_cond_t cameraImageCondition;
