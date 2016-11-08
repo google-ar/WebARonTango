@@ -117,7 +117,7 @@
 				stats.update();
 
 				// Required so the correct UVs are used at all times (changes happen when there is an orientation change or window resize)
-				THREE.WebAR.updateCameraMeshOrientation(cameraMesh);
+				THREE.WebAR.updateCameraMeshOrientation(vrDisplay, cameraMesh);
 
 				// Render the see through camera scene
 				renderer.clear();
