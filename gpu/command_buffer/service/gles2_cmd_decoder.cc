@@ -5596,7 +5596,7 @@ void GLES2DecoderImpl::DoUpdateTextureExternalOes(GLuint client_id) {
     //   return;
     // }
     LogClientServiceForInfo(texture, client_id, "glUpdateTextureExternalOes");
-
+    glBindTexture(GL_TEXTURE_EXTERNAL_OES, texture->service_id());
     TangoHandler::getInstance()->updateCameraImageIntoTexture(texture->service_id());
 
     // glBindTexture(target, texture->service_id());
