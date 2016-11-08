@@ -19,6 +19,7 @@
 <!-- <meta name="viewport" content="initial-scale=1.0, user-scalable=no"> -->
 
 <script type="text/javascript" src="glMatrix-0.9.5.min.js"></script>
+<script type="text/javascript" src="stats.min.js"></script>
 
 <script id="shader-fs-oes" type="x-shader/x-fragment">
     #extension GL_OES_EGL_image_external : require
@@ -76,6 +77,44 @@
         return projectionMatrix;
     }
 
+    function combineOrientations(screenOrientation, seeThroughCameraOrientation) {
+        seeThroughCameraOrientationIndex = 0;
+        switch (seeThroughCameraOrientation) {
+            case 90:
+                seeThroughCameraOrientationIndex = 1;
+                break;
+            case 180:
+                seeThroughCameraOrientationIndex = 2;
+                break;
+            case 270:
+                seeThroughCameraOrientationIndex = 3;
+                break;
+            default:
+                seeThroughCameraOrientationIndex = 0;
+                break;
+        }
+        screenOrientationIndex = 0;
+        switch (screenOrientation) {
+            case 90:
+                screenOrientationIndex = 1;
+                break;
+            case 180:
+                screenOrientationIndex = 2;
+                break;
+            case 270:
+                screenOrientationIndex = 3;
+                break;
+            default:
+                screenOrientationIndex = 0;
+                break;
+        }
+        ret = screenOrientationIndex - seeThroughCameraOrientationIndex;
+        if (ret < 0) {
+            ret += 4;
+        }
+        return (ret % 4);
+    }
+
     function VideoQuad(gl, vrDisplay, program) {
 
         this.program = program;
@@ -94,10 +133,10 @@
         this.vertexPositionBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexPositionBuffer);
         var vertices = [
-            -1.0,  1.0,  0.0,
-             1.0,  1.0,  0.0,
-             1.0, -1.0,  0.0,
-            -1.0, -1.0,  0.0
+          -1.0,  1.0, 0.0, 
+          -1.0, -1.0, 0.0,
+           1.0,  1.0, 0.0, 
+           1.0, -1.0, 0.0
         ];
         var f32Vertices = new Float32Array(vertices);
         gl.bufferData(gl.ARRAY_BUFFER, f32Vertices, gl.STATIC_DRAW);
@@ -107,20 +146,45 @@
         this.textureCoordBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.textureCoordBuffer);
         var textureCoords = [
-            0.0, 0.0,
-            this.seeThroughCamera.width / this.seeThroughCamera.textureWidth, 0.0, 
-            this.seeThroughCamera.width / this.seeThroughCamera.textureWidth, this.seeThroughCamera.height / this.seeThroughCamera.textureHeight,
-            0.0, this.seeThroughCamera.height / this.seeThroughCamera.textureHeight
+            [ 
+                0.0, 0.0,
+                0.0, this.seeThroughCamera.height / this.seeThroughCamera.textureHeight,
+                this.seeThroughCamera.width / this.seeThroughCamera.textureWidth, 0.0,
+                this.seeThroughCamera.width / this.seeThroughCamera.textureWidth, this.seeThroughCamera.height / this.seeThroughCamera.textureHeight
+            ],
+            [ 
+                this.seeThroughCamera.width / this.seeThroughCamera.textureWidth, 0.0,
+                0.0, 0.0,
+                this.seeThroughCamera.width / this.seeThroughCamera.textureWidth, this.seeThroughCamera.height / this.seeThroughCamera.textureHeight,
+                0.0, this.seeThroughCamera.height / this.seeThroughCamera.textureHeight
+            ],
+            [
+                this.seeThroughCamera.width / this.seeThroughCamera.textureWidth, this.seeThroughCamera.height / this.seeThroughCamera.textureHeight,
+                this.seeThroughCamera.width / this.seeThroughCamera.textureWidth, 0.0,
+                0.0, this.seeThroughCamera.height / this.seeThroughCamera.textureHeight,
+                0.0, 0.0
+            ],
+            [
+                0.0, this.seeThroughCamera.height / this.seeThroughCamera.textureHeight,
+                this.seeThroughCamera.width / this.seeThroughCamera.textureWidth, this.seeThroughCamera.height / this.seeThroughCamera.textureHeight,
+                0.0, 0.0,
+                this.seeThroughCamera.width / this.seeThroughCamera.textureWidth, 0.0
+            ]
         ];
-        var f32TextureCoords = new Float32Array(textureCoords);
-        gl.bufferData(gl.ARRAY_BUFFER, f32TextureCoords, gl.STATIC_DRAW);
+        this.f32TextureCoords = [];
+        for (var i = 0; i < textureCoords.length; i++) {
+            this.f32TextureCoords.push(new Float32Array(textureCoords[i]));
+        }
+        this.combinedOrientation = combineOrientations(screen.orientation.angle, this.seeThroughCamera.orientation);
+
+        gl.bufferData(gl.ARRAY_BUFFER, this.f32TextureCoords[this.combinedOrientation], gl.STATIC_DRAW);
         this.textureCoordBuffer.itemSize = 2;
         this.textureCoordBuffer.numItems = 8;
 
         this.indexBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
         var indices = [
-            0, 1, 2, 0, 2, 3
+            0, 1, 2, 2, 1, 3
         ];
         var ui16Indices = new Uint16Array(indices);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, ui16Indices, gl.STATIC_DRAW);
@@ -168,6 +232,14 @@
         gl.vertexAttribPointer(this.vertexPositionAttribute, this.vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, this.textureCoordBuffer);
+        var combinedOrientation =   combineOrientations(screen.orientation.angle, this.seeThroughCamera.orientation);
+        if (combinedOrientation !== this.combinedOrientation) {
+
+            // alert("combinedOrientation changed: from " + this.combinedOrientation + " to " + combinedOrientation + ", screen = " + screen.orientation.angle + ", camera = " + this.seeThroughCamera.orientation);
+
+            this.combinedOrientation = combinedOrientation;
+            gl.bufferData(gl.ARRAY_BUFFER, this.f32TextureCoords[this.combinedOrientation], gl.STATIC_DRAW);
+        }
         gl.enableVertexAttribArray(this.textureCoordAttribute);
         gl.vertexAttribPointer(this.textureCoordAttribute, this.textureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
@@ -245,6 +317,10 @@
 
     function getProgram(gl) {
         var fragmentShader = getShader(gl, "shader-fs-oes");
+        // Fallback for browsers without external image OES extension support :)
+        if (!fragmentShader) {
+            fragmentShader = getShader(gl, "shader-fs");
+        }
         var vertexShader = getShader(gl, "shader-vs");
 
         var shaderProgram = gl.createProgram();
@@ -283,17 +359,14 @@
         }
     }
 
-    window.addEventListener("touchstart", function(event) {
-        if (event.touches.length > 0 && videoQuad) {
-            var x = event.touches[0].pageX / window.innerWidth;
-            var y = event.touches[0].pageY / window.innerHeight;
-            var pointAndPlane = videoQuad.vrDisplay.getPickingPointAndPlaneInPointCloud(x, y);
-            console.log("x = " + event.touches[0].pageX + ", y = " + event.touches[0].pageY + ", window.innerWidth = " + window.innerWidth + ", window.innerHeight = " + window.innerHeight + ", uvx = " + x + ", uvy = " + y + ", point[0] = " + pointAndPlane.point[0] + ", point[1] = " + pointAndPlane.point[1] + ", point[2] = " + pointAndPlane.point[2] + ", plane[0] = " + pointAndPlane.plane[0] + ", plane[1] = " + pointAndPlane.plane[1] + ", plane[2] = " + pointAndPlane.plane[2] + ", plane[3] = " + pointAndPlane.plane[3]);            
-        }
-    });
+    var stats;
 
     function raf() {
+        stats.update();
+        
         videoQuad.update(gl);
+
+        // console.log("viewportWidth = " + gl.viewportWidth + ", viewportHeight = " + gl.viewportHeight);
 
         gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -318,6 +391,10 @@
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             document.body.appendChild(canvas);
+
+            stats = new Stats();
+            document.body.appendChild( stats.dom );
+
             var gl = getGL(canvas);
             var program = getProgram(gl);
             window.gl = gl;
@@ -326,6 +403,14 @@
                 requestAnimationFrame(raf);
             });
             gl.clearColor(0.2, 0.2, 0.2, 1.0);
+
+            window.addEventListener("orientationchange", function(event) {
+            });
+
+            window.addEventListener("resize", function(event) {
+                gl.viewportWidth = canvas.width = window.innerWidth;
+                gl.viewportHeight = canvas.height = window.innerHeight;
+            });
         }
     </script>
 </body>
