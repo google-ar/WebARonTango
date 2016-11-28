@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+
+	    <!-- Error handling -->
+	    <script>
+	        window.addEventListener('error', function(event) {
+	            var errorMessage = event.message;
+	            var url = event.filename;
+	            var lineNumber = event.lineno;
+	            var columnNumber = event.colno;
+	            alert("ERROR: " + errorMessage + " at " + url + " : " + lineNumber + " : " + columnNumber);
+	        });
+	    </script>
+
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #000000;
+				margin: 0px;
+				overflow: hidden;
+			}
+
+			#info {
+				color: #fff;
+				position: absolute;
+				bottom: 10px;
+				width: 100%;
+				text-align: center;
+				z-index: 100;
+				display:block;
+
+			}
+
+			a { color: skyblue }
+		</style>
+
+		<title>WebAR (Tango) QRCode ThreeJS Example</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	</head>
+	<body>
+		<div id="qrcode" style="display:none;"></div>
+		<div id="info">
+			<a href="http://threejs.org" target="_blank">three.js</a> -
+			WebAR (Tango) QRCode ThreeJS Example <a href="https://github.com/judax" target="_blank">Iker Jamardo</a>
+		</div>
+
+		<script src="three.js"></script>
+		<script src="Detector.js"></script>
+		<script src="stats.min.js"></script>
+		<script src="VRControls.js"></script>
+		<script src="THREE.WebAR.js"></script>
+		<script src="dat.gui.min.js"></script>
+		<script src="qrcode.js"></script>
+
+		<script>
+			// function GUI() {
+			// 	this.showPointCloud = true;
+			// 	this.showSeeThroughCamera = true;
+			// 	return this;
+			// }
+
+			// var datGUI = new dat.GUI();
+			// var gui = new GUI();
+			// datGUI.add(gui, "showPointCloud").onFinishChange(function(value) {
+			// 	if (value) {
+			// 		scene.add(points)
+			// 		showPointCloud = true;
+			// 	}
+			// 	else {
+			// 		scene.remove(points);
+			// 		showPointCloud = false;
+			// 	}
+			// });
+			// datGUI.add(gui, "showSeeThroughCamera");
+
+			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+
+			var container, stats;
+
+			var cameraOrtho, cameraPersp, sceneCamera, scene, renderer, cameraMesh;
+
+			var pointCloud;
+
+			var vrDisplay;
+
+			var qrcodeMesh;
+			var qrcodeLocked = false;
+
+	        if (navigator.getVRDisplays) {
+	            navigator.getVRDisplays().then(function(vrDisplays) {
+	                if (vrDisplays && vrDisplays.length > 0) {
+	                    for (var i = 0; i < vrDisplays.length; i++) {
+	                        vrDisplay = vrDisplays[i];
+	                        if (vrDisplay.displayName === "Tango VR Device") {
+								init(vrDisplay);
+								updateAndRender();									
+	                            break;
+	                        }
+	                    }
+	                }
+	            });
+	        }
+	        else {
+	            alert("No navigator.getVRDisplays");
+	            init();
+	            updateAndRender();
+	        }
+
+			function init(vrDisplay) {
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				// Create the see through camera scene and camera
+				sceneCamera = new THREE.Scene();
+				cameraOrtho = new THREE.OrthographicCamera( -1, 1, 1, -1, 0, 1000 );
+				cameraMesh = THREE.WebAR.createVRSeeThroughCameraMesh(vrDisplay);
+				sceneCamera.add(cameraMesh);
+
+				// Create the 3D scene and camera
+				scene = new THREE.Scene();
+				cameraPersp = THREE.WebAR.createVRSeeThroughCamera(vrDisplay, 0.00001, 1000);
+				pointCloud = new THREE.WebAR.VRPointCloud(vrDisplay, true);
+				vrControls = new THREE.VRControls(cameraPersp);
+				var ambientLight = new THREE.AmbientLight( 0xFFFFFF );
+				scene.add( ambientLight );
+				var qrcode = new QRCode(document.getElementById("qrcode"), {
+					text: location.href,
+					width : 512,
+					height : 512
+				});
+				var qrcodeImage = document.querySelector("div#qrcode img");
+				var qrcodeTexture = new THREE.Texture(qrcodeImage);
+				qrcodeTexture.image = qrcodeImage;
+				qrcodeImage.addEventListener("load", function() {
+					qrcodeTexture.needsUpdate = true;
+				});
+				var qrcodeMaterial = new THREE.MeshLambertMaterial( {
+					map: qrcodeTexture,
+					color: 0xFFFFFF,
+					transparent: true,
+					opacity: 0.4,
+					side: THREE.DoubleSide
+				});
+				var qrcodeGeometry = new THREE.PlaneBufferGeometry( 0.18, 0.18 );
+				qrcodeMesh = new THREE.Mesh( qrcodeGeometry, qrcodeMaterial );
+				qrcodeMesh.position.set(0, 0, -1);
+				scene.add( qrcodeMesh );
+				var textureLoader = new THREE.TextureLoader();
+				var pictureTexture = textureLoader.load("picture.jpg");
+				var pictureMaterial = new THREE.MeshLambertMaterial( {
+					map: pictureTexture,
+					color: 0xFFFFFF,
+				});
+				var pictureGeometry = new THREE.PlaneBufferGeometry( 0.17, 0.1275 );
+				var pictureMesh = new THREE.Mesh(pictureGeometry, pictureMaterial);
+				pictureMesh.position.set(0.245, 0, 0);
+				qrcodeMesh.add(pictureMesh);
+
+				// Create the renderer
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.autoClear = false;
+				document.body.appendChild( renderer.domElement );
+
+				// Create a way to measure performance
+				stats = new Stats();
+				container.appendChild( stats.dom );
+
+				// Control the resizing of the window to correctly display the scene.
+				window.addEventListener( 'resize', onWindowResize, false );
+
+				// Control the qrcode alignment or not using a click event.
+				window.addEventListener('click', function() {
+					qrcodeLocked = !qrcodeLocked;
+				});
+			}
+
+			function onWindowResize() {
+				// TODO: Accordingly update the perspective camera.
+				// cameraPersp.aspect = window.innerWidth / window.innerHeight;
+				// cameraPersp.updateProjectionMatrix();
+				THREE.WebAR.resizeVRSeeThroughCamera(vrDisplay, cameraPersp);
+				renderer.setSize( window.innerWidth, window.innerHeight );
+			}
+
+			//
+			function updateAndRender() {
+
+				stats.update();
+
+				// Update the see through camera scene
+				// IMPORTANT: This call makes sure that the camera mesh (quad) uses the correct texture coordinates depending on the camera and device orientations.
+				THREE.WebAR.updateCameraMeshOrientation(vrDisplay, cameraMesh);
+
+				// Render the see through camera scene
+				renderer.clear();
+				renderer.render( sceneCamera, cameraOrtho );
+
+				// Update the perspective scene
+				vrControls.update();
+				// IMPORTANT: this call makes sure that the camera, that has taken the pose from the previous VRControls.update call, is correctly transformed depending on the device orientation.
+				THREE.WebAR.updateCameraOrientation(vrDisplay, cameraPersp);
+
+				// Update the point cloud but do not update the point buffer geometry as it won't be shown
+				pointCloud.update(false);
+
+				// If the vrDisplay is correct and the qrcode is not locked, update its position with a raycast on the point cloud to check the point and plane of collision.
+				if (vrDisplay && !qrcodeLocked) {
+		            var pointAndPlane = vrDisplay.getPickingPointAndPlaneInPointCloud(0.5, 0.5);
+		            if (pointAndPlane && pointAndPlane.correctValues) {
+			            THREE.WebAR.positionAndRotateObject3DWithPickingPointAndPlaneInPointCloud(pointAndPlane, qrcodeMesh, 0.0);
+		            }
+		            else {
+		            	qrcodeMesh.position.set(0, 0, -1);
+		            	qrcodeMesh.rotation.set(0, 0, 0);
+		            }
+		        }
+
+				// Render the perspective scene
+				renderer.clearDepth();
+				renderer.render( scene, cameraPersp );
+
+				requestAnimationFrame( updateAndRender );
+			}
+
+		</script>
+	</body>
+</html>
