@@ -94,21 +94,10 @@ android_assets("android_webview_apk_assets") {
     "shell/assets/visual_state_waits_for_js_test.html",
   ]
   renaming_sources = [
-    "shell/assets/tango/pointcloud/index.html",
-    "shell/assets/tango/pointcloud/stats.min.js",
-    "shell/assets/tango/pointcloud/three.min.js",
-    "shell/assets/tango/pointcloud/VRControls.js",
-    "shell/assets/tango/video/index.html",
-    "shell/assets/tango/video/glMatrix-0.9.5.min.js"
-
+#    "shell/assets/tango/pointcloud/index.html"
   ]
   renaming_destinations = [
-    "tango/pointcloud/index.html",
-    "tango/pointcloud/stats.min.js",
-    "tango/pointcloud/three.min.js",
-    "tango/pointcloud/VRControls.js",
-    "tango/video/index.html",
-    "tango/video/glMatrix-0.9.5.min.js"
+#    "tango/pointcloud/index.html"
   ]
 }
 
