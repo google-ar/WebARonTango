@@ -329,6 +329,7 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
             public void onPageStarted(String url) {
                 if (mUrlTextView != null) {
                     mUrlTextView.setText(url);
+                    saveStringToPreferences(LAST_USED_URL_PREFERENCE_NAME, url);
                 }
             }
 
@@ -439,8 +440,6 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
                 setKeyboardVisibilityForUrl(false);
                 mAwTestContainerView.requestFocus();
 
-                saveStringToPreferences(LAST_USED_URL_PREFERENCE_NAME, url);
-
                 return true;
             }
         });
@@ -528,7 +527,6 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
                 mUrlTextView.clearFocus();
                 setKeyboardVisibilityForUrl(false);
                 mAwTestContainerView.requestFocus();
-                saveStringToPreferences(LAST_USED_URL_PREFERENCE_NAME, url);
             }
             catch(MalformedURLException e)
             {               
