@@ -124,13 +124,13 @@ unsigned TangoVRDevice::GetMaxPointCloudVertexCount()
   return TangoHandler::getInstance()->getMaxPointCloudVertexCount();
 }
 
-VRPointCloudPtr TangoVRDevice::GetPointCloud()
+VRPointCloudPtr TangoVRDevice::GetPointCloud(bool justUpdatePointCloud)
 {
   TangoHandler* tangoHandler = TangoHandler::getInstance();
   VRPointCloudPtr pointCloudPtr;
   pointCloudPtr = VRPointCloud::New();
   pointCloudPtr->vertices = mojo::Array<float>::New(tangoHandler->getMaxPointCloudVertexCount() * 3);
-  if (!tangoHandler->getPointCloud(&(pointCloudPtr->vertexCount), &(pointCloudPtr->vertices[0])))
+  if (!tangoHandler->getPointCloud(&(pointCloudPtr->vertexCount), &(pointCloudPtr->vertices[0]), justUpdatePointCloud))
   {
     pointCloudPtr->vertices = nullptr;
   }

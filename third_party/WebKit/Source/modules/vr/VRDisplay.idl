@@ -29,7 +29,7 @@ enum VREye {
     VRPose getImmediatePose();
     void resetPose();
     long getMaxPointCloudVertexCount();
-    VRPointCloud getPointCloud();
+    VRPointCloud getPointCloud(boolean justUpdatePointCloud);
     VRPickingPointAndPlane getPickingPointAndPlaneInPointCloud(float x, float y);
     VRSeeThroughCamera getSeeThroughCamera();
 

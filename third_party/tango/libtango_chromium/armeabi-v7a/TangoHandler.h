@@ -67,7 +67,7 @@ public:
 	bool getPoseMatrix(float* matrix);
 
 	uint32_t getMaxPointCloudVertexCount() const;
-	bool getPointCloud(uint32_t* count, float* xyz);
+	bool getPointCloud(uint32_t* count, float* xyz, bool justUpdatePointCloud);
 	bool getPickingPointAndPlaneInPointCloud(float x, float y, double* point, double* plane);
 
 	bool getCameraImageSize(uint32_t* width, uint32_t* height);

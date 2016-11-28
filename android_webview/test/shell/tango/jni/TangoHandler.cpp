@@ -516,14 +516,25 @@ uint32_t TangoHandler::getMaxPointCloudVertexCount() const
 	return maxPointCloudVertexCount;
 }
 
-bool TangoHandler::getPointCloud(uint32_t* count, float* xyz)
+bool TangoHandler::getPointCloud(uint32_t* count, float* xyz, bool justUpdatePointCloud)
 {
+	// In case the point cloud retrieval fails, 0 points should be returned.
+	*count = 0;
+
 	if (connected)
 	{
 		TangoErrorType result = TangoSupport_getLatestPointCloud(pointCloudManager, &latestTangoPointCloud);
 		if (result == TANGO_SUCCESS)
 		{
 			latestTangoPointCloudRetrieved = true;
+
+			// If only the update was requested, return with 0 points.
+			if (justUpdatePointCloud) return true;
+
+			// It is possible that the transform matrix retrieval fails but the count is already there/correct.
+			// TODO: Soon, the transformation of the points should be done in a shader in the application side, so the matrix retrieval could inside this method will be avoided.
+			*count = latestTangoPointCloud->num_points;
+
 			TangoMatrixTransformData depthCameraMatrixTransform;
 			TangoSupport_getMatrixTransformAtTime(
 				latestTangoPointCloud->timestamp, TANGO_COORDINATE_FRAME,
@@ -539,9 +550,9 @@ bool TangoHandler::getPointCloud(uint32_t* count, float* xyz)
 				result = TangoSupport_transformPointCloud(depthCameraMatrixTransform.matrix, latestTangoPointCloud, &tangoPointCloud);
 				if (result == TANGO_SUCCESS)
 				{
-					*count = latestTangoPointCloud->num_points;
 					uint32_t offset;
 					float* points = tangoPointCloud.points[0];
+					// float* points = latestTangoPointCloud->points[0];
 					for (uint32_t i = 0, j = 0; i < *count; i++, j += 3) 
 					{
 						offset = i * 4;
@@ -560,7 +571,7 @@ bool TangoHandler::getPointCloud(uint32_t* count, float* xyz)
 			}
 			else
 			{
-				LOGE("TangoHandler::getPointCloud, rretrieving the depth camera transform matrix failed.");
+				LOGE("TangoHandler::getPointCloud, retrieving the depth camera transform matrix failed.");
 			}
 		}
 		else
@@ -570,10 +581,6 @@ bool TangoHandler::getPointCloud(uint32_t* count, float* xyz)
 
 		// pthread_mutex_unlock( &pointCloudMutex );
 
-	}
-	else
-	{
-		*count = 0;
 	}
 
 	return connected;

@@ -86,7 +86,7 @@ interface VRService {
   [Sync]
   GetMaxPointCloudVertexCount(uint32 index) => (uint32 maxPointCloudVertexCount);
   [Sync]
-  GetPointCloud(uint32 index) => (VRPointCloud pointCloud);
+  GetPointCloud(uint32 index, bool justUpdatePointCloud) => (VRPointCloud pointCloud);
   [Sync]
   GetSeeThroughCamera(uint32 index) => (VRSeeThroughCamera seeThroughCamera);
   [Sync]

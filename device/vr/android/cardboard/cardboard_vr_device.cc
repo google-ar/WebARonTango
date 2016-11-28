@@ -161,7 +161,7 @@ unsigned CardboardVRDevice::GetMaxPointCloudVertexCount()
   return 0;
 }
 
-VRPointCloudPtr CardboardVRDevice::GetPointCloud()
+VRPointCloudPtr CardboardVRDevice::GetPointCloud(bool justUpdatePointCloud)
 {
   return nullptr;
 }

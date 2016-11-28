@@ -36,7 +36,7 @@ DOMFloat32Array* VRPointCloud::vertices() const
 
 void VRPointCloud::setPointCloud(device::blink::VRPointCloudPtr& pointCloudPtr)
 {
-	if (!pointCloudPtr->vertices && pointCloudPtr->vertexCount == 0)
+	if (pointCloudPtr.is_null() || !pointCloudPtr->vertices || pointCloudPtr->vertexCount == 0)
 	{
 		if (m_vertices)
 		{

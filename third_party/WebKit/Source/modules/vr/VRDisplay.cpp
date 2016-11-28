@@ -81,7 +81,18 @@ void VRDisplay::update(const device::blink::VRDisplayPtr& display)
     }
 
     if (display->capabilities->hasSeeThroughCamera) {
-        m_seeThroughCamera = new VRSeeThroughCamera(this);
+        if (!m_seeThroughCamera) {
+            m_seeThroughCamera = new VRSeeThroughCamera(this);
+        }
+    }
+
+    if (display->capabilities->hasPointCloud) {
+        if (!m_pointCloud) {
+            m_pointCloud = new VRPointCloud();
+        }
+        if (!m_pickingPointAndPlane) {
+            m_pickingPointAndPlane = new VRPickingPointAndPlane();
+        }
     }
 }
 
@@ -113,15 +124,11 @@ unsigned VRDisplay::getMaxPointCloudVertexCount()
     return controller()->getMaxPointCloudVertexCount(m_displayId);
 }
 
-VRPointCloud* VRDisplay::getPointCloud()
+VRPointCloud* VRDisplay::getPointCloud(bool justUpdatePointCloud)
 {
-    device::blink::VRPointCloudPtr pointCloudPtr = controller()->getPointCloud(m_displayId);
-    if (pointCloudPtr)
+    device::blink::VRPointCloudPtr pointCloudPtr = controller()->getPointCloud(m_displayId, justUpdatePointCloud);
+    if (m_pointCloud)
     {
-        if (!m_pointCloud)
-        {
-            m_pointCloud = new VRPointCloud();
-        }
         m_pointCloud->setPointCloud(pointCloudPtr);
     }
     return m_pointCloud;
@@ -130,12 +137,8 @@ VRPointCloud* VRDisplay::getPointCloud()
 VRPickingPointAndPlane* VRDisplay::getPickingPointAndPlaneInPointCloud(float x, float y)
 {
     device::blink::VRPickingPointAndPlanePtr picikingPointAndPlanePtr = controller()->getPickingPointAndPlaneInPointCloud(m_displayId, x, y);
-    if (picikingPointAndPlanePtr)
+    if (m_pickingPointAndPlane)
     {
-        if (!m_pickingPointAndPlane)
-        {
-            m_pickingPointAndPlane = new VRPickingPointAndPlane();
-        }
         m_pickingPointAndPlane->setPickingPointAndPlane(picikingPointAndPlanePtr);
     }
     return m_pickingPointAndPlane;

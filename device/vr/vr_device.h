@@ -35,7 +35,7 @@ class VRDevice {
   virtual VRPosePtr GetPose() = 0;
   virtual void ResetPose() = 0;
   virtual unsigned GetMaxPointCloudVertexCount() = 0;
-  virtual VRPointCloudPtr GetPointCloud() = 0;
+  virtual VRPointCloudPtr GetPointCloud(bool justUpdatePointCloud) = 0;
   virtual VRSeeThroughCameraPtr GetSeeThroughCamera() = 0;
   virtual VRPickingPointAndPlanePtr GetPickingPointAndPlaneInPointCloud(float x, float y) = 0;
   virtual mojo::Array<float> GetPoseMatrix() = 0;

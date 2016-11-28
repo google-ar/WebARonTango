@@ -60,7 +60,7 @@ public:
     VRPose* getImmediatePose();
     void resetPose();
     unsigned getMaxPointCloudVertexCount();
-    VRPointCloud* getPointCloud();
+    VRPointCloud* getPointCloud(bool justUpdatePointCloud);
     VRPickingPointAndPlane* getPickingPointAndPlaneInPointCloud(float x, float y);
     VRSeeThroughCamera* getSeeThroughCamera();
 

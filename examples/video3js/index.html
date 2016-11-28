@@ -63,8 +63,22 @@
 
 			var cameraOrtho, sceneCamera, renderer, cameraMesh;
 
-			var pointCloud;
 			var vrDisplay;
+
+			var combinations = [
+				[true, true, true],
+				[true, false, true],
+				[true, true, false],
+				[true, false, false],
+				[false, true, true],
+				[false, false, true],
+				[false, true, false],
+				[false, false, false]
+			];
+			var combinationsIndex = 0;
+			var callGetPose = combinations[combinationsIndex][0];
+			var callGetPointCloud = combinations[combinationsIndex][1];
+			var justUpdatePointCloud = combinations[combinationsIndex][2];
 
 	        if (navigator.getVRDisplays) {
 	            navigator.getVRDisplays().then(function(vrDisplays) {
@@ -73,7 +87,8 @@
 	                        vrDisplay = vrDisplays[i];
 	                        if (vrDisplay.displayName === "Tango VR Device") {
 								init(vrDisplay);
-								updateAndRender();									
+								updateAndRender();	
+								break;								
 	                        }
 	                    }
 	                }
@@ -105,16 +120,37 @@
 				container.appendChild( stats.dom );
 
 				window.addEventListener( 'resize', onWindowResize, false );
+
+				window.addEventListener( 'click', onClick, false );
+
+				showCombination();
 			}
 
 			function onWindowResize() {
 				renderer.setSize( window.innerWidth, window.innerHeight );
 			}
 
-			//
+			function showCombination() {
+				alert("Calling getPose " + (callGetPose ? "enabled" : "disabled") + "\nCalling getPointCloud " + (callGetPointCloud ? "enabled" : "disabled") + "\nJust update point cloud " + (justUpdatePointCloud ? "enabled" : "disabled"));
+			}
+
+			function onClick() {
+				combinationsIndex = (combinationsIndex + 1) % combinations.length;
+				callGetPose = combinations[combinationsIndex][0];
+				callGetPointCloud = combinations[combinationsIndex][1];
+				justUpdatePointCloud = combinations[combinationsIndex][2];
+				showCombination();
+			}
+
 			function updateAndRender() {
 
 				stats.update();
+
+				if (callGetPose)
+					vrDisplay.getPose();
+
+				if (callGetPointCloud)
+					vrDisplay.getPointCloud(justUpdatePointCloud);
 
 				// Required so the correct UVs are used at all times (changes happen when there is an orientation change or window resize)
 				THREE.WebAR.updateCameraMeshOrientation(vrDisplay, cameraMesh);

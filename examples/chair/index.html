@@ -84,19 +84,19 @@
 				return this;
 			}
 
-			var datGUI = new dat.GUI();
-			var gui = new GUI();
-			datGUI.add(gui, "showPointCloud").onFinishChange(function(value) {
-				if (value) {
-					scene.add(points)
-					showPointCloud = true;
-				}
-				else {
-					scene.remove(points);
-					showPointCloud = false;
-				}
-			});
-			datGUI.add(gui, "showSeeThroughCamera");
+			// var datGUI = new dat.GUI();
+			// var gui = new GUI();
+			// datGUI.add(gui, "showPointCloud").onFinishChange(function(value) {
+			// 	if (value) {
+			// 		scene.add(points)
+			// 		showPointCloud = true;
+			// 	}
+			// 	else {
+			// 		scene.remove(points);
+			// 		showPointCloud = false;
+			// 	}
+			// });
+			// datGUI.add(gui, "showSeeThroughCamera");
 
 			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
@@ -104,14 +104,14 @@
 
 			var cameraOrtho, cameraPersp, sceneCamera, scene, renderer, cameraMesh;
 
-			var pointCloud, showPointCloud = true;
+			var pointCloud, showPointCloud = false;
 			var vrDisplay;
 			var model;
 
 			var lastX, lastY;
 			var pos = new THREE.Vector3();
 
-			var USE_CUBE_AS_MODEL = false;
+			var USE_CUBE_AS_MODEL = true;
 
 	        if (navigator.getVRDisplays) {
 	            navigator.getVRDisplays().then(function(vrDisplays) {
@@ -176,7 +176,8 @@
 				points = new THREE.Points( pointCloud.getBufferGeometry(), material );
 				points.frustumCulled = false;
 				points.renderDepth = 0;
-				scene.add(points);
+				if (showPointCloud)
+					scene.add(points);
 				vrControls = new THREE.VRControls(cameraPersp);
 				var directionalLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
 				directionalLight.position.set( 0, 1, 0);
@@ -216,7 +217,7 @@
 
 				// Render the see through camera scene
 				renderer.clear();
-				if (gui.showSeeThroughCamera)
+				// if (gui.showSeeThroughCamera)
 					renderer.render( sceneCamera, cameraOrtho );
 
 				// Update the perspective scene

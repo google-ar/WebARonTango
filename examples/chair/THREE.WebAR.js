@@ -30,7 +30,7 @@ THREE.WebAR.VRPointCloud = function(vrDisplay, usePointCloudVerticesDirectly) {
 	this._bufferGeometry = new THREE.BufferGeometry();
 	this._bufferGeometry.frustumCulled = false;
 
-	var positions = vrDisplay ? (usePointCloudVerticesDirectly ? vrDisplay.getPointCloud().vertices : new Float32Array( vrDisplay.getMaxPointCloudVertexCount() * 3 )) : new Float32Array([-1, 1, -2, 1, 1, -2, 1, -1, -2, -1, -1, -2 ]);
+	var positions = vrDisplay ? (usePointCloudVerticesDirectly ? vrDisplay.getPointCloud(false).vertices : new Float32Array( vrDisplay.getMaxPointCloudVertexCount() * 3 )) : new Float32Array([-1, 1, -2, 1, 1, -2, 1, -1, -2, -1, -1, -2 ]);
 	var colors = new Float32Array( positions.length );
 
 	var color = new THREE.Color();
@@ -77,7 +77,7 @@ THREE.WebAR.VRPointCloud.prototype.getBufferGeometry = function() {
 */
 THREE.WebAR.VRPointCloud.prototype.update = function(updateBufferGeometry) {
 	if (!this._vrDisplay) return;
-	var pointCloud = this._vrDisplay.getPointCloud();
+	var pointCloud = this._vrDisplay.getPointCloud(!updateBufferGeometry);
 	if (!updateBufferGeometry) return;
 	if (!this._usePointCloudVerticesDirectly) {
 		if (pointCloud.vertices != null && pointCloud.vertexCount > 0) {

@@ -24,7 +24,7 @@ class CardboardVRDevice : public VRDevice {
   VRPosePtr GetPose() override;
   void ResetPose() override;
   unsigned GetMaxPointCloudVertexCount() override;
-  VRPointCloudPtr GetPointCloud() override;
+  VRPointCloudPtr GetPointCloud(bool justUpdatePointCloud) override;
   VRSeeThroughCameraPtr GetSeeThroughCamera() override;
   VRPickingPointAndPlanePtr GetPickingPointAndPlaneInPointCloud(float x, float y) override;
   mojo::Array<float> GetPoseMatrix() override;
