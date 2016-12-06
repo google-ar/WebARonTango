@@ -30,7 +30,7 @@ public:
 
     device::blink::VRPosePtr getPose(unsigned index);
     unsigned getMaxPointCloudVertexCount(unsigned index);
-    device::blink::VRPointCloudPtr getPointCloud(unsigned index, bool justUpdatePointCloud);
+    device::blink::VRPointCloudPtr getPointCloud(unsigned index, bool justUpdatePointCloud, unsigned pointsToSkip);
     device::blink::VRPickingPointAndPlanePtr getPickingPointAndPlaneInPointCloud(unsigned index, float x, float y);
     device::blink::VRSeeThroughCameraPtr getSeeThroughCamera(unsigned index);
     mojo::WTFArray<float> getPoseMatrix(unsigned index);

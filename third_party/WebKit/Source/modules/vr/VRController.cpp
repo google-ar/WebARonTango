@@ -69,13 +69,13 @@ unsigned VRController::getMaxPointCloudVertexCount(unsigned index)
     return result;
 }
 
-device::blink::VRPointCloudPtr VRController::getPointCloud(unsigned index, bool justUpdatePointCloud)
+device::blink::VRPointCloudPtr VRController::getPointCloud(unsigned index, bool justUpdatePointCloud, unsigned pointsToSkip)
 {
     if (!m_service)
         return nullptr;
 
     device::blink::VRPointCloudPtr pointCloud;
-    m_service->GetPointCloud(index, justUpdatePointCloud, &pointCloud);
+    m_service->GetPointCloud(index, justUpdatePointCloud, pointsToSkip, &pointCloud);
     return pointCloud;
 }
 

@@ -124,9 +124,9 @@ unsigned VRDisplay::getMaxPointCloudVertexCount()
     return controller()->getMaxPointCloudVertexCount(m_displayId);
 }
 
-VRPointCloud* VRDisplay::getPointCloud(bool justUpdatePointCloud)
+VRPointCloud* VRDisplay::getPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip)
 {
-    device::blink::VRPointCloudPtr pointCloudPtr = controller()->getPointCloud(m_displayId, justUpdatePointCloud);
+    device::blink::VRPointCloudPtr pointCloudPtr = controller()->getPointCloud(m_displayId, justUpdatePointCloud, pointsToSkip);
     if (m_pointCloud)
     {
         m_pointCloud->setPointCloud(pointCloudPtr);
