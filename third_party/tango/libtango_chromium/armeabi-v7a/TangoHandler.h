@@ -22,6 +22,8 @@
 
 #include <pthread.h>
 
+#include <ctime>
+
 #include <android/log.h>
 
 #define LOG_TAG "Tango Chromium"
@@ -35,12 +37,13 @@
 #define TANGO_USE_CAMERA
 #define TANGO_USE_POWER_OF_TWO
 // #define TANGO_USE_DRIFT_CORRECTION
+// #define TANGO_GET_POSE_ALONG_WITH_TEXTURE_UPDATE
 
- #ifdef TANGO_USE_DRIFT_CORRECTION
- #define TANGO_COORDINATE_FRAME TANGO_COORDINATE_FRAME_AREA_DESCRIPTION
- #else
- #define TANGO_COORDINATE_FRAME TANGO_COORDINATE_FRAME_START_OF_SERVICE
- #endif
+#ifdef TANGO_USE_DRIFT_CORRECTION
+#define TANGO_COORDINATE_FRAME TANGO_COORDINATE_FRAME_AREA_DESCRIPTION
+#else
+#define TANGO_COORDINATE_FRAME TANGO_COORDINATE_FRAME_START_OF_SERVICE
+#endif
 
 namespace tango_chromium {
 // TangoHandler provides functionality to communicate with the Tango Service.
@@ -67,7 +70,7 @@ public:
 	bool getPoseMatrix(float* matrix);
 
 	uint32_t getMaxPointCloudVertexCount() const;
-	bool getPointCloud(uint32_t* count, float* xyz, bool justUpdatePointCloud);
+	bool getPointCloud(uint32_t* count, float* xyz, bool justUpdatePointCloud, unsigned pointsToSkip);
 	bool getPickingPointAndPlaneInPointCloud(float x, float y, double* point, double* plane);
 
 	bool getCameraImageSize(uint32_t* width, uint32_t* height);
@@ -86,12 +89,19 @@ public:
 	int getSensorOrientation() const;
 
 private:
+	bool hasLastTangoImageBufferTimestampChangedLately();
+
 	static TangoHandler* instance;
 
 	bool connected;
 	TangoConfig tangoConfig;
 	TangoCameraIntrinsics tangoCameraIntrinsics;
 	double lastTangoImageBufferTimestamp;
+	std::time_t lastTangoImagebufferTimestampTime;
+
+	pthread_mutex_t poseMutex;
+	TangoPoseData pose;
+	bool poseIsCorrect;
 
 	// pthread_mutex_t pointCloudMutex;
 	uint32_t maxPointCloudVertexCount;
