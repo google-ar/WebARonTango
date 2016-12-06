@@ -29,7 +29,7 @@
 /**
 * @name VRDisplay
 * @class
-* @description WebAR devices will be exposed as VRDisplay instances. The pose estimation is exposed using the exact same methods as in any other VR display. Some methods have been added though to the VRDisplay class of the WebVR spec {@link https://w3c.github.io/webvr/#interface-vrdisplay}.
+* @description WebAR devices will be exposed as VRDisplay instances. The pose estimation is exposed using the exact same methods as in any other VR display, although in the case of the Tango underlying implementation, the pose will be 6DOF (position and orientation). Some new methods have been added though to the VRDisplay class of the WebVR spec to provide new functionalities {@link https://w3c.github.io/webvr/#interface-vrdisplay}.
 */
 
 /**
@@ -43,12 +43,14 @@
 * @method VRDisplay#getPointCloud
 * @description Returns an instance of {@link VRPointCloud} that represents the point cloud acquired by the underlying hardware at the moment of the call.
 * @see VRDisplayCapabilities
-* @returns {VRPointCloud} - The maximum number of points/vertices that the VRDisplay is able to represent or null if the underlying VRDisplay is does not support point cloud provisioning.
+* @param {boolean} justUpdatePointCloud - A flag to indicate if the whole point cloud should be retrieved or just updated internally. Updating the point cloud without retrieving the points may be useful if the point cloud won't be used in JS (for rendering it, for exmaple) but picking will be used. true to only update the point cloud returning 0 points and false to both update and return all the points detected up until the moment of the call.
+* @param {number} pointsToSkip - An integer value to indicate how many points to skip when all the points are returned (justUpdatePointCloud = false). This parameter allows to return a less dense point cloud by skipping 1, 2, 3, ... points. A value of 0 will return all the points. A value of 1 will skip every other point returning half the number of points (1/2), a value of 2 will skip 2 of every other points returning one third of the number of points (1/3), etc. In essence, this value will specify the number of point to return skipping some points. numberOfPointsToReturn = numberOfDetectedPoints / (pointsToSkip + 1). 
+* @returns {VRPointCloud} - An instance of a {@link VRPointCloud} with the points/vertices that the VRDisplay has detected or null if the underlying VRDisplay does not support point cloud provisioning.
 */
 
 /**
 * @method VRDisplay#getPickingPointAndPlaneInPointCloud
-* @description Returns an instance of {@link VRPickingPointAndPlane} that represents a point and a plane normal defined at the collision point in 3D between the underlying point cloud and the given 2D point of the screen. The returned value will always be null if the underlying VRDisplay does not support point cloud provisioning. The internal algorithm will use the provide 2D point to cast a ray against the point cloud and return the collision point and normal of the plane in the point cloud mesh.
+* @description Returns an instance of {@link VRPickingPointAndPlane} that represents a point and a plane normal defined at the collision point in 3D between the point cloud and the given 2D point of the screen. IMPORTANT: The point cloud needs to be at least updated by calling getPointCloud before calling this method. The returned value will always be null if the underlying VRDisplay does not support point cloud provisioning. The internal algorithm will use the provided 2D point to cast a ray against the point cloud and return the collision point and normal of the plane in the point cloud mesh.
 * @see VRDisplayCapabilities
 * @param {float} x - The horizontal normalized value (0-1) of the screen position.
 * @param {float} y - The vertival normalized value (0-1) of the screen position.
@@ -68,7 +70,7 @@
 /**
 * @name VRPickingPointAndPlane
 * @class
-* @description A class that represents the point where a collision has occured between a ray and the VRPointCloud mesh and the normal of the plane of that same collision.
+* @description A class that represents the point where a collision happened between a ray and the VRPointCloud mesh and the normal of the plane of that same collision.
 */
 
 /**
@@ -99,7 +101,8 @@
 /**
 * @name VRPointCloud
 * @class
-* @description A class that represents the point cloud acquired by the underlying VRDisplay. A point cloud is just a set of triplets that represent each 3D position of each vertex/point in the point cloud. In order to make this structure as fast as possible, the Float32Array is always of the maximum vertex count possible depending on the underlywing VRDisplay. Of course, the exact number of points that have been correctly acquired is also provided in the VRPointCloud instance.
+* @description A class that represents the point cloud acquired by the underlying VRDisplay when a call to getPointCloud is made. A point cloud is just a set of triplets (x, y, z) that represent each 3D position of each vertex/point in the point cloud. In order to make this structure as fast as possible, the Float32Array is always of the maximum vertex count possible depending on the underlywing VRDisplay. Of course, the exact number of points that have been correctly acquired is also provided in the VRPointCloud instance.
+* NOTE: In order to improve performance, a single point Float32Array is allocated with the maximum capacity of points that the underlying SDK could provide. This is why the vertexCount property is also passed along with the vertices property. It is up to the developer to correctly use/copy the values.
 */
 
 /**
@@ -143,14 +146,14 @@
 /**
 * @name VRSeeThroughCamera#textureWidth
 * @type {long}
-* @description The horizontal size of the texture used to hold each camera frame. I can be the same or a bigger value than the camera width.
+* @description The horizontal size of the texture used to hold each camera frame. It can be the same or a bigger value than the camera width.
 * @readonly
 */
 
 /**
 * @name VRSeeThroughCamera#textureHeight
 * @type {long}
-* @description The vertical size of the texture used to hold each camera frame. I can be the same or a bigger value than the camera height.
+* @description The vertical size of the texture used to hold each camera frame. It can be the same or a bigger value than the camera height.
 * @readonly
 */
 

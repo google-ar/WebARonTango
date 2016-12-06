@@ -1,29 +1,38 @@
 # Overview
 
-This repository includes modifications on Chromium that allows to add Tango/AR capabilities into JavaScript. Chromium is a complex project with gigabytes of source code, resources and third party libraries. This repository does not include all Chromium but just the files necessary to make the changes to it in order to enable WebAR. This documentation is divided in 2 sections: 
-1. How to build your own version of Chromium with WebAR and 
-2. Using the new VR/AR JavaScript APIs. This way, anyone that wants to build and modify his/her own version of chromium, will be able to do it and those who just want to install a prebuilt version of Chromium and start using it right away.
+**NOTE:** The repository with the Chromium code to enable WebAR capabilities on top of the WebVR implementation is still not publicly available so much of the references to it in this documentation might not be applicable for those without access.
 
-## The folder structure
+This project's goal is to provide an initial implementation of a possible Augmented Reality API for the Web. This documentation (specially this page you are reading) includes a tutorial on how to build your own version of Chromium that has WebAR capabilities. Also, on the side, you may find documentation of both the low level JS API exposed on top of some of the WebVR API elements and the utility library built on top of THREE.JS (THREE.WebAR).
 
-`/android_webview`: The modifications to the android webview Chromium project to be able to load the tango handling dynamic library, store the URLs for future executions, etc. This folder, internally, contains the tango handling library and all the build files needed. 
+This WebAR specification and implementation is completely experimental so use it at your own risk. There is no guarantee that any of this code will eveb make it to Chromium and even less to Chrome but it will provide the possibitliy to use the WebVR API on an actual Android application if needed. The whole implementation is based on the Tango device and SDK for the moment.
 
-`/device`: The modifications to the vr device files to add both the tango_vr_device class and the modifications to the vr service to be able to expose some specific data related to AR (point cloud, see through camera data, etc.).
+This documentation is divided in 2 sections: 
+1. **How to build your own version of Chromium with WebAR** 
+2. **Using the new VR/AR JavaScript APIs**: This way, anyone that wants to build and modify his/her own version of chromium, will be able to do it and those who just want to install a prebuilt version of Chromium and start using it right away.
+
+## 1. How to build your own version of Chromium with WebAR
+
+This repository includes only modifications on the Chromium repository that allows to add Tango/AR capabilities into JavaScript. Chromium is a complex project with gigabytes of source code, resources and third party libraries. This repository does not include all Chromium but just the files necessary to make the changes to it in order to enable WebAR, so you will also have to checout the Chromium repository (how to do so will be explained in this tutorial). 
+
+### The folder structure in this repo
+
+Let's review the content on this repository to better understand it:
+
+`/android_webview`: The modifications to the android webview Chromium project to be able to load the Tango handling dynamic library, store the URLs for future executions, read QRCodes, etc. This folder, internally, contains the Tango handling library and all the build files and resources needed. 
+
+`/device`: The modifications to the vr device files to add both the tango_vr_device class and the modifications to the vr service to be able to expose some specific data related to AR (point cloud, see through camera data, picking, etc.).
 
 `/examples`: A set of some basic examples based on straight WebGL or (mostly) using the ThreeJS framework.
 
-`/gpu`: All the modifications in the command buffer to be able to use the external texture extension and make the right call to Tango implementation when the texImage2D is called using the VRSeeThroughCamera instance.
+`/gpu`: All the modifications in the GL command buffer to be able to use the external texture extension and make the right call to Tango implementation when the texImage2D is called using the VRSeeThroughCamera instance.
 
 `/third_party`: Both the inclusion of the tango third party libraries (and the tango handling library) and the WebKit vr and webgl IDL classes modifications to be able to expose all the functionalities. ZXing is also added to be able to add the QRCode reading functionality to the WebView APK.
 
-## Build your own version of Chromium with WebAR
+Building the modified version of Chromium, is a 2 step process: 
+1.1. Clone the Chromium project (copying the changes in this repository) and prepare it to be built
+1.2. Build, install and run.
 
-Building the modified version of Chromium, is a 3 steps process: 
-1. Clone he chromium project and prepare it to be built, 
-2. Copy the changes in this repository to the Chromium repository, 
-3. Build, install and run.
-
-### 1 and 2: Clone the Chromium project (copying the changes in this repository) and prepare it to be built
+### 1.1 Clone the Chromium project (copying the changes in this repository) and prepare it to be built
 
 Chromium cloning/building instruction are available online. 
 
@@ -55,7 +64,7 @@ Open a terminal window to be able
 	```
 	target_os = "android"
 	target_cpu = "arm"  # (default)
-	is_debug = true  # (default)
+	is_debug = false  # (default)
 
 	# Other args you may want to set:
 	is_component_build = true
@@ -80,7 +89,7 @@ Open a terminal window to be able
  13. `~/chromium/src$ gclient sync`
  14. `~/chromium/src$ . build/android/envsetup.sh`
 
-### 3: Build, install and run
+### 1.2: Build, install and run
 
 **IMPORTANT:** some changes have been done to the Chromium command buffer. These changes may require to rebuild the command buffer. The Python script to do so does not execute along with the regular building process so if further changes are done to the command buffer, this script needs to be executed with the following command:
 ```
@@ -93,7 +102,7 @@ The out folder that has been created has the same name as the branch. This is no
 
 ### Resolving some possible Chromium WebView crashes on some Android versions
 
-Chromium webview seems to crash pretty consistently on some Android versions (5 and 6) on some internal checks/asserts related to both audio and touch handling. This is a list of some possible points in the chromium source code where these crashes may occur. It is recommended that some testing is performed before introducing these changes. The good thing with asserts/checks is that they show the specific line of code where the crash is happening so a simple review of the logcat when the crash happens should poing to the specific line of code and file where the assert is failing.
+Chromium webview v54.0.2796.3 seems to crash pretty consistently on some Android versions (5 and 6) on some internal checks/asserts related to both audio and touch handling. This is a list of some possible points in the chromium source code where these crashes may occur. It is recommended that some testing is performed before introducing these changes. The good thing with asserts/checks is that they show the specific line of code where the crash is happening so a simple review of the logcat when the crash happens should poing to the specific line of code and file where the assert is failing.
 
 **NOTE**: It is recommended that the changes are well documented (for example introducing a //WebAR BEGIN..//WebAR END block to correctly mark each change). Remember, these changes should not be needed but for some reason the Chromium WebView is showing these errors.
 
