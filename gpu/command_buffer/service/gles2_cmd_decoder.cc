@@ -5561,6 +5561,7 @@ void GLES2DecoderImpl::DoBindTexture(GLenum target, GLuint client_id) {
 }
 
 // WebAR BEGIN
+
 void GLES2DecoderImpl::DoUpdateTextureExternalOes(GLuint client_id) {
   TextureRef* texture_ref = NULL;
   GLuint service_id = 0;
@@ -5621,6 +5622,9 @@ void GLES2DecoderImpl::DoUpdateTextureExternalOes(GLuint client_id) {
   // TextureUnit& unit = state_.texture_units[state_.active_texture_unit];
   // unit.bind_target = target;
   // unit.GetInfoForTarget(target) = texture_ref;
+
+  // TODO: This call should not be done. It seems that the Tango codea is giving/leaving a GL error behing so this call is here to clean it up.
+  glGetError();
 }
 // WebAR END
 
