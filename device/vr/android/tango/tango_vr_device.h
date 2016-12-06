@@ -24,7 +24,7 @@ class TangoVRDevice : public VRDevice {
   VRPosePtr GetPose() override;
   void ResetPose() override;
   unsigned GetMaxPointCloudVertexCount() override;
-  VRPointCloudPtr GetPointCloud(bool justUpdatePointCloud) override;
+  VRPointCloudPtr GetPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip) override;
   VRSeeThroughCameraPtr GetSeeThroughCamera() override;
   VRPickingPointAndPlanePtr GetPickingPointAndPlaneInPointCloud(float x, float y) override;
   mojo::Array<float> GetPoseMatrix() override;

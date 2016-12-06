@@ -54,7 +54,7 @@ class VRDeviceManager : public VRService {
   void GetPose(uint32_t index, const GetPoseCallback& callback) override;
   void ResetPose(uint32_t index) override;
   void GetMaxPointCloudVertexCount(uint32_t index, const GetMaxPointCloudVertexCountCallback& callback) override;
-  void GetPointCloud(uint32_t index, bool justUpdatePointCloud, const GetPointCloudCallback& callback) override;
+  void GetPointCloud(uint32_t index, bool justUpdatePointCloud, unsigned pointsToSkip, const GetPointCloudCallback& callback) override;
   void GetPickingPointAndPlaneInPointCloud(uint32_t index, float x, float y, const GetPickingPointAndPlaneInPointCloudCallback& callback) override;
   void GetSeeThroughCamera(uint32_t index, const GetSeeThroughCameraCallback& callback) override;
   void GetPoseMatrix(uint32_t index, const GetPoseMatrixCallback& callback) override;

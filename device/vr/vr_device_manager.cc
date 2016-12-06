@@ -167,10 +167,10 @@ void VRDeviceManager::GetMaxPointCloudVertexCount(uint32_t index, const GetMaxPo
   }
 }
 
-void VRDeviceManager::GetPointCloud(uint32_t index, bool justUpdatePointCloud, const GetPointCloudCallback& callback) {
+void VRDeviceManager::GetPointCloud(uint32_t index, bool justUpdatePointCloud, unsigned pointsToSkip, const GetPointCloudCallback& callback) {
   VRDevice* device = GetDevice(index);
   if (device) {
-    callback.Run(device->GetPointCloud(justUpdatePointCloud));
+    callback.Run(device->GetPointCloud(justUpdatePointCloud, pointsToSkip));
   } else {
     callback.Run(nullptr);
   }
