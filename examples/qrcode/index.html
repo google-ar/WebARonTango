@@ -88,6 +88,8 @@
 			var qrcodeMesh;
 			var qrcodeLocked = false;
 
+			var qrcodeNormal = new THREE.Vector3();
+
 	        if (navigator.getVRDisplays) {
 	            navigator.getVRDisplays().then(function(vrDisplays) {
 	                if (vrDisplays && vrDisplays.length > 0) {
@@ -153,7 +155,8 @@
 					map: pictureTexture,
 					color: 0xFFFFFF,
 				});
-				var pictureGeometry = new THREE.PlaneBufferGeometry( 0.17, 0.1275 );
+				// var pictureGeometry = new THREE.PlaneBufferGeometry( 0.17, 0.1275 );
+				var pictureGeometry = new THREE.PlaneBufferGeometry( 0.12, 0.0875 );
 				var pictureMesh = new THREE.Mesh(pictureGeometry, pictureMaterial);
 				pictureMesh.position.set(0.245, 0, 0);
 				qrcodeMesh.add(pictureMesh);
@@ -176,6 +179,21 @@
 				window.addEventListener('click', function() {
 					qrcodeLocked = !qrcodeLocked;
 				});
+
+				var lastX;
+				// Add some qrcode rotation functionality using touch
+			    window.addEventListener("touchstart", function(event) {
+			    	if (event.changedTouches.length > 0)
+			    		lastX = event.changedTouches[0].pageX;
+			    });
+			    window.addEventListener("touchmove", function(event) {
+			        if (event.changedTouches.length > 0 && vrDisplay) {
+			        	var x = event.changedTouches[0].pageX;
+			        	var diffX = x - lastX;
+			        	lastX = x;
+			        	//qrcodeMesh.rotateZ(THREE.Math.degToRad(diffX));
+			        }
+			    });
 			}
 
 			function onWindowResize() {

@@ -79,24 +79,11 @@
 			}
 
 			function GUI() {
-				this.showPointCloud = true;
+				this.showPointCloud = showPointCloud;
 				this.showSeeThroughCamera = true;
+				this.pointsToSkip = 0;
 				return this;
 			}
-
-			// var datGUI = new dat.GUI();
-			// var gui = new GUI();
-			// datGUI.add(gui, "showPointCloud").onFinishChange(function(value) {
-			// 	if (value) {
-			// 		scene.add(points)
-			// 		showPointCloud = true;
-			// 	}
-			// 	else {
-			// 		scene.remove(points);
-			// 		showPointCloud = false;
-			// 	}
-			// });
-			// datGUI.add(gui, "showSeeThroughCamera");
 
 			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
@@ -104,14 +91,16 @@
 
 			var cameraOrtho, cameraPersp, sceneCamera, scene, renderer, cameraMesh;
 
-			var pointCloud, showPointCloud = false;
+			var pointCloud, showPointCloud = true;
 			var vrDisplay;
 			var model;
 
 			var lastX, lastY;
 			var pos = new THREE.Vector3();
 
-			var USE_CUBE_AS_MODEL = true;
+			var USE_CUBE_AS_MODEL = false;
+
+			var gui;
 
 	        if (navigator.getVRDisplays) {
 	            navigator.getVRDisplays().then(function(vrDisplays) {
@@ -153,6 +142,23 @@
 
 			function init(vrDisplay) {
 
+				// Initialize the dat.GUI.
+				var datGUI = new dat.GUI();
+				gui = new GUI();
+				datGUI.add(gui, "showPointCloud").onFinishChange(function(value) {
+					if (value) {
+						scene.add(points)
+						showPointCloud = true;
+					}
+					else {
+						scene.remove(points);
+						showPointCloud = false;
+					}
+				});
+				datGUI.add(gui, "showSeeThroughCamera");
+				datGUI.add(gui, "pointsToSkip", 0, 10);
+
+				// Initialize everything related to ThreeJS.
 				container = document.createElement( 'div' );
 				document.body.appendChild( container );
 
@@ -166,7 +172,7 @@
 				scene = new THREE.Scene();
 				cameraPersp = THREE.WebAR.createVRSeeThroughCamera(vrDisplay, 0.00001, 1000);
 				if (!model) {
-					model = new THREE.Mesh(new THREE.BoxBufferGeometry(0.1, 0.1, 0.1), new THREE.MeshLambertMaterial( {color: 0x888888 } ));
+					model = new THREE.Mesh(new THREE.BoxBufferGeometry(0.1, 0.1, 0.01), new THREE.MeshLambertMaterial( {color: 0x888888 } ));
 				}
 				model.position.set(Infinity, Infinity, Infinity);
 				scene.add(model);
@@ -196,6 +202,42 @@
 
 				// Control the resizing of the window to correctly display the scene.
 				window.addEventListener( 'resize', onWindowResize, false );
+
+			    renderer.domElement.addEventListener("touchstart", function(event) {
+			    	if (event.changedTouches.length > 0)
+			    		lastX = event.changedTouches[0].pageX;
+			    });
+
+			    renderer.domElement.addEventListener("touchmove", function(event) {
+			        if (event.changedTouches.length > 0 && vrDisplay) {
+			        	var x = event.changedTouches[0].pageX;
+			        	var diffX = x - lastX;
+			        	lastX = x;
+			        	model.rotateZ(THREE.Math.degToRad(diffX));
+			        }
+			    });
+
+			    renderer.domElement.addEventListener("click", function(event) {
+			        if (vrDisplay) {
+			            pos.x = event.pageX / window.innerWidth;
+			            pos.y = event.pageY / window.innerHeight;
+
+			            THREE.WebAR.updateVector3Orientation(vrDisplay, pos);
+
+			            var pointAndPlane = vrDisplay.getPickingPointAndPlaneInPointCloud(pos.x, pos.y);
+			            // console.log("x = " + lastX + ", y = " + lastY + ", window.innerWidth = " + window.innerWidth + ", window.innerHeight = " + window.innerHeight + ", uvx = " + x + ", uvy = " + y + ", point[0] = " + pointAndPlane.point[0] + ", point[1] = " + pointAndPlane.point[1] + ", point[2] = " + pointAndPlane.point[2] + ", plane[0] = " + pointAndPlane.plane[0] + ", plane[1] = " + pointAndPlane.plane[1] + ", plane[2] = " + pointAndPlane.plane[2] + ", plane[3] = " + pointAndPlane.plane[3]);  
+
+			            if (pointAndPlane.correctValues) {
+			            	// alert(pointAndPlane.point);
+							// model.position.set(pointAndPlane.point[0], pointAndPlane.point[1], pointAndPlane.point[2]);
+				            THREE.WebAR.positionAndRotateObject3DWithPickingPointAndPlaneInPointCloud(pointAndPlane, model, 0.0);
+			            }
+			            else {
+			            	alert("Could not retrieve the correct point and plane.");
+			            }
+			        }
+			    });
+
 			}
 
 			function onWindowResize() {
@@ -208,7 +250,6 @@
 
 			//
 			function updateAndRender() {
-
 				stats.update();
 
 				// Update the see through camera scene
@@ -217,7 +258,8 @@
 
 				// Render the see through camera scene
 				renderer.clear();
-				// if (gui.showSeeThroughCamera)
+
+				if (gui.showSeeThroughCamera)
 					renderer.render( sceneCamera, cameraOrtho );
 
 				// Update the perspective scene
@@ -233,49 +275,15 @@
 				// IMPORTANT: this call makes sure that the camera, that has taken the pose from the previous VRControls.update call, is correctly transformed depending on the device orientation.
 				THREE.WebAR.updateCameraOrientation(vrDisplay, cameraPersp);
 
-				pointCloud.update(showPointCloud);
+				pointCloud.update(showPointCloud, gui.pointsToSkip);
 
 				// Render the perspective scene
 				renderer.clearDepth();
+
 				renderer.render( scene, cameraPersp );
 
 				requestAnimationFrame( updateAndRender );
 			}
-
-		    window.addEventListener("click", function(event) {
-		        if (vrDisplay) {
-		            pos.x = event.pageX / window.innerWidth;
-		            pos.y = event.pageY / window.innerHeight;
-
-		            THREE.WebAR.updateVector3Orientation(vrDisplay, pos);
-
-		            var pointAndPlane = vrDisplay.getPickingPointAndPlaneInPointCloud(pos.x, pos.y);
-		            // console.log("x = " + lastX + ", y = " + lastY + ", window.innerWidth = " + window.innerWidth + ", window.innerHeight = " + window.innerHeight + ", uvx = " + x + ", uvy = " + y + ", point[0] = " + pointAndPlane.point[0] + ", point[1] = " + pointAndPlane.point[1] + ", point[2] = " + pointAndPlane.point[2] + ", plane[0] = " + pointAndPlane.plane[0] + ", plane[1] = " + pointAndPlane.plane[1] + ", plane[2] = " + pointAndPlane.plane[2] + ", plane[3] = " + pointAndPlane.plane[3]);  
-
-		            if (pointAndPlane.correctValues) {
-		            	// alert(pointAndPlane.point);
-						// model.position.set(pointAndPlane.point[0], pointAndPlane.point[1], pointAndPlane.point[2]);
-			            THREE.WebAR.positionAndRotateObject3DWithPickingPointAndPlaneInPointCloud(pointAndPlane, model, 0.0);
-		            }
-		            else {
-		            	alert("Could not retrieve the correct point and plane.");
-		            }
-		        }
-		    });
-
-		    window.addEventListener("touchstart", function(event) {
-		    	if (event.changedTouches.length > 0)
-		    		lastX = event.changedTouches[0].pageX;
-		    });
-
-		    window.addEventListener("touchmove", function(event) {
-		        if (event.changedTouches.length > 0 && vrDisplay) {
-		        	var x = event.changedTouches[0].pageX;
-		        	var diffX = x - lastX;
-		        	lastX = x;
-		        	model.rotateZ(THREE.Math.degToRad(diffX));
-		        }
-		    });
 
 		</script>
 	</body>
