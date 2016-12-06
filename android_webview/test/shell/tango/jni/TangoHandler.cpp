@@ -22,6 +22,8 @@
 
 #include <cassert>
 
+#include <cmath>
+
 #include "TangoHandler.h"
 
 namespace {
@@ -248,6 +250,7 @@ void TangoHandler::releaseInstance()
 TangoHandler::TangoHandler(): connected(false)
 	, tangoConfig(nullptr)
 	, lastTangoImageBufferTimestamp(0)
+	, poseIsCorrect(false)
 	, latestTangoPointCloud(0)
 	, latestTangoPointCloudRetrieved(false)
 	, maxPointCloudVertexCount(0)
@@ -270,6 +273,7 @@ TangoHandler::TangoHandler(): connected(false)
     pthread_mutexattr_settype( &attr, PTHREAD_MUTEX_ERRORCHECK );
     // pthread_mutex_init( &pointCloudMutex, &attr );
     pthread_mutex_init( &cameraImageMutex, &attr );
+    pthread_mutex_init( &poseMutex, &attr );
     pthread_cond_init( &cameraImageCondition, NULL );
     pthread_mutexattr_destroy( &attr );	
 }
@@ -278,6 +282,7 @@ TangoHandler::~TangoHandler()
 {
     // pthread_mutex_destroy( &pointCloudMutex );
     pthread_mutex_destroy( &cameraImageMutex );
+    pthread_mutex_destroy( &poseMutex );
     pthread_cond_destroy( &cameraImageCondition );
 }
 
@@ -479,16 +484,36 @@ bool TangoHandler::getPose(TangoPoseData* tangoPoseData)
 	if (connected)
 	{
 
-		// LOGI("TangoHandler::getPose lastTangoImageBufferTimestamp = %lf", lastTangoImageBufferTimestamp);
+		double timestamp = hasLastTangoImageBufferTimestampChangedLately() ? lastTangoImageBufferTimestamp : 0.0;
+
+#ifdef TANGO_GET_POSE_ALONG_WITH_TEXTURE_UPDATE
+		pthread_mutex_lock( &poseMutex );
+		if (poseIsCorrect)
+		{
+			// LOGI("JUDAX: Getting the cached pose.");
+			*tangoPoseData = pose;
+		}
+		else 
+		{
+			timestamp = 0.0;
+#endif
+
+		// LOGI("JUDAX: TangoHandler::getPose timestamp = %lf", timestamp);
 
 		result = TangoSupport_getPoseAtTime(
-			0.0/*lastTangoImageBufferTimestamp*/, TANGO_COORDINATE_FRAME,
+			timestamp, TANGO_COORDINATE_FRAME,
 			TANGO_COORDINATE_FRAME_CAMERA_COLOR, TANGO_SUPPORT_ENGINE_OPENGL,
 			ROTATION_0, tangoPoseData) == TANGO_SUCCESS;
 		if (!result) 
 		{
-			LOGE("TangoHandler::getPose: Failed to get a the pose.");
+			LOGE("TangoHandler::getPose: Failed to get the pose.");
 		}
+
+#ifdef TANGO_GET_POSE_ALONG_WITH_TEXTURE_UPDATE
+		}
+		pthread_mutex_unlock( &poseMutex );
+#endif
+
 	}
 	return result;
 }
@@ -496,14 +521,16 @@ bool TangoHandler::getPose(TangoPoseData* tangoPoseData)
 bool TangoHandler::getPoseMatrix(float* matrix)
 {
 	bool result = false;
+
+	double timestamp = hasLastTangoImageBufferTimestampChangedLately() ? lastTangoImageBufferTimestamp : 0.0;
+
 	TangoMatrixTransformData tangoMatrixTransformData;
 	TangoSupport_getMatrixTransformAtTime(
-		lastTangoImageBufferTimestamp, TANGO_COORDINATE_FRAME,
+		timestamp, TANGO_COORDINATE_FRAME,
 		TANGO_COORDINATE_FRAME_CAMERA_COLOR, TANGO_SUPPORT_ENGINE_OPENGL,
 		TANGO_SUPPORT_ENGINE_OPENGL, ROTATION_0, &tangoMatrixTransformData);
 	if (tangoMatrixTransformData.status_code != TANGO_POSE_VALID) {
-		LOGE("TangoHandler::getPoseMatrix: Could not find a valid matrix transform at "
-		"time %lf for the color camera.", lastTangoImageBufferTimestamp);
+		LOGE("TangoHandler::getPoseMatrix: Could not find a valid matrix transform at time %lf for the color camera.", timestamp);
 		return result;
 	}
 	memcpy(matrix, tangoMatrixTransformData.matrix, 16 * sizeof(float));
@@ -516,10 +543,12 @@ uint32_t TangoHandler::getMaxPointCloudVertexCount() const
 	return maxPointCloudVertexCount;
 }
 
-bool TangoHandler::getPointCloud(uint32_t* count, float* xyz, bool justUpdatePointCloud)
+bool TangoHandler::getPointCloud(uint32_t* count, float* xyz, bool justUpdatePointCloud, unsigned pointsToSkip)
 {
 	// In case the point cloud retrieval fails, 0 points should be returned.
 	*count = 0;
+
+	pointsToSkip += 1;
 
 	if (connected)
 	{
@@ -533,7 +562,7 @@ bool TangoHandler::getPointCloud(uint32_t* count, float* xyz, bool justUpdatePoi
 
 			// It is possible that the transform matrix retrieval fails but the count is already there/correct.
 			// TODO: Soon, the transformation of the points should be done in a shader in the application side, so the matrix retrieval could inside this method will be avoided.
-			*count = latestTangoPointCloud->num_points;
+			*count = std::ceil(latestTangoPointCloud->num_points / pointsToSkip);
 
 			TangoMatrixTransformData depthCameraMatrixTransform;
 			TangoSupport_getMatrixTransformAtTime(
@@ -553,7 +582,7 @@ bool TangoHandler::getPointCloud(uint32_t* count, float* xyz, bool justUpdatePoi
 					uint32_t offset;
 					float* points = tangoPointCloud.points[0];
 					// float* points = latestTangoPointCloud->points[0];
-					for (uint32_t i = 0, j = 0; i < *count; i++, j += 3) 
+					for (uint32_t i = 0, j = 0; i < tangoPointCloud.num_points; i += pointsToSkip, j += 3) 
 					{
 						offset = i * 4;
 						xyz[j    ] = points[offset    ];
@@ -590,9 +619,11 @@ bool TangoHandler::getPickingPointAndPlaneInPointCloud(float x, float y, double*
 {
 	bool result = false;
 	
+	double timestamp = hasLastTangoImageBufferTimestampChangedLately() ? lastTangoImageBufferTimestamp : 0.0;
+
 	TangoPoseData tangoPose;
 	if (TangoSupport_calculateRelativePose(
-		lastTangoImageBufferTimestamp, TANGO_COORDINATE_FRAME_CAMERA_COLOR,
+		timestamp, TANGO_COORDINATE_FRAME_CAMERA_COLOR,
 		latestTangoPointCloud->timestamp, TANGO_COORDINATE_FRAME_CAMERA_DEPTH,
 		&tangoPose) != TANGO_SUCCESS) 
 	{
@@ -807,6 +838,33 @@ bool TangoHandler::updateCameraImageIntoTexture(uint32_t textureId)
 
 	TangoErrorType result = TangoService_updateTextureExternalOes(TANGO_CAMERA_COLOR, textureId, &lastTangoImageBufferTimestamp);
 
+	std::time(&lastTangoImagebufferTimestampTime);	
+
+	// LOGI("JUDAX: TangoHandler::updateCameraImageIntoTexture lastTangoImageBufferTimestamp = %lf", lastTangoImageBufferTimestamp);
+
+#ifdef TANGO_GET_POSE_ALONG_WITH_TEXTURE_UPDATE
+
+	pthread_mutex_lock( &poseMutex );
+
+	if (result == TANGO_SUCCESS)
+	{
+
+		result = TangoSupport_getPoseAtTime(
+			lastTangoImageBufferTimestamp, TANGO_COORDINATE_FRAME,
+			TANGO_COORDINATE_FRAME_CAMERA_COLOR, TANGO_SUPPORT_ENGINE_OPENGL,
+			ROTATION_0, &pose);
+		if (result != TANGO_SUCCESS) 
+		{
+			LOGE("TangoHandler::getPose: Failed to get a the pose.");
+		}
+	}
+
+	poseIsCorrect = result == TANGO_SUCCESS;	
+
+	pthread_mutex_unlock( &poseMutex );
+
+#endif
+
 	return result == TANGO_SUCCESS;
 }
 
@@ -869,6 +927,13 @@ void TangoHandler::onCameraFrameAvailable(const TangoImageBuffer* buffer)
 int TangoHandler::getSensorOrientation() const
 {
 	return sensorOrientation;
+}
+
+bool TangoHandler::hasLastTangoImageBufferTimestampChangedLately()
+{
+	std::time_t currentTime;
+	std::time(&currentTime);
+	return std::difftime(currentTime, lastTangoImagebufferTimestampTime) < 1.0;
 }
 
 }  // namespace tango_chromium
