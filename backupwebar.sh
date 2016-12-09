@@ -37,6 +37,11 @@ cp src/gpu/command_buffer/service/gles2_cmd_decoder_passthrough_doers.cc Backup_
 # NOTE: Could copy only the elements that have been changed.
 cp -r src/android_webview/test/shell Backup_WebAR/android_webview/test
 cp src/android_webview/test/BUILD.gn Backup_WebAR/android_webview/test
+# Remove the temporary files
+rm -rf Backup_WebAR/android_webview/test/shell/tango/libs
+rm -rf Backup_WebAR/android_webview/test/shell/tango/obj
+rm -rf Backup_WebAR/android_webview/test/shell/tango/jni/objs
+rm -rf Backup_WebAR/android_webview/test/shell/VRWebGL
 
 # Build script, notes, backup script, examples, ... 
 cp src/build_install_run.sh Backup_WebAR
