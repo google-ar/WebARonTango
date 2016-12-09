@@ -253,16 +253,43 @@ In order to build the documentation you are currently reading, there are some st
 
 ### A basic overview of the WebAR JS API
 
-This implementation of WebAR is an addition of some features on top of the WebVR API v1.0 specification. AR and VR share many common concepts like tracking and even a see through camera or a depth sensor can be found in both AR and VR devices. This API is still experimental and it is just a proposal os a possible solution.
+This implementation of WebAR is an addition of some features on top of the [WebVR API v1.0 specification](https://webvr.info/). AR and VR share many common concepts like tracking and even a see through camera or a depth sensor can be found in both AR and VR devices. This API is still experimental and it is just a proposal os a possible solution.
 
 The main point of entry for the WebAR API is still the VRDisplay, similarly as in  WebVR. Actually, if an AR device such as Tango (which this implementation is based on) wants to be used for 6DOF (6 Degrees Of Freedom) VR experiences, the WebVR API as is could be used. The getPose call will correctly return the position and orientation acquired from the underlying hardware implementation. 
 
 But there are some new features that the WebVR v1.0 spec does not include and that provide additional functionality based on the AR underlying platform. These new characteristics can be identified using the VRDisplayCapabilities class that now exposes 2 new flags to specify if the VRDisplay is able to:
 
-1. `hasPointCloud`: Retrieve a cloud of points acquired by a depth sensing device.
-2. `hasSeeThroughCamera`: Use an undelying see through camera to show the real world.
+* [hasPointCloud](./VRDisplayCapabilities.html): Retrieve a cloud of points acquired by a depth sensing device.
+* [hasSeeThroughCamera](./VRDisplayCapabilities.html): Use an undelying see through camera to show the real world.
 
+If any of these flags are true, a new set of functionalities and APIs can be used always using the [VRDisplay](./VRDisplay.html) as a starting point to retrieve them. The new methods are:
 
+* [getMaxPointCloudVertexCount](./VRDisplay.html): Provides the maximum number of points in the point cloud.
+* [getPointCloud](./VRDisplay.html): Updates and/or retrieves the points in the [point cloud](./VRPointCloud.html).
+* [getPickingPointAndPlaneInPointCloud](./VRDisplay.html): Allows to calculate a colission [point and plane](./VRPickingPointAndPlane.html) between a 2D position and a ray casted on to the point cloud.
+* [getSeeThroughCamera](./VRDisplay.html): Retrieves a structure that represents the [see through camera](VRSeeThroughCamera.html) so it can be used for both correct fustrum calculation and for rendering the video feed.
+
+At a glance it is obvious that some new data structures/classes have been created to support some new functionalities as the underlying Tango platform allows new types of interactions/features. Most of the calls are pretty straightforward and the documentation might provide some idea of how they could be integrated in any or nex web application. The one that might need a bit more explanation is the VRSeeThroughCamera class as it even provides some useful information (what are called the camera intrinsics), it still does not expose how it could be used to render the camera feed in an application. In the current implementation, the approach that has been selected is to create a new overloaded function in the [WebGL API](https://www.khronos.org/registry/webgl/specs/1.0). The [WebGLRenderingContext](https://www.khronos.org/registry/webgl/specs/1.0/#5.14) now exposes the following function:
+
+```
+void texImage2D(GLenum target, GLint level, GLenum internalformat, GLenum format, GLenum type, VRSeeThroughCamera? source);
+```
+
+This approach has some benefits:
+
+1. There is no need to retrieve the pixels of the image.
+2. There is full control over the camera image in WebGL (in a fragment shader for example).
+3. It uses a common way to handle video content (texImage2D already has a HTMLVideoElement overload).
+
+But the current implementation has a problem too as the way the camera image is handled inside the texImage2D call requires to use an OpenGL extension that is not available in WebGL at the moment. The Chromium modification that you can find in the repository includes the activation of this extension internally, but you also need to recall that you will need to use the extension in your shader:
+
+```
+#extension GL_OES_EGL_image_external : require
+...
+
+uniform samplerExternalOES map;
+...
+```
 
 ## Some notes about developing WebAR apps using ThreeJS
 
