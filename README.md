@@ -7,12 +7,12 @@ This project's goal is to provide an initial implementation of a possible Augmen
 This WebAR specification and implementation is completely experimental so use it at your own risk. There is no guarantee that any of this code will ever make it to Chromium and even less to Chrome but it will provide the possibitliy to use the WebVR API on an actual Android application if needed. The whole implementation is built on the Tango device and SDK for the moment.
 
 This documentation is divided in 2 sections: 
-1. **How to build your own version of Chromium with WebAR** 
-2. **Using the new VR/AR JavaScript APIs**
+1. <a href="#how_to_build_your_own_version_of_chromium_with_webar"><b>How to build your own version of Chromium with WebAR</b></a> 
+2. <a href="#using_the_new_vr_ar_javascript_apis"><b>Using the new VR/AR JavaScript APIs</b></a>
 
 This way, anyone that wants to build and modify his/her own version of chromium, will be able to do so and those who just want to install a prebuilt version of Chromium and start using it right away, will also be able to do it.
 
-## 1. How to build your own version of Chromium with WebAR
+## <a name="how_to_build_your_own_version_of_chromium_with_webar"></a> 1. How to build your own version of Chromium with WebAR
 
 This repository includes only the modifications on the Chromium repository that allows to add Tango/WebAR capabilities into JavaScript. Chromium is a complex project with gigabytes of source code, resources and third party libraries. This repository does not include all Chromium but just the files necessary to make the changes to it in order to enable WebAR, so you will also have to checout the Chromium repository (how to do so will be explained in this tutorial). 
 
@@ -242,7 +242,7 @@ Chromium webview v54.0.2796.3 seems to crash pretty consistently on some Android
 	    //            touch_start_location_).LengthSquared(),
 	    //           kMaxConceivablePlatformSlopRegionLengthDipsSquared);
 
-## Using the new VR/AR JavaScript APIs
+## <a name="using_the_new_vr_ar_javascript_apis"></a> Using the new VR/AR JavaScript APIs
 
 ### Build the documentation
 
