@@ -54,14 +54,12 @@ Open a terminal window to be able
 	1. `git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git`
 	2. `export PATH=$PATH:/path/to/depot_tools`
  2. `$ mkdir ~/chromium && cd ~/chromium`
- 3. `~/chromium$ fetch --nohooks android`
- 	NOTE: This process may take quite some time (an hour?)
+ 3. `~/chromium$ fetch --nohooks android` NOTE: This process may take quite some time (an hour?)
  4. Verify that the .gclient file has `target_os = ['android']` in it
- 5. `~/chromium/src$ gclient sync`
+ 5. `cd src` and then `~/chromium/src$ gclient sync`.  NOTE: This process may take some time too.
  6. Checkout a specific tag to a new branch. The tag is `54.0.2796.3`. The name of the branch to checkout could be `webar_54.0.2796.3` for example.
  	`~/chromium/src$ git checkout -b webar_54.0.2796.3 54.0.2796.3`
- 7. Create a folder for the final product compilation:
- 	~/chromium/src$ mkdir -p out/webar_54.0.2796.3
+ 7. Create a folder for the final product compilation: `~/chromium/src$ mkdir -p out/webar_54.0.2796.3`
  8. Create and edit a new file `out/webar_54.0.2796.3/args.gn` with the command `~/chromium/src$ gedit out/webar_54.0.2796.3/args.gn` and copy and paste the following content in it:
 	```
 	target_os = "android"
