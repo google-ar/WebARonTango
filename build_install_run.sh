@@ -33,7 +33,7 @@ if [ $? -eq 0 ]; then
 	if [ $? -eq 0 ]; then
 		echo "Regenerated!"
 		echo "Building $APK_TYPE for Android at 'out/$BRANCH_NAME' folder..."
-		ninja -C "out/$BRANCH_NAME" "$APK_TYPE"
+		ninja -C "out/$BRANCH_NAME" -j 320 "$APK_TYPE"
 		if [ $? -eq 0 ]; then
 			echo "Built!"
 			echo "Installing $APK_TYPE on Android device..."
