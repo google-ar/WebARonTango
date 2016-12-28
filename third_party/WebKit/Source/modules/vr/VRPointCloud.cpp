@@ -49,6 +49,7 @@ void VRPointCloud::setPointCloud(device::mojom::blink::VRPointCloudPtr& pointClo
 	{
 		if (!m_vertices)
 		{
+			// The retrieved VRPointCloudPtr creates a vertices array of the maximum size (check the GetPointCloud method in the tango_vr_device.cc file)
 			m_vertices = DOMFloat32Array::create(pointCloudPtr->vertices.value().size());
 			std::fill_n(m_vertices->data(), pointCloudPtr->vertices.value().size(), std::numeric_limits<float>::max());
 			// memset(m_vertices->data(), FLT_MAX, pointCloudPtr->vertices.size() * sizeof(float));
