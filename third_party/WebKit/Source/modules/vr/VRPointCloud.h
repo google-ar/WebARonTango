@@ -21,7 +21,7 @@ public:
     unsigned int vertexCount() const;
     DOMFloat32Array* vertices() const;
 
-    void setPointCloud(device::blink::VRPointCloudPtr& pointCloudPtr);
+    void setPointCloud(device::mojom::blink::VRPointCloudPtr& pointCloudPtr);
 
     DECLARE_VIRTUAL_TRACE()
 

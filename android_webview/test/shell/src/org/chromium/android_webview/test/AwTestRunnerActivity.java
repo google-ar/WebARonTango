@@ -7,6 +7,7 @@ package org.chromium.android_webview.test;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.LinearLayout;
@@ -30,7 +31,9 @@ public class AwTestRunnerActivity extends Activity {
 
         AwShellResourceProvider.registerResources(this);
         ContextUtils.initApplicationContext(getApplicationContext());
+        StrictMode.ThreadPolicy oldPolicy = StrictMode.allowThreadDiskReads();
         AwBrowserProcess.loadLibrary();
+        StrictMode.setThreadPolicy(oldPolicy);
 
         mLinearLayout = new LinearLayout(this);
         mLinearLayout.setOrientation(LinearLayout.VERTICAL);

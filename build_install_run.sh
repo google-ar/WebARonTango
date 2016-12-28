@@ -1,3 +1,4 @@
+clear; reset;
 echo "Rebuilding libtango.so..."
 cd android_webview/test/shell/tango/jni
 ./ndkbuild.sh

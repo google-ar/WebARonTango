@@ -63,7 +63,7 @@ long VRSeeThroughCamera::orientation()
 	return m_vrDisplay->getSeeThroughCameraOrientation();
 }
 
-void VRSeeThroughCamera::setSeeThroughCamera(const device::blink::VRSeeThroughCameraPtr& seeThroughCameraPtr)
+void VRSeeThroughCamera::setSeeThroughCamera(const device::mojom::blink::VRSeeThroughCameraPtr& seeThroughCameraPtr)
 {
 	m_width = seeThroughCameraPtr->width;
 	m_height = seeThroughCameraPtr->height;

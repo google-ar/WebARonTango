@@ -5,44 +5,65 @@
 #ifndef DEVICE_VR_VR_DEVICE_H
 #define DEVICE_VR_VR_DEVICE_H
 
+#include "base/callback.h"
 #include "base/macros.h"
 #include "device/vr/vr_export.h"
 #include "device/vr/vr_service.mojom.h"
 
-namespace blink {
-struct WebHMDSensorState;
-}
-
-namespace ui {
-class BaseWindow;
-}
-
 namespace device {
 
-class VRDeviceProvider;
+class VRDisplayImpl;
 
 const unsigned int VR_DEVICE_LAST_ID = 0xFFFFFFFF;
 
-class VRDevice {
+class DEVICE_VR_EXPORT VRDevice {
  public:
-  DEVICE_VR_EXPORT explicit VRDevice(VRDeviceProvider* provider);
-  DEVICE_VR_EXPORT virtual ~VRDevice();
+  VRDevice();
+  virtual ~VRDevice();
 
-  DEVICE_VR_EXPORT VRDeviceProvider* provider() const { return provider_; }
-  DEVICE_VR_EXPORT unsigned int id() const { return id_; }
+  unsigned int id() const { return id_; }
 
-  virtual VRDisplayPtr GetVRDevice() = 0;
-  virtual VRPosePtr GetPose() = 0;
+  virtual mojom::VRDisplayInfoPtr GetVRDevice() = 0;
+  virtual mojom::VRPosePtr GetPose() = 0;
   virtual void ResetPose() = 0;
   virtual unsigned GetMaxPointCloudVertexCount() = 0;
-  virtual VRPointCloudPtr GetPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip) = 0;
-  virtual VRSeeThroughCameraPtr GetSeeThroughCamera() = 0;
-  virtual VRPickingPointAndPlanePtr GetPickingPointAndPlaneInPointCloud(float x, float y) = 0;
+  virtual mojom::VRPointCloudPtr GetPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip) = 0;
+  virtual mojom::VRSeeThroughCameraPtr GetSeeThroughCamera() = 0;
+  virtual mojom::VRPickingPointAndPlanePtr GetPickingPointAndPlaneInPointCloud(float x, float y) = 0;
   virtual mojo::Array<float> GetPoseMatrix() = 0;
   virtual int GetSeeThroughCameraOrientation() = 0;
 
+  virtual void RequestPresent(const base::Callback<void(bool)>& callback) = 0;
+  virtual void SetSecureOrigin(bool secure_origin) = 0;
+  virtual void ExitPresent() = 0;
+  virtual void SubmitFrame(mojom::VRPosePtr pose) = 0;
+  virtual void UpdateLayerBounds(mojom::VRLayerBoundsPtr left_bounds,
+                                 mojom::VRLayerBoundsPtr right_bounds) = 0;
+
+  virtual void AddDisplay(VRDisplayImpl* display);
+  virtual void RemoveDisplay(VRDisplayImpl* display);
+
+  virtual bool IsAccessAllowed(VRDisplayImpl* display);
+  virtual bool CheckPresentingDisplay(VRDisplayImpl* display);
+
+  virtual void OnChanged();
+  virtual void OnExitPresent();
+  virtual void OnBlur();
+  virtual void OnFocus();
+  virtual void OnActivate(mojom::VRDisplayEventReason reason);
+  virtual void OnDeactivate(mojom::VRDisplayEventReason reason);
+
+ protected:
+  friend class VRDisplayImpl;
+  friend class VRDisplayImplTest;
+
+  void SetPresentingDisplay(VRDisplayImpl* display);
+
  private:
-  VRDeviceProvider* provider_;
+  std::set<VRDisplayImpl*> displays_;
+
+  VRDisplayImpl* presenting_display_;
+
   unsigned int id_;
 
   static unsigned int next_id_;

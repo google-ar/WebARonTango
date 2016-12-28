@@ -10,7 +10,7 @@ GL_APICALL void         GL_APIENTRY glBindAttribLocation (GLidProgram program, G
 GL_APICALL void         GL_APIENTRY glBindBuffer (GLenumBufferTarget target, GLidBindBuffer buffer);
 GL_APICALL void         GL_APIENTRY glBindBufferBase (GLenumIndexedBufferTarget target, GLuint index, GLidBindBuffer buffer);
 GL_APICALL void         GL_APIENTRY glBindBufferRange (GLenumIndexedBufferTarget target, GLuint index, GLidBindBuffer buffer, GLintptrNotNegative offset, GLsizeiptr size);
-GL_APICALL void         GL_APIENTRY glBindFramebuffer (GLenumFrameBufferTarget target, GLidBindFramebuffer framebuffer);
+GL_APICALL void         GL_APIENTRY glBindFramebuffer (GLenumFramebufferTarget target, GLidBindFramebuffer framebuffer);
 GL_APICALL void         GL_APIENTRY glBindRenderbuffer (GLenumRenderBufferTarget target, GLidBindRenderbuffer renderbuffer);
 GL_APICALL void         GL_APIENTRY glBindSampler (GLuint unit, GLidBindSampler sampler);
 GL_APICALL void         GL_APIENTRY glBindTexture (GLenumTextureBindTarget target, GLidBindTexture texture);
@@ -27,7 +27,7 @@ GL_APICALL void         GL_APIENTRY glBlendFunc (GLenumSrcBlendFactor sfactor, G
 GL_APICALL void         GL_APIENTRY glBlendFuncSeparate (GLenumSrcBlendFactor srcRGB, GLenumDstBlendFactor dstRGB, GLenumSrcBlendFactor srcAlpha, GLenumDstBlendFactor dstAlpha);
 GL_APICALL void         GL_APIENTRY glBufferData (GLenumBufferTarget target, GLsizeiptr size, const void* data, GLenumBufferUsage usage);
 GL_APICALL void         GL_APIENTRY glBufferSubData (GLenumBufferTarget target, GLintptrNotNegative offset, GLsizeiptr size, const void* data);
-GL_APICALL GLenum       GL_APIENTRY glCheckFramebufferStatus (GLenumFrameBufferTarget target);
+GL_APICALL GLenum       GL_APIENTRY glCheckFramebufferStatus (GLenumFramebufferTarget target);
 GL_APICALL void         GL_APIENTRY glClear (GLbitfield mask);
 GL_APICALL void         GL_APIENTRY glClearBufferfi (GLenumBufferfi buffer, GLint drawbuffers, GLfloat depth, GLint stencil);
 GL_APICALL void         GL_APIENTRY glClearBufferfv (GLenumBufferfv buffer, GLint drawbuffers, const GLfloat* value);
@@ -40,9 +40,9 @@ GL_APICALL GLenum       GL_APIENTRY glClientWaitSync (GLsync sync, GLbitfieldSyn
 GL_APICALL void         GL_APIENTRY glColorMask (GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
 GL_APICALL void         GL_APIENTRY glCompileShader (GLidShader shader);
 GL_APICALL void         GL_APIENTRY glCompressedTexImage2D (GLenumTextureTarget target, GLint level, GLenumCompressedTextureFormat internalformat, GLsizei width, GLsizei height, GLintTextureBorder border, GLsizei imageSize, const voidOptional* data);
-GL_APICALL void         GL_APIENTRY glCompressedTexSubImage2D (GLenumTextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenumCompressedTextureFormat format, GLsizei imageSize, const void* data);
+GL_APICALL void         GL_APIENTRY glCompressedTexSubImage2D (GLenumTextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenumCompressedTextureFormat format, GLsizei imageSize, const voidOptional* data);
 GL_APICALL void         GL_APIENTRY glCompressedTexImage3D (GLenumTexture3DTarget target, GLint level, GLenumCompressedTextureFormat internalformat, GLsizei width, GLsizei height, GLsizei depth, GLintTextureBorder border, GLsizei imageSize, const voidOptional* data);
-GL_APICALL void         GL_APIENTRY glCompressedTexSubImage3D (GLenumTexture3DTarget target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth,  GLenumCompressedTextureFormat format, GLsizei imageSize, const void* data);
+GL_APICALL void         GL_APIENTRY glCompressedTexSubImage3D (GLenumTexture3DTarget target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth,  GLenumCompressedTextureFormat format, GLsizei imageSize, const voidOptional* data);
 GL_APICALL void         GL_APIENTRY glCopyBufferSubData (GLenumBufferTarget readtarget, GLenumBufferTarget writetarget, GLintptrNotNegative readoffset, GLintptrNotNegative writeoffset, GLsizeiptr size);
 GL_APICALL void         GL_APIENTRY glCopyTexImage2D (GLenumTextureTarget target, GLint level, GLenumTextureInternalFormat internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLintTextureBorder border);
 GL_APICALL void         GL_APIENTRY glCopyTexSubImage2D (GLenumTextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
@@ -73,9 +73,9 @@ GL_APICALL void         GL_APIENTRY glEnableVertexAttribArray (GLuint index);
 GL_APICALL GLsync       GL_APIENTRY glFenceSync (GLenumSyncCondition condition, GLbitfieldSyncFlags flags);
 GL_APICALL void         GL_APIENTRY glFinish (void);
 GL_APICALL void         GL_APIENTRY glFlush (void);
-GL_APICALL void         GL_APIENTRY glFramebufferRenderbuffer (GLenumFrameBufferTarget target, GLenumAttachment attachment, GLenumRenderBufferTarget renderbuffertarget, GLidRenderbuffer renderbuffer);
-GL_APICALL void         GL_APIENTRY glFramebufferTexture2D (GLenumFrameBufferTarget target, GLenumAttachment attachment, GLenumTextureTarget textarget, GLidTexture texture, GLint level);
-GL_APICALL void         GL_APIENTRY glFramebufferTextureLayer (GLenumFrameBufferTarget target, GLenumAttachment attachment, GLidTexture texture, GLint level, GLint layer);
+GL_APICALL void         GL_APIENTRY glFramebufferRenderbuffer (GLenumFramebufferTarget target, GLenumAttachment attachment, GLenumRenderBufferTarget renderbuffertarget, GLidRenderbuffer renderbuffer);
+GL_APICALL void         GL_APIENTRY glFramebufferTexture2D (GLenumFramebufferTarget target, GLenumAttachment attachment, GLenumTextureTarget textarget, GLidTexture texture, GLint level);
+GL_APICALL void         GL_APIENTRY glFramebufferTextureLayer (GLenumFramebufferTarget target, GLenumAttachment attachment, GLidTexture texture, GLint level, GLint layer);
 GL_APICALL void         GL_APIENTRY glFrontFace (GLenumFaceMode mode);
 GL_APICALL void         GL_APIENTRY glGenBuffers (GLsizeiNotNegative n, GLuint* buffers);
 GL_APICALL void         GL_APIENTRY glGenerateMipmap (GLenumTextureBindTarget target);
@@ -97,7 +97,7 @@ GL_APICALL void         GL_APIENTRY glGetBufferParameteriv (GLenumBufferTarget t
 GL_APICALL GLenum       GL_APIENTRY glGetError (void);
 GL_APICALL void         GL_APIENTRY glGetFloatv (GLenumGLState pname, GLfloat* params);
 GL_APICALL GLint        GL_APIENTRY glGetFragDataLocation (GLidProgram program, const char* name);
-GL_APICALL void         GL_APIENTRY glGetFramebufferAttachmentParameteriv (GLenumFrameBufferTarget target, GLenumAttachment attachment, GLenumFrameBufferParameter pname, GLint* params);
+GL_APICALL void         GL_APIENTRY glGetFramebufferAttachmentParameteriv (GLenumFramebufferTarget target, GLenumAttachmentQuery attachment, GLenumFramebufferParameter pname, GLint* params);
 GL_APICALL void         GL_APIENTRY glGetInteger64v (GLenumGLState pname, GLint64* params);
 GL_APICALL void         GL_APIENTRY glGetIntegeri_v (GLenumIndexedGLState pname, GLuint index, GLint* data);
 GL_APICALL void         GL_APIENTRY glGetInteger64i_v (GLenumIndexedGLState pname, GLuint index, GLint64* data);
@@ -130,8 +130,8 @@ GL_APICALL void         GL_APIENTRY glGetVertexAttribIiv (GLuint index, GLenumVe
 GL_APICALL void         GL_APIENTRY glGetVertexAttribIuiv (GLuint index, GLenumVertexAttribute pname, GLuint* params);
 GL_APICALL void         GL_APIENTRY glGetVertexAttribPointerv (GLuint index, GLenumVertexPointer pname, void** pointer);
 GL_APICALL void         GL_APIENTRY glHint (GLenumHintTarget target, GLenumHintMode mode);
-GL_APICALL void         GL_APIENTRY glInvalidateFramebuffer (GLenumFrameBufferTarget target, GLsizei count, const GLenum* attachments);
-GL_APICALL void         GL_APIENTRY glInvalidateSubFramebuffer (GLenumFrameBufferTarget target, GLsizei count, const GLenum* attachments, GLint x, GLint y, GLsizei width, GLsizei height);
+GL_APICALL void         GL_APIENTRY glInvalidateFramebuffer (GLenumFramebufferTarget target, GLsizei count, const GLenum* attachments);
+GL_APICALL void         GL_APIENTRY glInvalidateSubFramebuffer (GLenumFramebufferTarget target, GLsizei count, const GLenum* attachments, GLint x, GLint y, GLsizei width, GLsizei height);
 GL_APICALL GLboolean    GL_APIENTRY glIsBuffer (GLidBuffer buffer);
 GL_APICALL GLboolean    GL_APIENTRY glIsEnabled (GLenumCapability cap);
 GL_APICALL GLboolean    GL_APIENTRY glIsFramebuffer (GLidFramebuffer framebuffer);
@@ -234,7 +234,7 @@ GL_APICALL void         GL_APIENTRY glWaitSync (GLsync sync, GLbitfieldSyncFlush
 GL_APICALL void         GL_APIENTRY glBlitFramebufferCHROMIUM (GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenumBlitFilter filter);
 GL_APICALL void         GL_APIENTRY glRenderbufferStorageMultisampleCHROMIUM (GLenumRenderBufferTarget target, GLsizei samples, GLenumRenderBufferFormat internalformat, GLsizei width, GLsizei height);
 GL_APICALL void         GL_APIENTRY glRenderbufferStorageMultisampleEXT (GLenumRenderBufferTarget target, GLsizei samples, GLenumRenderBufferFormat internalformat, GLsizei width, GLsizei height);
-GL_APICALL void         GL_APIENTRY glFramebufferTexture2DMultisampleEXT (GLenumFrameBufferTarget target, GLenumAttachment attachment, GLenumTextureTarget textarget, GLidTexture texture, GLint level, GLsizei samples);
+GL_APICALL void         GL_APIENTRY glFramebufferTexture2DMultisampleEXT (GLenumFramebufferTarget target, GLenumAttachment attachment, GLenumTextureTarget textarget, GLidTexture texture, GLint level, GLsizei samples);
 GL_APICALL void         GL_APIENTRY glTexStorage2DEXT (GLenumTextureBindTarget target, GLsizei levels, GLenumTextureInternalFormatStorage internalFormat, GLsizei width, GLsizei height);
 GL_APICALL void         GL_APIENTRY glGenQueriesEXT (GLsizeiNotNegative n, GLuint* queries);
 GL_APICALL void         GL_APIENTRY glDeleteQueriesEXT (GLsizeiNotNegative n, const GLuint* queries);
@@ -269,6 +269,7 @@ GL_APICALL void*        GL_APIENTRY glMapBufferSubDataCHROMIUM (GLuint target, G
 GL_APICALL void         GL_APIENTRY glUnmapBufferSubDataCHROMIUM (const void* mem);
 GL_APICALL void*        GL_APIENTRY glMapBufferRange (GLenumBufferTarget target, GLintptrNotNegative offset, GLsizeiptr size, GLbitfieldMapBufferAccess access);
 GL_APICALL GLboolean    GL_APIENTRY glUnmapBuffer (GLenumBufferTarget target);
+GL_APICALL void         GL_APIENTRY glFlushMappedBufferRange (GLenumBufferTarget target, GLintptrNotNegative offset, GLsizeiptr size);
 GL_APICALL void*        GL_APIENTRY glMapTexSubImage2DCHROMIUM (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, GLenum access);
 GL_APICALL void         GL_APIENTRY glUnmapTexSubImage2DCHROMIUM (const void* mem);
 GL_APICALL void         GL_APIENTRY glResizeCHROMIUM (GLuint width, GLuint height, GLfloat scale_factor, GLboolean alpha);
@@ -295,12 +296,13 @@ GL_APICALL void         GL_APIENTRY glProduceTextureCHROMIUM (GLenumTextureBindT
 GL_APICALL void         GL_APIENTRY glProduceTextureDirectCHROMIUM (GLidBindTexture texture, GLenumTextureBindTarget target, const GLbyte* mailbox);
 GL_APICALL void         GL_APIENTRY glConsumeTextureCHROMIUM (GLenumTextureBindTarget target, const GLbyte* mailbox);
 GL_APICALL GLuint       GL_APIENTRY glCreateAndConsumeTextureCHROMIUM (GLenumTextureBindTarget target, const GLbyte* mailbox);
+GL_APICALL void         GL_APIENTRY glCreateAndConsumeTextureINTERNAL (GLenumTextureBindTarget target, GLuint texture, const GLbyte* mailbox);
 GL_APICALL void         GL_APIENTRY glBindUniformLocationCHROMIUM (GLidProgram program, GLint location, const char* name);
 GL_APICALL void         GL_APIENTRY glBindTexImage2DCHROMIUM (GLenumTextureBindTarget target, GLint imageId);
 GL_APICALL void         GL_APIENTRY glReleaseTexImage2DCHROMIUM (GLenumTextureBindTarget target, GLint imageId);
 GL_APICALL void         GL_APIENTRY glTraceBeginCHROMIUM (const char* category_name, const char* trace_name);
 GL_APICALL void         GL_APIENTRY glTraceEndCHROMIUM (void);
-GL_APICALL void         GL_APIENTRY glDiscardFramebufferEXT (GLenum target, GLsizei count, const GLenum* attachments);
+GL_APICALL void         GL_APIENTRY glDiscardFramebufferEXT (GLenumFramebufferTarget target, GLsizei count, const GLenum* attachments);
 GL_APICALL void         GL_APIENTRY glLoseContextCHROMIUM (GLenumResetStatus current, GLenumResetStatus other);
 GL_APICALL GLuint64     GL_APIENTRY glInsertFenceSyncCHROMIUM (void);
 GL_APICALL void         GL_APIENTRY glGenSyncTokenCHROMIUM (GLuint64 fence_sync, GLbyte* sync_token);
@@ -310,7 +312,8 @@ GL_APICALL void         GL_APIENTRY glWaitSyncTokenCHROMIUM (const GLbyte* sync_
 GL_APICALL void         GL_APIENTRY glDrawBuffersEXT (GLsizei count, const GLenum* bufs);
 GL_APICALL void         GL_APIENTRY glDiscardBackbufferCHROMIUM (void);
 GL_APICALL void         GL_APIENTRY glScheduleOverlayPlaneCHROMIUM (GLint plane_z_order, GLenum plane_transform, GLuint overlay_texture_id, GLint bounds_x, GLint bounds_y, GLint bounds_width, GLint bounds_height, GLfloat uv_x, GLfloat uv_y, GLfloat uv_width, GLfloat uv_height);
-GL_APICALL void         GL_APIENTRY glScheduleCALayerCHROMIUM (GLuint contents_texture_id, const GLfloat* contents_rect, GLfloat opacity, GLuint background_color, GLuint edge_aa_mask, const GLfloat* bounds_rect, GLboolean is_clipped, const GLfloat* clip_rect, GLint sorting_context_id, const GLfloat* transform, GLuint filter);
+GL_APICALL void         GL_APIENTRY glScheduleCALayerSharedStateCHROMIUM (GLfloat opacity, GLboolean is_clipped, const GLfloat* clip_rect, GLint sorting_context_id, const GLfloat* transform);
+GL_APICALL void         GL_APIENTRY glScheduleCALayerCHROMIUM (GLuint contents_texture_id, const GLfloat* contents_rect, GLuint background_color, GLuint edge_aa_mask, const GLfloat* bounds_rect, GLuint filter);
 GL_APICALL void         GL_APIENTRY glScheduleCALayerInUseQueryCHROMIUM (GLsizei count, const GLuint* textures);
 GL_APICALL void         GL_APIENTRY glCommitOverlayPlanesCHROMIUM (void);
 GL_APICALL void         GL_APIENTRY glSwapInterval (GLint interval);
@@ -341,6 +344,7 @@ GL_APICALL void         GL_APIENTRY glStencilThenCoverFillPathInstancedCHROMIUM 
 GL_APICALL void         GL_APIENTRY glStencilThenCoverStrokePathInstancedCHROMIUM (GLsizei numPaths, GLenum pathNameType, const GLvoid* paths, GLuint pathBase, GLint reference, GLuint mask, GLenumPathInstancedCoverMode coverMode, GLenumPathTransformType transformType, const GLfloat* transformValues);
 GL_APICALL void         GL_APIENTRY glBindFragmentInputLocationCHROMIUM (GLidProgram program, GLint location, const char* name);
 GL_APICALL void         GL_APIENTRY glProgramPathFragmentInputGenCHROMIUM (GLidProgram program, GLint location, GLenumPathFragmentInputGenMode genMode, GLint components, const GLfloat* coeffs);
+GL_APICALL void*        GL_APIENTRY glGetBufferSubDataAsyncCHROMIUM (GLenumBufferTarget target, GLintptrNotNegative offset, GLsizeiptr size);
 
 
 // Extension CHROMIUM_framebuffer_mixed_samples
@@ -361,4 +365,7 @@ GL_APICALL void         GL_APIENTRY glBindFragDataLocationEXT (GLidProgram progr
 GL_APICALL GLint        GL_APIENTRY glGetFragDataIndexEXT (GLidProgram program, const char* name);
 
 // Extension CHROMIUM_stream_texture_matrix
-GL_APICALL void         GL_APIENTRY glUniformMatrix4fvStreamTextureMatrixCHROMIUM (GLintUniformLocation location, GLbooleanFalseOnly transpose, const GLfloat* default_value);
+GL_APICALL void         GL_APIENTRY glUniformMatrix4fvStreamTextureMatrixCHROMIUM (GLintUniformLocation location, GLbooleanFalseOnly transpose, const GLfloat* transform);
+GL_APICALL void         GL_APIENTRY glOverlayPromotionHintCHROMIUM (GLidBindTexture texture, GLboolean promotion_hint, GLint display_x, GLint display_y);
+
+GL_APICALL void         GL_APIENTRY glSwapBuffersWithDamageCHROMIUM (GLint x, GLint y, GLint width, GLint height);

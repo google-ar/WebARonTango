@@ -22,6 +22,7 @@ import android.content.ServiceConnection;
 import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
+import android.annotation.SuppressLint;
 
 import java.io.File;
 
@@ -75,6 +76,7 @@ public class TangoInitializationHelper {
    *
    * @return returns the loaded architecture id.
    */
+  @SuppressLint({"SdCardPath", "UnsafeDynamicallyLoadedCode"})
   public static final int loadTangoSharedLibrary() {
     int loadedSoId = ARCH_ERROR;
     String basePath = "/data/data/com.google.tango/libfiles/";

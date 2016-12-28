@@ -7,10 +7,12 @@ enum VREye {
     "right"
 };
 
-// http://mozvr.github.io/webvr-spec/webvr.html#vrdisplay
+// https://w3c.github.io/webvr/#interface-vrdisplay
 [
-    RuntimeEnabled=WebVR
-] interface VRDisplay {
+    ActiveScriptWrappable,
+    DependentLifetime,
+    OriginTrialEnabled=WebVR
+] interface VRDisplay : EventTarget {
     // An identifier for this device unique across VRDisplays.
     readonly attribute unsigned long displayId;
 
@@ -25,13 +27,16 @@ enum VREye {
 
     readonly attribute VRStageParameters stageParameters;
 
-    VRPose getPose();
-    VRPose getImmediatePose();
+    boolean getFrameData(VRFrameData frameData);
+    [DeprecateAs=VRDeprecatedGetPose] VRPose getPose();
     void resetPose();
     long getMaxPointCloudVertexCount();
     VRPointCloud getPointCloud(boolean justUpdatePointCloud, unsigned long pointsToSkip);
     VRPickingPointAndPlane getPickingPointAndPlaneInPointCloud(float x, float y);
     VRSeeThroughCamera getSeeThroughCamera();
+
+    attribute double depthNear;
+    attribute double depthFar;
 
     VREyeParameters getEyeParameters(VREye whichEye);
 
@@ -52,7 +57,7 @@ enum VREye {
     // in the HMD. Calling this function has the same effect on the source
     // canvas as any other operation that uses its source image, and canvases
     // created without preserveDrawingBuffer set to true will be cleared.
-    void submitFrame(optional VRPose pose = null);
+    void submitFrame();
 
     Float32Array getPoseMatrix();
 };

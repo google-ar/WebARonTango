@@ -12,12 +12,12 @@ FakeVRDeviceProvider::FakeVRDeviceProvider() : VRDeviceProvider() {
 
 FakeVRDeviceProvider::~FakeVRDeviceProvider() {}
 
-void FakeVRDeviceProvider::AddDevice(VRDevice* device) {
-  devices_.push_back(device);
+void FakeVRDeviceProvider::AddDevice(std::unique_ptr<VRDevice> device) {
+  devices_.push_back(std::move(device));
 }
 
-void FakeVRDeviceProvider::RemoveDevice(VRDevice* device) {
-  std::vector<VRDevice*>::iterator iter = devices_.begin();
+void FakeVRDeviceProvider::RemoveDevice(std::unique_ptr<VRDevice> device) {
+  std::vector<std::unique_ptr<VRDevice>>::iterator iter = devices_.begin();
   while (iter != devices_.end()) {
     if (device == *iter) {
       iter = devices_.erase(iter);
@@ -28,10 +28,8 @@ void FakeVRDeviceProvider::RemoveDevice(VRDevice* device) {
 }
 
 void FakeVRDeviceProvider::GetDevices(std::vector<VRDevice*>* devices) {
-  std::vector<VRDevice*>::iterator iter;
-
-  for (auto device : devices_) {
-    devices->push_back(device);
+  for (const auto& device : devices_) {
+    devices->push_back(device.get());
   }
 }
 

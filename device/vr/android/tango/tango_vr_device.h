@@ -15,24 +15,34 @@
 
 namespace device {
 
+class TangoVRDeviceProvider;
+
 class TangoVRDevice : public VRDevice {
  public:
-  explicit TangoVRDevice(VRDeviceProvider* provider);
+  explicit TangoVRDevice(TangoVRDeviceProvider* provider);
   ~TangoVRDevice() override;
 
-  VRDisplayPtr GetVRDevice() override;
-  VRPosePtr GetPose() override;
+  mojom::VRDisplayInfoPtr GetVRDevice() override;
+  mojom::VRPosePtr GetPose() override;
   void ResetPose() override;
   unsigned GetMaxPointCloudVertexCount() override;
-  VRPointCloudPtr GetPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip) override;
-  VRSeeThroughCameraPtr GetSeeThroughCamera() override;
-  VRPickingPointAndPlanePtr GetPickingPointAndPlaneInPointCloud(float x, float y) override;
+  mojom::VRPointCloudPtr GetPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip) override;
+  mojom::VRSeeThroughCameraPtr GetSeeThroughCamera() override;
+  mojom::VRPickingPointAndPlanePtr GetPickingPointAndPlaneInPointCloud(float x, float y) override;
   mojo::Array<float> GetPoseMatrix() override;
   int GetSeeThroughCameraOrientation() override;
+  void RequestPresent(const base::Callback<void(bool)>& callback) override;
+  void SetSecureOrigin(bool secure_origin) override;
+  void ExitPresent() override;
+  void SubmitFrame(mojom::VRPosePtr pose) override;
+  void UpdateLayerBounds(mojom::VRLayerBoundsPtr left_bounds,
+                         mojom::VRLayerBoundsPtr right_bounds) override;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(TangoVRDevice);
   TangoCoordinateFramePair tangoCoordinateFramePair;  
+  TangoVRDeviceProvider* tangoVRDeviceProvider;
+
+  DISALLOW_COPY_AND_ASSIGN(TangoVRDevice);
 };
 
 }  // namespace device

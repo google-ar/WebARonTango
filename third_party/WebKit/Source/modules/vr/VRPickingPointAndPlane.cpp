@@ -12,7 +12,7 @@ VRPickingPointAndPlane::VRPickingPointAndPlane(): m_correctValues(false)
     m_plane = DOMFloat32Array::create(4);
 }
 
-void VRPickingPointAndPlane::setPickingPointAndPlane(const device::blink::VRPickingPointAndPlanePtr& pickingPointAndPlanePtr)
+void VRPickingPointAndPlane::setPickingPointAndPlane(const device::mojom::blink::VRPickingPointAndPlanePtr& pickingPointAndPlanePtr)
 {
     m_correctValues = false;
 

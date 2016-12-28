@@ -68,6 +68,7 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URISyntaxException;
 import java.net.MalformedURLException;
+import java.util.Locale;
 
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
@@ -319,7 +320,7 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
             public void onReceivedHttpError(AwWebResourceRequest request, AwWebResourceResponse response) {
                 String failingUrl = request.url;
                 // HACK! Do not show the icon loading error.
-                if (failingUrl.toLowerCase().contains("favicon.ico")) return;
+                if (failingUrl.toLowerCase(Locale.getDefault()).contains("favicon.ico")) return;
                 int errorCode = response.getStatusCode();
                 String description = response.getReasonPhrase();
                 Utils.createAlertDialog(AwShellActivity.this, "HTTP ERROR: " + errorCode, failingUrl + ": " + description, null, 1, "Ok", null, null).show();                

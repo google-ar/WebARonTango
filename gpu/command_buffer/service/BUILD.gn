@@ -17,7 +17,12 @@ group("service") {
   }
 }
 
-source_set("service_sources") {
+if (is_component_build) {
+  link_target_type = "source_set"
+} else {
+  link_target_type = "static_library"
+}
+target(link_target_type, "service_sources") {
   # External code should depend on this via //gpu/command_buffer/service above
   # rather than depending on this directly or the component build will break.
   visibility = [ "//gpu/*" ]
@@ -25,6 +30,7 @@ source_set("service_sources") {
   sources = [
     "buffer_manager.cc",
     "buffer_manager.h",
+    "client_service_map.h",
     "cmd_buffer_engine.h",
     "cmd_parser.cc",
     "cmd_parser.h",
@@ -71,6 +77,8 @@ source_set("service_sources") {
     "gles2_cmd_decoder_passthrough_doers.cc",
     "gles2_cmd_decoder_passthrough_handlers.cc",
     "gles2_cmd_decoder_passthrough_handlers_autogen.cc",
+    "gles2_cmd_srgb_converter.cc",
+    "gles2_cmd_srgb_converter.h",
     "gles2_cmd_validation.cc",
     "gles2_cmd_validation.h",
     "gles2_cmd_validation_autogen.h",
@@ -89,8 +97,6 @@ source_set("service_sources") {
     "image_factory.h",
     "image_manager.cc",
     "image_manager.h",
-    "in_process_command_buffer.cc",
-    "in_process_command_buffer.h",
     "indexed_buffer_binding_host.cc",
     "indexed_buffer_binding_host.h",
     "logger.cc",
@@ -115,6 +121,8 @@ source_set("service_sources") {
     "renderbuffer_manager.h",
     "sampler_manager.cc",
     "sampler_manager.h",
+    "service_utils.cc",
+    "service_utils.h",
     "shader_manager.cc",
     "shader_manager.h",
     "shader_translator.cc",
@@ -164,6 +172,8 @@ source_set("service_sources") {
     "//gpu/command_buffer/client:client_sources",
     "//gpu/command_buffer/common:gles2_utils",
     "//gpu/config:config_sources",
+    "//gpu/ipc/common:surface_handle_type",
+    "//media:media_features",
     "//third_party/angle:angle_image_util",
     "//third_party/angle:commit_id",
     "//third_party/angle:translator",

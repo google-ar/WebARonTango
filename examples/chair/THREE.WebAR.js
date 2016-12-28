@@ -33,7 +33,10 @@ THREE.WebAR.VRPointCloud = function(vrDisplay, usePointCloudVerticesDirectly) {
 	this._bufferGeometry = new THREE.BufferGeometry();
 	this._bufferGeometry.frustumCulled = false;
 
-	var positions = vrDisplay ? (usePointCloudVerticesDirectly ? vrDisplay.getPointCloud(false, 0).vertices : new Float32Array( vrDisplay.getMaxPointCloudVertexCount() * 3 )) : new Float32Array([-1, 1, -2, 1, 1, -2, 1, -1, -2, -1, -1, -2 ]);
+	var pointCloud = vrDisplay.getPointCloud(false, 0);
+	alert(vrDisplay.capabilities.hasPointCloud + ", " + pointCloud);
+
+	var positions = vrDisplay ? (usePointCloudVerticesDirectly ? pointCloud.vertices : new Float32Array( vrDisplay.getMaxPointCloudVertexCount() * 3 )) : new Float32Array([-1, 1, -2, 1, 1, -2, 1, -1, -2, -1, -1, -2 ]);
 	var colors = new Float32Array( positions.length );
 
 	var color = new THREE.Color();
@@ -161,7 +164,7 @@ THREE.WebAR.createVRSeeThroughCameraMesh = function(vrDisplay) {
 	if (vrDisplay) {
 		var seeThroughCamera = vrDisplay.getSeeThroughCamera();
 		video = seeThroughCamera;
-		// HACK: Needed to tell the THEE.VideoTextue that the video is ready and that the texture needs update.
+		// HACK: Needed to tell the THREE.VideoTextue that the video is ready and that the texture needs update.
 		video.readyState = 2;
 		video.HAVE_CURRENT_DATA = 2;
 

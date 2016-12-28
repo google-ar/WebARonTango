@@ -18,15 +18,15 @@ class FakeVRDeviceProvider : public VRDeviceProvider {
 
   // Adds devices to the provider with the given device, which will be
   // returned when GetDevices is queried.
-  void AddDevice(VRDevice* device);
-  void RemoveDevice(VRDevice* device);
+  void AddDevice(std::unique_ptr<VRDevice> device);
+  void RemoveDevice(std::unique_ptr<VRDevice> device);
   bool IsInitialized() { return initialized_; }
 
   void GetDevices(std::vector<VRDevice*>* devices) override;
   void Initialize() override;
 
  private:
-  std::vector<VRDevice*> devices_;
+  std::vector<std::unique_ptr<VRDevice>> devices_;
   bool initialized_;
 };
 

@@ -8,6 +8,7 @@
 
 <LinearLayout android:id="@+id/testshell_activity"
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
@@ -17,6 +18,7 @@
         android:orientation="horizontal">
         <ImageButton
             android:id="@+id/qrcodeImageButton"
+            android:contentDescription="@null"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
@@ -31,6 +33,7 @@
             android:singleLine="true"
             android:selectAllOnFocus="true"
             android:inputType="textUri"
+            tools:ignore="LabelFor"
             android:imeOptions="actionGo" />
         <ImageButton android:id="@+id/prev"
             android:contentDescription="@null"

@@ -26,7 +26,7 @@ public:
     double pointY() const;
     long orientation();
 
-    void setSeeThroughCamera(const device::blink::VRSeeThroughCameraPtr&);
+    void setSeeThroughCamera(const device::mojom::blink::VRSeeThroughCameraPtr&);
 
     DECLARE_VIRTUAL_TRACE()
 private:

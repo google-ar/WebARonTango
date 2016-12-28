@@ -12,36 +12,46 @@
 #include <vector>
 
 #include "base/macros.h"
-#include "base/memory/linked_ptr.h"
+#include "base/memory/ref_counted.h"
 #include "base/threading/thread_checker.h"
+#include "base/timer/timer.h"
 #include "device/vr/vr_device.h"
 #include "device/vr/vr_device_provider.h"
 #include "device/vr/vr_export.h"
 #include "device/vr/vr_service.mojom.h"
+#include "device/vr/vr_service_impl.h"
 #include "mojo/public/cpp/bindings/binding_set.h"
 
 namespace device {
 
-class VRDeviceManager : public VRService {
+class VRDeviceManager {
  public:
-  DEVICE_VR_EXPORT ~VRDeviceManager() override;
-
-  DEVICE_VR_EXPORT static void BindRequest(
-      mojo::InterfaceRequest<VRService> request);
+  DEVICE_VR_EXPORT virtual ~VRDeviceManager();
 
   // Returns the VRDeviceManager singleton.
   static VRDeviceManager* GetInstance();
 
-  DEVICE_VR_EXPORT mojo::Array<VRDisplayPtr> GetVRDevices();
-  DEVICE_VR_EXPORT VRDevice* GetDevice(unsigned int index);
+  // Adds a listener for device manager events. VRDeviceManager does not own
+  // this object.
+  void AddService(VRServiceImpl* service);
+  void RemoveService(VRServiceImpl* service);
+
+  DEVICE_VR_EXPORT bool GetVRDevices(VRServiceImpl* service);
+  DEVICE_VR_EXPORT unsigned int GetNumberOfConnectedDevices();
+
+  void ListeningForActivateChanged(bool listening);
 
  private:
   friend class VRDeviceManagerTest;
+  friend class VRDisplayImplTest;
+  friend class VRServiceImplTest;
 
   VRDeviceManager();
   // Constructor for testing.
   DEVICE_VR_EXPORT explicit VRDeviceManager(
       std::unique_ptr<VRDeviceProvider> provider);
+
+  DEVICE_VR_EXPORT VRDevice* GetDevice(unsigned int index);
 
   static void SetInstance(VRDeviceManager* service);
   static bool HasInstance();
@@ -49,21 +59,11 @@ class VRDeviceManager : public VRService {
   void InitializeProviders();
   void RegisterProvider(std::unique_ptr<VRDeviceProvider> provider);
 
-  // mojom::VRService implementation
-  void GetDisplays(const GetDisplaysCallback& callback) override;
-  void GetPose(uint32_t index, const GetPoseCallback& callback) override;
-  void ResetPose(uint32_t index) override;
-  void GetMaxPointCloudVertexCount(uint32_t index, const GetMaxPointCloudVertexCountCallback& callback) override;
-  void GetPointCloud(uint32_t index, bool justUpdatePointCloud, unsigned pointsToSkip, const GetPointCloudCallback& callback) override;
-  void GetPickingPointAndPlaneInPointCloud(uint32_t index, float x, float y, const GetPickingPointAndPlaneInPointCloudCallback& callback) override;
-  void GetSeeThroughCamera(uint32_t index, const GetSeeThroughCameraCallback& callback) override;
-  void GetPoseMatrix(uint32_t index, const GetPoseMatrixCallback& callback) override;
-  void GetSeeThroughCameraOrientation(uint32_t index, const GetSeeThroughCameraOrientationCallback& callback) override;
+  void SchedulePollEvents();
+  void PollEvents();
+  void StopSchedulingPollEvents();
 
-  // Mojo connection error handler.
-  void OnConnectionError();
-
-  using ProviderList = std::vector<linked_ptr<VRDeviceProvider>>;
+  using ProviderList = std::vector<std::unique_ptr<VRDeviceProvider>>;
   ProviderList providers_;
 
   // Devices are owned by their providers.
@@ -72,12 +72,18 @@ class VRDeviceManager : public VRService {
 
   bool vr_initialized_;
 
-  mojo::BindingSet<VRService> bindings_;
+  std::set<VRServiceImpl*> services_;
 
   // For testing. If true will not delete self when consumer count reaches 0.
   bool keep_alive_;
 
+  bool has_scheduled_poll_;
+
+  bool has_activate_listeners_;
+
   base::ThreadChecker thread_checker_;
+
+  base::RepeatingTimer timer_;
 
   DISALLOW_COPY_AND_ASSIGN(VRDeviceManager);
 };

@@ -11,39 +11,45 @@
 
 namespace blink {
 
-class VRDisplayCapabilities final : public GarbageCollected<VRDisplayCapabilities>, public ScriptWrappable {
-    DEFINE_WRAPPERTYPEINFO();
-public:
-    VRDisplayCapabilities();
+class VRDisplayCapabilities final
+    : public GarbageCollected<VRDisplayCapabilities>,
+      public ScriptWrappable {
+  DEFINE_WRAPPERTYPEINFO();
 
-    bool hasOrientation() const { return m_hasOriention; }
-    bool hasPosition() const { return m_hasPosition; }
-    bool hasExternalDisplay() const { return m_hasExternalDisplay; }
-    bool canPresent() const { return m_canPresent; }
-    unsigned maxLayers() const { return m_maxLayers; }
-    bool hasPointCloud() const { return m_hasPointCloud; }
-    bool hasSeeThroughCamera() const { return m_hasSeeThroughCamera; }
+ public:
+  VRDisplayCapabilities();
 
-    void setHasOrientation(bool value) { m_hasOriention = value; }
-    void setHasPosition(bool value) { m_hasPosition = value; }
-    void setHasExternalDisplay(bool value) { m_hasExternalDisplay = value; }
-    void setCanPresent(bool value) { m_canPresent = value; }
-    void setMaxLayers(unsigned value) { m_maxLayers = value; }
-    void setHasPointCloud(bool value) { m_hasPointCloud = value; }
-    void setHasSeeThroughCamera(bool value) { m_hasSeeThroughCamera = value; }
+  bool hasOrientation() const { return m_hasOriention; }
+  bool hasPosition() const { return m_hasPosition; }
+  bool hasExternalDisplay() const { return m_hasExternalDisplay; }
+  bool canPresent() const { return m_canPresent; }
+  unsigned maxLayers() const { return m_maxLayers; }
 
-    DECLARE_VIRTUAL_TRACE()
+  bool hasPointCloud() const { return m_hasPointCloud; }
+  bool hasSeeThroughCamera() const { return m_hasSeeThroughCamera; }
 
-private:
-    bool m_hasOriention;
-    bool m_hasPosition;
-    bool m_hasExternalDisplay;
-    bool m_canPresent;
-    unsigned m_maxLayers;
-    bool m_hasPointCloud;
-    bool m_hasSeeThroughCamera;
+  void setHasOrientation(bool value) { m_hasOriention = value; }
+  void setHasPosition(bool value) { m_hasPosition = value; }
+  void setHasExternalDisplay(bool value) { m_hasExternalDisplay = value; }
+  void setCanPresent(bool value) { m_canPresent = value; }
+  void setMaxLayers(unsigned value) { m_maxLayers = value; }
+
+  void setHasPointCloud(bool value) { m_hasPointCloud = value; }
+  void setHasSeeThroughCamera(bool value) { m_hasSeeThroughCamera = value; }
+
+  DECLARE_VIRTUAL_TRACE()
+
+ private:
+  bool m_hasOriention;
+  bool m_hasPosition;
+  bool m_hasExternalDisplay;
+  bool m_canPresent;
+  unsigned m_maxLayers;
+
+  bool m_hasPointCloud;
+  bool m_hasSeeThroughCamera;
 };
 
-} // namespace blink
+}  // namespace blink
 
-#endif // VRDisplayCapabilities_h
+#endif  // VRDisplayCapabilities_h

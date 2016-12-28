@@ -34,7 +34,7 @@ DOMFloat32Array* VRPointCloud::vertices() const
     return m_vertices;
 }
 
-void VRPointCloud::setPointCloud(device::blink::VRPointCloudPtr& pointCloudPtr)
+void VRPointCloud::setPointCloud(device::mojom::blink::VRPointCloudPtr& pointCloudPtr)
 {
 	if (pointCloudPtr.is_null() || !pointCloudPtr->vertices || pointCloudPtr->vertexCount == 0)
 	{
@@ -49,13 +49,13 @@ void VRPointCloud::setPointCloud(device::blink::VRPointCloudPtr& pointCloudPtr)
 	{
 		if (!m_vertices)
 		{
-			m_vertices = DOMFloat32Array::create(pointCloudPtr->vertices.size());
-			std::fill_n(m_vertices->data(), pointCloudPtr->vertices.size(), std::numeric_limits<float>::max());
+			m_vertices = DOMFloat32Array::create(pointCloudPtr->vertices.value().size());
+			std::fill_n(m_vertices->data(), pointCloudPtr->vertices.value().size(), std::numeric_limits<float>::max());
 			// memset(m_vertices->data(), FLT_MAX, pointCloudPtr->vertices.size() * sizeof(float));
 		}
 
 		m_vertexCount = pointCloudPtr->vertexCount;
-		memcpy(m_vertices->data(), &(pointCloudPtr->vertices.front()), m_vertexCount * 3 * sizeof(float));
+		memcpy(m_vertices->data(), &(pointCloudPtr->vertices.value().front()), m_vertexCount * 3 * sizeof(float));
 		if (m_vertexCount < m_lastVertexCount)
 		{
 			std::fill_n(m_vertices->data() + (m_vertexCount * 3), (m_lastVertexCount - m_vertexCount) * 3, std::numeric_limits<float>::max());

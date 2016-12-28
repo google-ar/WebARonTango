@@ -22,7 +22,7 @@ public:
     DOMFloat32Array* plane() const { return m_plane; }
     bool correctValues() const { return m_correctValues; }
 
-    void setPickingPointAndPlane(const device::blink::VRPickingPointAndPlanePtr&);
+    void setPickingPointAndPlane(const device::mojom::blink::VRPickingPointAndPlanePtr&);
 
     DECLARE_VIRTUAL_TRACE();
 

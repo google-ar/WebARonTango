@@ -17,8 +17,8 @@ using tango_chromium::TangoHandler;
 
 namespace device {
 
-TangoVRDevice::TangoVRDevice(VRDeviceProvider* provider)
-    : VRDevice(provider) {
+TangoVRDevice::TangoVRDevice(TangoVRDeviceProvider* provider)
+    : tangoVRDeviceProvider(provider) {
   tangoCoordinateFramePair.base = TANGO_COORDINATE_FRAME_START_OF_SERVICE;
   tangoCoordinateFramePair.target = TANGO_COORDINATE_FRAME_DEVICE;
 }
@@ -26,13 +26,13 @@ TangoVRDevice::TangoVRDevice(VRDeviceProvider* provider)
 TangoVRDevice::~TangoVRDevice() {
 }
 
-VRDisplayPtr TangoVRDevice::GetVRDevice() {
+mojom::VRDisplayInfoPtr TangoVRDevice::GetVRDevice() {
   TRACE_EVENT0("input", "TangoVRDevice::GetVRDevice");
-  VRDisplayPtr device = VRDisplay::New();
+  mojom::VRDisplayInfoPtr device = mojom::VRDisplayInfo::New();
 
   device->displayName = "Tango VR Device";
 
-  device->capabilities = VRDisplayCapabilities::New();
+  device->capabilities = mojom::VRDisplayCapabilities::New();
   device->capabilities->hasOrientation = true;
   device->capabilities->hasPosition = true;
   device->capabilities->hasExternalDisplay = false;
@@ -40,12 +40,12 @@ VRDisplayPtr TangoVRDevice::GetVRDevice() {
   device->capabilities->hasPointCloud = true;
   device->capabilities->hasSeeThroughCamera = true;
 
-  device->leftEye = VREyeParameters::New();
-  device->rightEye = VREyeParameters::New();
-  VREyeParametersPtr& left_eye = device->leftEye;
-  VREyeParametersPtr& right_eye = device->rightEye;
+  device->leftEye = mojom::VREyeParameters::New();
+  device->rightEye = mojom::VREyeParameters::New();
+  mojom::VREyeParametersPtr& left_eye = device->leftEye;
+  mojom::VREyeParametersPtr& right_eye = device->rightEye;
 
-  left_eye->fieldOfView = VRFieldOfView::New();
+  left_eye->fieldOfView = mojom::VRFieldOfView::New();
   left_eye->fieldOfView->upDegrees = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*fov[0]*/;
   left_eye->fieldOfView->downDegrees = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*fov[1]*/;
   left_eye->fieldOfView->leftDegrees = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*fov[2]*/;
@@ -53,7 +53,7 @@ VRDisplayPtr TangoVRDevice::GetVRDevice() {
 
   // Cardboard devices always assume a mirrored FOV, so this is just the left
   // eye FOV with the left and right degrees swapped.
-  right_eye->fieldOfView = VRFieldOfView::New();
+  right_eye->fieldOfView = mojom::VRFieldOfView::New();
   right_eye->fieldOfView->upDegrees = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*fov[0]*/;
   right_eye->fieldOfView->downDegrees = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*fov[1]*/;
   right_eye->fieldOfView->leftDegrees = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*fov[3]*/;
@@ -75,13 +75,13 @@ VRDisplayPtr TangoVRDevice::GetVRDevice() {
   right_eye->renderWidth = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*screen_size[0]*/ / 2.0;
   right_eye->renderHeight = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*screen_size[1]*/;
 
-  device->stageParameters = VRStageParameters::New();
-  device->stageParameters->standingTransform = mojo::Array<float>::New(16);
+  // device->stageParameters = mojom::VRStageParameters::New();
+  // device->stageParameters->standingTransform = mojo::Array<float>::New(16);
 
   return device;
 }
 
-VRPosePtr TangoVRDevice::GetPose() {
+mojom::VRPosePtr TangoVRDevice::GetPose() {
 
   TangoPoseData tangoPoseData;
 
@@ -89,27 +89,21 @@ VRPosePtr TangoVRDevice::GetPose() {
 
   TRACE_EVENT0("input", "TangoVRDevice::GetPose");
   
-  VRPosePtr pose = VRPose::New();
+  mojom::VRPosePtr pose = mojom::VRPose::New();
 
   pose->timestamp = base::Time::Now().ToJsTime();
 
   if (connected)
   {
-    pose->orientation = mojo::Array<float>::New(4);
-    pose->orientation[0] = tangoPoseData.orientation[0]/*decomposed_transform.quaternion[0]*/;
-    pose->orientation[1] = tangoPoseData.orientation[1]/*decomposed_transform.quaternion[1]*/;
-    pose->orientation[2] = tangoPoseData.orientation[2]/*decomposed_transform.quaternion[2]*/;
-    pose->orientation[3] = tangoPoseData.orientation[3]/*decomposed_transform.quaternion[3]*/;
+    pose->orientation.value()[0] = tangoPoseData.orientation[0]/*decomposed_transform.quaternion[0]*/;
+    pose->orientation.value()[1] = tangoPoseData.orientation[1]/*decomposed_transform.quaternion[1]*/;
+    pose->orientation.value()[2] = tangoPoseData.orientation[2]/*decomposed_transform.quaternion[2]*/;
+    pose->orientation.value()[3] = tangoPoseData.orientation[3]/*decomposed_transform.quaternion[3]*/;
 
-    pose->position = mojo::Array<float>::New(3);
-    pose->position[0] = tangoPoseData.translation[0]/*decomposed_transform.translate[0]*/;
-    pose->position[1] = tangoPoseData.translation[1]/*decomposed_transform.translate[1]*/;
-    pose->position[2] = tangoPoseData.translation[2]/*decomposed_transform.translate[2]*/;
-  }
-  else 
-  {
-    pose->orientation = nullptr;
-    pose->position = nullptr;
+    pose->position.emplace(3);
+    pose->position.value()[0] = tangoPoseData.translation[0]/*decomposed_transform.translate[0]*/;
+    pose->position.value()[1] = tangoPoseData.translation[1]/*decomposed_transform.translate[1]*/;
+    pose->position.value()[2] = tangoPoseData.translation[2]/*decomposed_transform.translate[2]*/;
   }
 
   return pose;
@@ -124,24 +118,24 @@ unsigned TangoVRDevice::GetMaxPointCloudVertexCount()
   return TangoHandler::getInstance()->getMaxPointCloudVertexCount();
 }
 
-VRPointCloudPtr TangoVRDevice::GetPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip)
+mojom::VRPointCloudPtr TangoVRDevice::GetPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip)
 {
   TangoHandler* tangoHandler = TangoHandler::getInstance();
-  VRPointCloudPtr pointCloudPtr;
-  pointCloudPtr = VRPointCloud::New();
-  pointCloudPtr->vertices = mojo::Array<float>::New(tangoHandler->getMaxPointCloudVertexCount() * 3);
-  if (!tangoHandler->getPointCloud(&(pointCloudPtr->vertexCount), &(pointCloudPtr->vertices[0]), justUpdatePointCloud, pointsToSkip))
+  mojom::VRPointCloudPtr pointCloudPtr;
+  pointCloudPtr = mojom::VRPointCloud::New();
+  // pointCloudPtr->vertices = mojo::Array<float>::New(tangoHandler->getMaxPointCloudVertexCount() * 3);
+  if (!tangoHandler->getPointCloud(&(pointCloudPtr->vertexCount), &(pointCloudPtr->vertices.value()[0]), justUpdatePointCloud, pointsToSkip))
   {
-    pointCloudPtr->vertices = nullptr;
+    // pointCloudPtr->vertices = nullptr;
   }
   return pointCloudPtr;
 }
 
-VRSeeThroughCameraPtr TangoVRDevice::GetSeeThroughCamera()
+mojom::VRSeeThroughCameraPtr TangoVRDevice::GetSeeThroughCamera()
 {
   TangoHandler* tangoHandler = TangoHandler::getInstance();
-  VRSeeThroughCameraPtr seeThroughCameraPtr;
-  seeThroughCameraPtr = VRSeeThroughCamera::New();
+  mojom::VRSeeThroughCameraPtr seeThroughCameraPtr;
+  seeThroughCameraPtr = mojom::VRSeeThroughCamera::New();
   tangoHandler->getCameraImageSize(&(seeThroughCameraPtr->width), &(seeThroughCameraPtr->height));
   tangoHandler->getCameraImageTextureSize(&(seeThroughCameraPtr->textureWidth), &(seeThroughCameraPtr->textureHeight));
   tangoHandler->getCameraFocalLength(&(seeThroughCameraPtr->focalLengthX), &(seeThroughCameraPtr->focalLengthY));
@@ -149,10 +143,10 @@ VRSeeThroughCameraPtr TangoVRDevice::GetSeeThroughCamera()
   return seeThroughCameraPtr;
 }
 
-VRPickingPointAndPlanePtr TangoVRDevice::GetPickingPointAndPlaneInPointCloud(float x, float y)
+mojom::VRPickingPointAndPlanePtr TangoVRDevice::GetPickingPointAndPlaneInPointCloud(float x, float y)
 {
-  VRPickingPointAndPlanePtr pickingPointAndPlanePtr;
-  pickingPointAndPlanePtr = VRPickingPointAndPlane::New();
+  mojom::VRPickingPointAndPlanePtr pickingPointAndPlanePtr;
+  pickingPointAndPlanePtr = mojom::VRPickingPointAndPlane::New();
   pickingPointAndPlanePtr->point = mojo::Array<double>::New(3);
   pickingPointAndPlanePtr->plane = mojo::Array<double>::New(4);
   if (!TangoHandler::getInstance()->getPickingPointAndPlaneInPointCloud(x, y, &(pickingPointAndPlanePtr->point[0]), &(pickingPointAndPlanePtr->plane[0])))
@@ -175,6 +169,46 @@ mojo::Array<float> TangoVRDevice::GetPoseMatrix()
 int TangoVRDevice::GetSeeThroughCameraOrientation()
 {
   return TangoHandler::getInstance()->getSensorOrientation();
+}
+
+void TangoVRDevice::RequestPresent(const base::Callback<void(bool)>& callback) {
+  // gvr_provider_->RequestPresent(callback);
+}
+
+void TangoVRDevice::SetSecureOrigin(bool secure_origin) {
+  // secure_origin_ = secure_origin;
+  // if (delegate_)
+  //   delegate_->SetWebVRSecureOrigin(secure_origin_);
+}
+
+void TangoVRDevice::ExitPresent() {
+  // gvr_provider_->ExitPresent();
+  // OnExitPresent();
+}
+
+void TangoVRDevice::SubmitFrame(mojom::VRPosePtr pose) {
+  // if (delegate_)
+  //   delegate_->SubmitWebVRFrame();
+}
+
+void TangoVRDevice::UpdateLayerBounds(mojom::VRLayerBoundsPtr left_bounds,
+                                  mojom::VRLayerBoundsPtr right_bounds) {
+  // if (!delegate_)
+  //   return;
+
+  // gvr::Rectf left_gvr_bounds;
+  // left_gvr_bounds.left = left_bounds->left;
+  // left_gvr_bounds.top = 1.0f - left_bounds->top;
+  // left_gvr_bounds.right = left_bounds->left + left_bounds->width;
+  // left_gvr_bounds.bottom = 1.0f - (left_bounds->top + left_bounds->height);
+
+  // gvr::Rectf right_gvr_bounds;
+  // right_gvr_bounds.left = right_bounds->left;
+  // right_gvr_bounds.top = 1.0f - right_bounds->top;
+  // right_gvr_bounds.right = right_bounds->left + right_bounds->width;
+  // right_gvr_bounds.bottom = 1.0f - (right_bounds->top + right_bounds->height);
+
+  // delegate_->UpdateWebVRTextureBounds(left_gvr_bounds, right_gvr_bounds);
 }
 
 }  // namespace device

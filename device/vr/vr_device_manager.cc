@@ -7,11 +7,12 @@
 #include <utility>
 
 #include "base/bind.h"
+#include "base/memory/ptr_util.h"
 #include "base/memory/singleton.h"
 #include "build/build_config.h"
 
 #if defined(OS_ANDROID)
-#include "device/vr/android/cardboard/cardboard_vr_device_provider.h"
+#include "device/vr/android/gvr/gvr_device_provider.h"
 #include "device/vr/android/tango/tango_vr_device_provider.h"
 #endif
 
@@ -22,22 +23,19 @@ VRDeviceManager* g_vr_device_manager = nullptr;
 }
 
 VRDeviceManager::VRDeviceManager()
-    : vr_initialized_(false), keep_alive_(false) {
-  bindings_.set_connection_error_handler(
-      base::Bind(&VRDeviceManager::OnConnectionError, base::Unretained(this)));
+    : vr_initialized_(false),
+      keep_alive_(false),
+      has_scheduled_poll_(false),
+      has_activate_listeners_(false) {
 // Register VRDeviceProviders for the current platform
 #if defined(OS_ANDROID)
-  std::unique_ptr<VRDeviceProvider> tango_provider(
-      new TangoVRDeviceProvider());
-  RegisterProvider(std::move(tango_provider));
-  std::unique_ptr<VRDeviceProvider> cardboard_provider(
-      new CardboardVRDeviceProvider());
-  RegisterProvider(std::move(cardboard_provider));
+  RegisterProvider(base::MakeUnique<GvrDeviceProvider>());
+  RegisterProvider(base::MakeUnique<TangoVRDeviceProvider>());
 #endif
 }
 
 VRDeviceManager::VRDeviceManager(std::unique_ptr<VRDeviceProvider> provider)
-    : vr_initialized_(false), keep_alive_(true) {
+    : vr_initialized_(false), keep_alive_(true), has_scheduled_poll_(false) {
   thread_checker_.DetachFromThread();
   RegisterProvider(std::move(provider));
   SetInstance(this);
@@ -45,20 +43,8 @@ VRDeviceManager::VRDeviceManager(std::unique_ptr<VRDeviceProvider> provider)
 
 VRDeviceManager::~VRDeviceManager() {
   DCHECK(thread_checker_.CalledOnValidThread());
+  StopSchedulingPollEvents();
   g_vr_device_manager = nullptr;
-}
-
-void VRDeviceManager::BindRequest(mojo::InterfaceRequest<VRService> request) {
-  VRDeviceManager* device_manager = GetInstance();
-  device_manager->bindings_.AddBinding(device_manager, std::move(request));
-}
-
-void VRDeviceManager::OnConnectionError() {
-  DCHECK(thread_checker_.CalledOnValidThread());
-  if (bindings_.empty() && !keep_alive_) {
-    // Delete the device manager when it has no active connections.
-    delete g_vr_device_manager;
-  }
 }
 
 VRDeviceManager* VRDeviceManager::GetInstance() {
@@ -70,7 +56,7 @@ VRDeviceManager* VRDeviceManager::GetInstance() {
 void VRDeviceManager::SetInstance(VRDeviceManager* instance) {
   // Unit tests can create multiple instances but only one should exist at any
   // given time so g_vr_device_manager should only go from nullptr to
-  // non-nullptr and vica versa.
+  // non-nullptr and vice versa.
   CHECK_NE(!!instance, !!g_vr_device_manager);
   g_vr_device_manager = instance;
 }
@@ -80,7 +66,30 @@ bool VRDeviceManager::HasInstance() {
   return !!g_vr_device_manager;
 }
 
-mojo::Array<VRDisplayPtr> VRDeviceManager::GetVRDevices() {
+void VRDeviceManager::AddService(VRServiceImpl* service) {
+  // Loop through any currently active devices and send Connected messages to
+  // the service. Future devices that come online will send a Connected message
+  // when they are created.
+  GetVRDevices(service);
+
+  services_.insert(service);
+}
+
+void VRDeviceManager::RemoveService(VRServiceImpl* service) {
+
+  if (service->listening_for_activate()) {
+    ListeningForActivateChanged(false);
+  }
+
+  services_.erase(service);
+
+  if (services_.empty() && !keep_alive_) {
+    // Delete the device manager when it has no active connections.
+    delete g_vr_device_manager;
+  }
+}
+
+bool VRDeviceManager::GetVRDevices(VRServiceImpl* service) {
   DCHECK(thread_checker_.CalledOnValidThread());
 
   InitializeProviders();
@@ -89,23 +98,50 @@ mojo::Array<VRDisplayPtr> VRDeviceManager::GetVRDevices() {
   for (const auto& provider : providers_)
     provider->GetDevices(&devices);
 
-  mojo::Array<VRDisplayPtr> out_devices;
-  for (const auto& device : devices) {
+  if (devices.empty())
+    return false;
+
+  for (auto* device : devices) {
     if (device->id() == VR_DEVICE_LAST_ID)
       continue;
 
     if (devices_.find(device->id()) == devices_.end())
       devices_[device->id()] = device;
 
-    VRDisplayPtr vr_device_info = device->GetVRDevice();
-    if (vr_device_info.is_null())
-      continue;
-
-    vr_device_info->index = device->id();
-    out_devices.push_back(std::move(vr_device_info));
+    // Create a VRDisplayImpl for this service/device pair and attach
+    // the VRDisplayImpl to the device.
+    VRDisplayImpl* display_impl = service->GetVRDisplayImpl(device);
+    device->AddDisplay(display_impl);
   }
 
-  return out_devices;
+  return true;
+}
+
+unsigned int VRDeviceManager::GetNumberOfConnectedDevices() {
+  DCHECK(thread_checker_.CalledOnValidThread());
+
+  return static_cast<unsigned int>(devices_.size());
+}
+
+void VRDeviceManager::ListeningForActivateChanged(bool listening) {
+  DCHECK(thread_checker_.CalledOnValidThread());
+
+  bool activate_listeners = listening;
+  if (!activate_listeners) {
+    for (const auto& service : services_) {
+      if (service->listening_for_activate()) {
+        activate_listeners = true;
+        break;
+      }
+    }
+  }
+
+  // Notify all the providers if this changes
+  if (has_activate_listeners_ != activate_listeners) {
+    has_activate_listeners_ = activate_listeners;
+    for (const auto& provider : providers_)
+      provider->SetListeningForActivate(has_activate_listeners_);
+  }
 }
 
 VRDevice* VRDeviceManager::GetDevice(unsigned int index) {
@@ -127,90 +163,36 @@ void VRDeviceManager::InitializeProviders() {
     return;
   }
 
-  for (const auto& provider : providers_)
+  for (const auto& provider : providers_) {
     provider->Initialize();
+  }
 
   vr_initialized_ = true;
 }
 
 void VRDeviceManager::RegisterProvider(
     std::unique_ptr<VRDeviceProvider> provider) {
-  providers_.push_back(make_linked_ptr(provider.release()));
+  providers_.push_back(std::move(provider));
 }
 
-void VRDeviceManager::GetDisplays(const GetDisplaysCallback& callback) {
-  callback.Run(GetVRDevices());
+void VRDeviceManager::SchedulePollEvents() {
+  if (has_scheduled_poll_)
+    return;
+
+  has_scheduled_poll_ = true;
+
+  timer_.Start(FROM_HERE, base::TimeDelta::FromMilliseconds(500), this,
+               &VRDeviceManager::PollEvents);
 }
 
-void VRDeviceManager::GetPose(uint32_t index, const GetPoseCallback& callback) {
-  VRDevice* device = GetDevice(index);
-  if (device) {
-    callback.Run(device->GetPose());
-  } else {
-    callback.Run(nullptr);
-  }
+void VRDeviceManager::PollEvents() {
+  for (const auto& provider : providers_)
+    provider->PollEvents();
 }
 
-void VRDeviceManager::ResetPose(uint32_t index) {
-  VRDevice* device = GetDevice(index);
-  if (device)
-    device->ResetPose();
-}
-
-void VRDeviceManager::GetMaxPointCloudVertexCount(uint32_t index, const GetMaxPointCloudVertexCountCallback& callback) 
-{
-  VRDevice* device = GetDevice(index);
-  if (device) {
-    callback.Run(device->GetMaxPointCloudVertexCount());
-  } else {
-    callback.Run(0);
-  }
-}
-
-void VRDeviceManager::GetPointCloud(uint32_t index, bool justUpdatePointCloud, unsigned pointsToSkip, const GetPointCloudCallback& callback) {
-  VRDevice* device = GetDevice(index);
-  if (device) {
-    callback.Run(device->GetPointCloud(justUpdatePointCloud, pointsToSkip));
-  } else {
-    callback.Run(nullptr);
-  }
-}
-
-void VRDeviceManager::GetPickingPointAndPlaneInPointCloud(uint32_t index, float x, float y, const GetPickingPointAndPlaneInPointCloudCallback& callback)
-{
-  VRDevice* device = GetDevice(index);
-  if (device) {
-    callback.Run(device->GetPickingPointAndPlaneInPointCloud(x, y));
-  } else {
-    callback.Run(nullptr);
-  }
-}
-
-void VRDeviceManager::GetSeeThroughCamera(uint32_t index, const GetSeeThroughCameraCallback& callback) {
-  VRDevice* device = GetDevice(index);
-  if (device) {
-    callback.Run(device->GetSeeThroughCamera());
-  } else {
-    callback.Run(nullptr);
-  }
-}
-
-void VRDeviceManager::GetPoseMatrix(uint32_t index, const GetPoseMatrixCallback& callback) {
-  VRDevice* device = GetDevice(index);
-  if (device) {
-    callback.Run(device->GetPoseMatrix());
-  } else {
-    callback.Run(nullptr);
-  }
-}
-
-void VRDeviceManager::GetSeeThroughCameraOrientation(uint32_t index, const GetSeeThroughCameraOrientationCallback& callback) {
-  VRDevice* device = GetDevice(index);
-  if (device) {
-    callback.Run(device->GetSeeThroughCameraOrientation());
-  } else {
-    callback.Run(0);
-  }
+void VRDeviceManager::StopSchedulingPollEvents() {
+  if (has_scheduled_poll_)
+    timer_.Stop();
 }
 
 }  // namespace device

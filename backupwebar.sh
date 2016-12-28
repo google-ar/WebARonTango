@@ -7,8 +7,8 @@ cp src/third_party/WebKit/Source/modules/vr/VRPointCloud.* Backup_WebAR/third_pa
 cp src/third_party/WebKit/Source/modules/vr/VRSeeThroughCamera.* Backup_WebAR/third_party/WebKit/Source/modules/vr/
 cp src/third_party/WebKit/Source/modules/vr/VRDisplayCapabilities.* Backup_WebAR/third_party/WebKit/Source/modules/vr/
 cp src/third_party/WebKit/Source/modules/vr/VRPickingPointAndPlane.* Backup_WebAR/third_party/WebKit/Source/modules/vr/
-cp src/third_party/WebKit/Source/modules/BUILD.gn Backup_WebAR/third_party/WebKit/Source/modules
-cp src/third_party/WebKit/Source/modules/modules.gypi Backup_WebAR/third_party/WebKit/Source/modules
+cp src/third_party/WebKit/Source/modules/vr/BUILD.gn Backup_WebAR/third_party/WebKit/Source/modules/vr/
+cp src/third_party/WebKit/Source/modules/modules_idl_files.gni Backup_WebAR/third_party/WebKit/Source/modules
 # WebKit WebGL
 mkdir -p Backup_WebAR/third_party/WebKit/Source/modules/webgl
 cp src/third_party/WebKit/Source/modules/webgl/WebGLRenderingContextBase.* Backup_WebAR/third_party/WebKit/Source/modules/webgl/
@@ -37,6 +37,10 @@ cp src/gpu/command_buffer/service/gles2_cmd_decoder_passthrough_doers.cc Backup_
 # NOTE: Could copy only the elements that have been changed.
 cp -r src/android_webview/test/shell Backup_WebAR/android_webview/test
 cp src/android_webview/test/BUILD.gn Backup_WebAR/android_webview/test
+cp src/android_webview/BUILD.gn Backup_WebAR/android_webview/
+# Also copy the suppressions.xml file as there is a lint warning that needs to be suppressed in the webview apk.
+mkdir -p Backup_WebAR/build/android/lint
+cp src/build/android/lint/suppressions.xml Backup_WebAR/build/android/lint
 # Remove the temporary files
 rm -rf Backup_WebAR/android_webview/test/shell/tango/libs
 rm -rf Backup_WebAR/android_webview/test/shell/tango/obj
