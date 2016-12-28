@@ -54,12 +54,11 @@ Open a terminal window to be able
 	1. `git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git`
 	2. `export PATH=$PATH:/path/to/depot_tools`
  2. `$ mkdir ~/chromium && cd ~/chromium`
- 3. `~/chromium$ fetch --nohooks android` NOTE: This process may take quite some time (an hour?)
- 4. Verify that the .gclient file has `target_os = ['android']` in it
- 5. `cd src` and then `~/chromium/src$ gclient sync`.  NOTE: This process may take some time too.
- 6. Checkout a specific tag to a new branch. The tag is `54.0.2796.3`. The name of the branch to checkout could be `webar_54.0.2796.3` for example.
- 	`~/chromium/src$ git checkout -b webar_54.0.2796.3 54.0.2796.3`
- 7. Create a folder for the final product compilation: `~/chromium/src$ mkdir -p out/webar_54.0.2796.3`
+ 3. `~/chromium$ fetch --nohooks android`.          **NOTE**: This process may take quite some time (an hour?)
+ 4. Verify that the `.gclient` file has `target_os = ['android']` in it
+ 5. `cd src` and then `~/chromium/src$ gclient sync`.          **NOTE**: This process may take some time too.
+ 6. Checkout a specific tag to a new branch. The tag used for this build is `54.0.2796.3`. The name of the branch to checkout could be `webar_54.0.2796.3` for example: `~/chromium/src$ git checkout -b webar_54.0.2796.3 54.0.2796.3`. Choose the name of the brnach you like but remember it to create a corresponding out folder.
+ 7. Create a folder for the final product compilation with the same name as the branch: `~/chromium/src$ mkdir -p out/webar_54.0.2796.3`
  8. Create and edit a new file `out/webar_54.0.2796.3/args.gn` with the command `~/chromium/src$ gedit out/webar_54.0.2796.3/args.gn` and copy and paste the following content in it:
 	```
 	target_os = "android"
@@ -72,11 +71,9 @@ Open a terminal window to be able
 	symbol_level = 1  # Faster build with fewer symbols. -g1 rather than -g2
 	enable_incremental_javac = true  # Much faster; experimental
 	```
- 9. Copy and paste all the content from the current folder of the WebAR repo into the chromium/src folder. Override every possible conflict that may arise if you use the file explorer. Otherwise, you can use the following command line
- 	`cp -r PATH_TO_THIS_FOLDER/* ~/chromium/src`
- 10. `~/chromium/src$ gn args out/webar_54.0.2796.3`
-	**NOTE**: just exit "q!" in vi when it opens and shows args.gn (modified in the previous step using a proper editor ;))
- 11. `~/chromium$ src/build/install-build-deps-android.sh` 
+ 9. Copy and paste all the content from the current folder of the WebAR repo into the chromium/src folder. Override every possible conflict that may arise if you use the file explorer. Otherwise, you can use the following command line: `cp -r PATH_TO_THIS_FOLDER/* ~/chromium/src`
+ 10. `~/chromium/src$ gn args out/webar_54.0.2796.3`.          **NOTE**: just exit "q!" in vi when it opens and shows args.gn (modified in the previous step using a proper editor ;))
+ 11. `~/chromium/src$ build/install-build-deps-android.sh` 
  12. Execute the following commands and select the right choice on each. Do not worry if some commands do not have any effect.
  	```
 	sudo update-alternatives --config javac
@@ -95,7 +92,7 @@ Open a terminal window to be able
 ```
 ~/chromium/src/python gpu/command_buffer/build_gles2_cmd_buffer.py
 ```
-This tutorial specified that the name of the out folder created during the setup process above is the same as the branch (54.0.2796.3). This is no coincidence, as the `build_install_run.sh` shell script provided along with this documentation allows to build the Chromium project depending on the current git branch name that is currently checked out. This script not only compiles Chromium but also the Tango native library called tango_chromium that handle the Tango SDK calls. Moreover, this script, it also installs the final APK on a connected device and runs it, so it is convenient that you to connect the Tango device via USB before executing it. The project that will be built by default is the Chromium WebView project.
+This tutorial specified that the name of the out folder created during the setup process above is the same as the branch (webar_54.0.2796.3). This is no coincidence, as the `build_install_run.sh` shell script provided along with this documentation allows to build the Chromium project depending on the current checked out git branch. This script not only compiles Chromium but also the Tango native library called `tango_chromium` that handle the Tango SDK calls. Moreover, this script also installs the final APK on to a connected device and runs it, so it is convenient that you to connect the Tango device via USB before executing it. The project that will be built by default is the Chromium WebView project, the only one that has been modified to provide Tango/WebAR capabilities.
 ```
 ~/chromium/src/build_install_run.sh
 ```
