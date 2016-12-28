@@ -59,12 +59,12 @@ mojom::VRDisplayInfoPtr TangoVRDevice::GetVRDevice() {
   right_eye->fieldOfView->leftDegrees = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*fov[3]*/;
   right_eye->fieldOfView->rightDegrees = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*fov[2]*/;
 
-  left_eye->offset = mojo::Array<float>::New(3);
+  left_eye->offset.resize(3);
   left_eye->offset[0] = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*ipd*/ * -0.5f;
   left_eye->offset[1] = 0.0f;
   left_eye->offset[2] = 0.0f;
 
-  right_eye->offset = mojo::Array<float>::New(3);
+  right_eye->offset.resize(3);
   right_eye->offset[0] = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*ipd*/ * 0.5f;
   right_eye->offset[1] = 0.0f;
   right_eye->offset[2] = 0.0f;
@@ -95,6 +95,7 @@ mojom::VRPosePtr TangoVRDevice::GetPose() {
 
   if (connected)
   {
+    pose->orientation.emplace(4);
     pose->orientation.value()[0] = tangoPoseData.orientation[0]/*decomposed_transform.quaternion[0]*/;
     pose->orientation.value()[1] = tangoPoseData.orientation[1]/*decomposed_transform.quaternion[1]*/;
     pose->orientation.value()[2] = tangoPoseData.orientation[2]/*decomposed_transform.quaternion[2]*/;
@@ -123,10 +124,10 @@ mojom::VRPointCloudPtr TangoVRDevice::GetPointCloud(bool justUpdatePointCloud, u
   TangoHandler* tangoHandler = TangoHandler::getInstance();
   mojom::VRPointCloudPtr pointCloudPtr;
   pointCloudPtr = mojom::VRPointCloud::New();
-  // pointCloudPtr->vertices = mojo::Array<float>::New(tangoHandler->getMaxPointCloudVertexCount() * 3);
+  pointCloudPtr->vertices.emplace(tangoHandler->getMaxPointCloudVertexCount() * 3);
   if (!tangoHandler->getPointCloud(&(pointCloudPtr->vertexCount), &(pointCloudPtr->vertices.value()[0]), justUpdatePointCloud, pointsToSkip))
   {
-    // pointCloudPtr->vertices = nullptr;
+    pointCloudPtr->vertices.value().clear();
   }
   return pointCloudPtr;
 }
