@@ -1,12 +1,10 @@
-# Overview
-
-This project's goal is to provide an initial implementation of a possible Augmented Reality (AR) API for the Web and start a conversation on the subject.
-
 # Index
 
 * Disclaimer
-* Using the WebAR prototype and the new WebAR APIs
-  * Install the APK
+* Overview
+* How to use this repo
+* Using the WebAR prototype and the new APIs
+  * How to install and use the prototype
   * Overview of the WebAR APIs
   * Using the WebAR APIs in ThreeJS
   * Examples
@@ -16,28 +14,53 @@ This project's goal is to provide an initial implementation of a possible Augmen
 * License
 * 
 
+# Overview
+
+This project's goal is to provide an initial implementation of a possible Augmented Reality (AR) API for the Web on top of Chromium. There is a precompiled and working prototype you can use right away along with documentation of the APIs and some examples. There is also a tutorial on how to build your own version of modified Chromium with the WebAR APIs in it.
+
+A major objective of this project is to get a conversation going on the subject of how to provide Augmented Reality capabilities to the web: WebAR.
+
 # Disclaimer
 
-Defining how a web standard will look like is a complex conversation. All the code and proposals in this project are not meant to be the definitive implementation of AR capabilities for the web, but some prototypes you can play around with at your own risk. I will try to keep this project alive and implement as many AR devices/platforms as possible.
+Defining how a web standard will look like is a complex conversation. All the code and proposals in this project are not meant to be the definitive implementation of AR capabilities for the web, but some prototypes you can play around with at your own risk and have some starting point where to build upon.
 
-# Hands on WebAR
+# How use this repo
 
-This project is built on top of Chromium, an open source web browser. You have 2 options to start working with the WebAR prototype:
+This repository can be used in 2 ways if you want to start playing around with WebAR:
 
-1. If you would like to use a precompiled version of the prototype and start playing asap, you may find the section <a href="#using_the_new_vr_ar_javascript_apis"><b>Using the new VR/AR JavaScript APIs</b></a> very useful.
+1. Install and use a precompiled version of the Chromium prototype with AR capabilities, learn about the new APIs and check out some examples by reading the section <a href="#using_the_prototype_and_the_new_webar_apis"><b>Using the WebAR prototype and the new APIs</b></a>.
 
-2. If you would like to compile your own version of Chromium with WebAR capabilities and contribute to the project, this documentation includes a tutorial on<a href="#how_to_build_your_own_version_of_chromium_with_webar"><b>How to build your own version of Chromium with WebAR</b></a>.
+2. Compile you own version of Chromium with WebAR capabilities and contribute to the project by reading the section <a href="#how_to_build_your_own_version_of_chromium_with_webar"><b>How to build your own version of Chromium with WebAR APIs</b></a>.
 
-## <a name="using_the_new_vr_ar_javascript_apis"></a> Using the new VR/AR JavaScript APIs
+# <a name="using_the_prototype_and_the_new_webar_apis">Using the WebAR prototype and the new APIs</a>
 
-### Build the documentation
+## How to install and use the prototype
 
-In order to build the documentation you are currently reading, there are some steps that need to be followed:
+In the `bin` folder there is a precompiled version of the WebAR enabled version of Chromium. The current version is only available for Android devices with Tango capabilities.
 
-1. Install JSDoc: `npm install -g jsdoc`
-2. `$ jsdoc WebARAPI.js THREE.WebAR/THREE.WebAR.js README.md`
+To install the APK you can use the Android `adb` command from the command line. Assuming that you are in the bin folder:
 
-### A basic overview of the WebAR JS API
+```
+bin$ adb install -r WebARChromium.apk
+```
+
+The `-r` parameter will reinstall the APK in case you already had it.
+
+The installed application will display the `WebAR Chromium` name with the Android icon.
+
+<img src="markdown/images/WebARChromiumIcon.png"/>
+
+When executed, it will show an overly simplified version of a browser with just a QRCode button (explained later), the URL bar, the back and forward buttons as this version of the prototype is using the WebView version of Chromium.
+
+<img src="markdown/images/WebARChromiumHead.png"/>
+
+The QRCode button
+
+<img src="markdown/images/QRCodeButton.png"/>
+
+allows to introduce URLs encoded in QRCodes. It will require the installation of the [Barcode Scanner App](https://play.google.com/store/apps/details?id=com.google.zxing.client.android) from GooglePlay if it is not installed on the device yet. Do not worry, the app itself will prompt you to install it and redirect you to the store automagically the first time you press the QRCode button. There are multiple QRCode generators around the web but I highly recommend to use [The QRCode Generator](https://www.the-qrcode-generator.com/).
+
+### Overview of the WebAR APIs
 
 This implementation of WebAR is an addition of some features on top of the [WebVR API v1.0 specification](https://webvr.info/). AR and VR share many common concepts like tracking and even a see through camera or a depth sensor can be found in both AR and VR devices. This API is still experimental and it is just a proposal os a possible solution.
 
@@ -191,4 +214,11 @@ This tutorial specified that the name of the out folder created during the setup
 ```
 ~/chromium/src/build_install_run.sh
 ```
+
+### Build the documentation
+
+In order to build the documentation you are currently reading, there are some steps that need to be followed:
+
+1. Install JSDoc: `npm install -g jsdoc`
+2. `$ jsdoc WebARAPI.js THREE.WebAR/THREE.WebAR.js README.md`
 
