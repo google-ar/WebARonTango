@@ -1,16 +1,111 @@
 # Overview
 
-**NOTE:** The repository with the Chromium code to enable WebAR capabilities on top of the WebVR implementation is still not publicly available so much of the references to it in this documentation might not be applicable for those without access.
+This project's goal is to provide an initial implementation of a possible Augmented Reality (AR) API for the Web and start a conversation on the subject.
 
-This project's goal is to provide an initial implementation of a possible Augmented Reality API for the Web. This documentation (specially this page you are reading) includes a tutorial on how to build your own version of Chromium that has WebAR capabilities. Also, on the side, you may find documentation of both the low level JS API exposed on top of some of the WebVR API already existing classes (and some new ones) and the utility library built on top of THREE.JS (called THREE.WebAR).
+# Index
 
-This WebAR specification and implementation is completely experimental so use it at your own risk. There is no guarantee that any of this code will ever make it to Chromium and even less to Chrome but it will provide the possibitliy to use the WebVR API on an actual Android application if needed. The whole implementation is built on the Tango device and SDK for the moment.
+* Disclaimer
+* Using the WebAR prototype and the new WebAR APIs
+  * Install the APK
+  * Overview of the WebAR APIs
+  * Using the WebAR APIs in ThreeJS
+  * Examples
+* How to build your own version of Chromium with WebAR APIs
+* Supported devices
+* How to build this documentation
+* License
+* 
 
-This documentation is divided in 2 sections: 
-1. <a href="#how_to_build_your_own_version_of_chromium_with_webar"><b>How to build your own version of Chromium with WebAR</b></a> 
-2. <a href="#using_the_new_vr_ar_javascript_apis"><b>Using the new VR/AR JavaScript APIs</b></a>
+# Disclaimer
 
-This way, anyone that wants to build and modify his/her own version of chromium, will be able to do so and those who just want to install a prebuilt version of Chromium and start using it right away, will also be able to do it.
+Defining how a web standard will look like is a complex conversation. All the code and proposals in this project are not meant to be the definitive implementation of AR capabilities for the web, but some prototypes you can play around with at your own risk. I will try to keep this project alive and implement as many AR devices/platforms as possible.
+
+# Hands on WebAR
+
+This project is built on top of Chromium, an open source web browser. You have 2 options to start working with the WebAR prototype:
+
+1. If you would like to use a precompiled version of the prototype and start playing asap, you may find the section <a href="#using_the_new_vr_ar_javascript_apis"><b>Using the new VR/AR JavaScript APIs</b></a> very useful.
+
+2. If you would like to compile your own version of Chromium with WebAR capabilities and contribute to the project, this documentation includes a tutorial on<a href="#how_to_build_your_own_version_of_chromium_with_webar"><b>How to build your own version of Chromium with WebAR</b></a>.
+
+## <a name="using_the_new_vr_ar_javascript_apis"></a> Using the new VR/AR JavaScript APIs
+
+### Build the documentation
+
+In order to build the documentation you are currently reading, there are some steps that need to be followed:
+
+1. Install JSDoc: `npm install -g jsdoc`
+2. `$ jsdoc WebARAPI.js THREE.WebAR/THREE.WebAR.js README.md`
+
+### A basic overview of the WebAR JS API
+
+This implementation of WebAR is an addition of some features on top of the [WebVR API v1.0 specification](https://webvr.info/). AR and VR share many common concepts like tracking and even a see through camera or a depth sensor can be found in both AR and VR devices. This API is still experimental and it is just a proposal os a possible solution.
+
+The main point of entry for the WebAR API is still the VRDisplay, similarly as in  WebVR. Actually, if an AR device such as Tango (which this implementation is based on) wants to be used for 6DOF (6 Degrees Of Freedom) VR experiences, the WebVR API as is could be used. The getPose call will correctly return the position and orientation acquired from the underlying hardware implementation. 
+
+But there are some new features that the WebVR v1.0 spec does not include and that provide additional functionality based on the AR underlying platform. These new characteristics can be identified using the VRDisplayCapabilities class that now exposes 2 new flags to specify if the VRDisplay is able to:
+
+* [hasPointCloud](./VRDisplayCapabilities.html): Retrieve a cloud of points acquired by a depth sensing device.
+* [hasSeeThroughCamera](./VRDisplayCapabilities.html): Use an undelying see through camera to show the real world.
+
+If any of these flags are true, a new set of functionalities and APIs can be used always using the [VRDisplay](./VRDisplay.html) as a starting point to retrieve them. The new methods are:
+
+* [getMaxPointCloudVertexCount](./VRDisplay.html): Provides the maximum number of points in the point cloud.
+* [getPointCloud](./VRDisplay.html): Updates and/or retrieves the points in the [point cloud](./VRPointCloud.html).
+* [getPickingPointAndPlaneInPointCloud](./VRDisplay.html): Allows to calculate a colission [point and plane](./VRPickingPointAndPlane.html) between a 2D position and a ray casted on to the point cloud.
+* [getSeeThroughCamera](./VRDisplay.html): Retrieves a structure that represents the [see through camera](VRSeeThroughCamera.html) so it can be used for both correct fustrum calculation and for rendering the video feed.
+
+At a glance it is obvious that some new data structures/classes have been created to support some new functionalities as the underlying Tango platform allows new types of interactions/features. Most of the calls are pretty straightforward and the documentation might provide some idea of how they could be integrated in any or nex web application. The one that might need a bit more explanation is the VRSeeThroughCamera class as it even provides some useful information (what are called the camera intrinsics), it still does not expose how it could be used to render the camera feed in an application. In the current implementation, the approach that has been selected is to create a new overloaded function in the [WebGL API](https://www.khronos.org/registry/webgl/specs/1.0). The [WebGLRenderingContext](https://www.khronos.org/registry/webgl/specs/1.0/#5.14) now exposes the following function:
+
+```
+void texImage2D(GLenum target, GLint level, GLenum internalformat, GLenum format, GLenum type, VRSeeThroughCamera? source);
+```
+
+This approach has some benefits:
+
+1. There is no need to retrieve the pixels of the image.
+2. There is full control over the camera image in WebGL (in a fragment shader for example).
+3. It uses a common way to handle video content (texImage2D already has a HTMLVideoElement overload).
+
+But the current implementation has a problem too as the way the camera image is handled inside the texImage2D call requires to use an OpenGL extension that is not available in WebGL at the moment. The Chromium modification that you can find in the repository includes the activation of this extension internally, but you also need to recall that you will need to use the extension in your shader:
+
+```
+#extension GL_OES_EGL_image_external : require
+...
+
+uniform samplerExternalOES map;
+...
+```
+
+## Some notes about developing WebAR apps using ThreeJS
+
+**IMPORTANT**: In order to use the external image OES extension, a modification to the ThreeJS engine is required. In the `getSingularSetter` function that is able to identify the set functions for the different types of uniforms/attributes in a shader, a new type needs to be added as follows:
+```
+function getSingularSetter( type ) {
+
+	switch ( type ) {
+
+		case 0x1406: return setValue1f; // FLOAT
+		case 0x8b50: return setValue2fv; // _VEC2
+		case 0x8b51: return setValue3fv; // _VEC3
+		case 0x8b52: return setValue4fv; // _VEC4
+
+		case 0x8b5a: return setValue2fm; // _MAT2
+		case 0x8b5b: return setValue3fm; // _MAT3
+		case 0x8b5c: return setValue4fm; // _MAT4
+
+		case 0x8b5e: case 36198: return setValueT1; // SAMPLER_2D  // case 36198: Added by WebAR
+		case 0x8b60: return setValueT6; // SAMPLER_CUBE
+
+		case 0x1404: case 0x8b56: return setValue1i; // INT, BOOL
+		case 0x8b53: case 0x8b57: return setValue2iv; // _VEC2
+		case 0x8b54: case 0x8b58: return setValue3iv; // _VEC3
+		case 0x8b55: case 0x8b59: return setValue4iv; // _VEC4
+
+	}
+
+}
+```
 
 ## <a name="how_to_build_your_own_version_of_chromium_with_webar"></a> 1. How to build your own version of Chromium with WebAR
 
@@ -95,224 +190,5 @@ Open a terminal window to be able
 This tutorial specified that the name of the out folder created during the setup process above is the same as the branch (webar_54.0.2796.3). This is no coincidence, as the `build_install_run.sh` shell script provided along with this documentation allows to build the Chromium project depending on the current checked out git branch. This script not only compiles Chromium but also the Tango native library called `tango_chromium` that handle the Tango SDK calls. Moreover, this script also installs the final APK on to a connected device and runs it, so it is convenient that you to connect the Tango device via USB before executing it. The project that will be built by default is the Chromium WebView project, the only one that has been modified to provide Tango/WebAR capabilities.
 ```
 ~/chromium/src/build_install_run.sh
-```
-
-### Resolving some possible Chromium WebView crashes on some Android versions
-
-Chromium webview v54.0.2796.3 seems to crash pretty consistently on some Android versions (5 and 6) on some internal checks/asserts related to both audio and touch handling. This is a list of some possible points in the chromium source code where these crashes may occur. It is recommended that some testing is performed before introducing these changes. The good thing with asserts/checks is that they show the specific line of code where the crash is happening so a simple review of the logcat when the crash happens should poing to the specific line of code and file where the assert is failing.
-
-**NOTE**: It is recommended that if you introduce these changes, they are well documented (for example introducing a //WebAR BEGIN..//WebAR END block to correctly mark each change). Remember, these changes are not completely necessary and should only be included if your chromium product is consistently crashing when using audio and touch and showing check related errors on the logcat before crashing.
-
-* `ui/events/android/motion_event_android.cc`
-
-	Line 221:
-
-		// DCHECK_LT(pointer_index, cached_pointer_count_);
-
-	Line 231:
-
-		// DCHECK_LT(pointer_index, cached_pointer_count_);
-
-* `third_party/WebKit/Source/core/layout/LayoutBlockFlow.cpp`
-
-	Line 3351:
-
-		// ASSERT(!floatBox.hasSelfPaintingLayer());
-
-* `third_party/WebKit/Source/modules/webaudio/DeferredTaskHandler.cpp`
-
-	Line 313:
-
-		// ASSERT(!isMainThread());
-
-	Line 37:
-
-		// ASSERT(!isAudioThread());
-
-* `media/blink/multibuffer_data_source.cc`
-
- 	Line 442:   
-
-		// DCHECK(render_task_runner_->BelongsToCurrentThread());
-		// DCHECK(reader_.get());
-
-* `third_party/WebKit/Source/modules/webaudio/AudioListener.cpp`
-
-	Line 207:
-
-	    // DCHECK(!isMainThread());
-
-* `third_party/WebKit/Source/modules/webaudio/BaseAudioContext.cpp`
-
-	Line 221:
-
-	    // DCHECK(!isAudioThread());
-
-* `content/browser/renderer_host/render_widget_host_impl.cc`
-
-	Line 1008:
-
-	    // DCHECK(*is_in_gesture_scroll ||
-	    //        (gesture_event.type == blink::WebInputEvent::GestureFlingStart &&
-	    //         gesture_event.sourceDevice ==
-	    //             blink::WebGestureDevice::WebGestureDeviceTouchpad));
-
-* `content/common/input/input_event_stream_validator.cc`
-
-	Line 31:
-
-		// DCHECK(ValidateImpl(event, &error_msg_))
-		//     << error_msg_
-		//     << "\nInvalid Event: " << WebInputEventTraits::ToString(event);
-	
-* `third_party/WebKit/Source/core/input/EventHandler.cpp`
-
-	Line 1406/1968/1993:
-
-		// ASSERT(result.isRectBasedTest());
-
-* `android_webview/browser/browser_view_renderer.cc`
-
-	Line 574:
-
-		// DCHECK_LE(0.f, scroll_offset_dip.x());
-		// DCHECK_LE(0.f, scroll_offset_dip.y());
-		// DCHECK(scroll_offset_dip.x() < max_scroll_offset_dip_.x() ||
-		//        scroll_offset_dip.x() - max_scroll_offset_dip_.x() < kEpsilon)
-		//     << scroll_offset_dip.x() << " " << max_scroll_offset_dip_.x();
-		// DCHECK(scroll_offset_dip.y() < max_scroll_offset_dip_.y() ||
-		//        scroll_offset_dip.y() - max_scroll_offset_dip_.y() < kEpsilon)
-		//     << scroll_offset_dip.y() << " " << max_scroll_offset_dip_.y();
-
-	Line 40:
-
-		// const double kEpsilon = 1e-8;
-
-* `ui/events/gesture_detection/gesture_detector.cc`
-
-	Line 585:
-
-		// Substituted these lines for the return of the current down event.
-		// NOTREACHED();
-		// return nullptr;
-		return &current_down_event;
-
-* `ui/events/gesture_detection/gesture_provider.cc`
-
-	Line 360:
-
-	    // DCHECK(scroll_event_sent_);
-
-	Line 695:
-
-		// DCHECK_GE(source_index, 0);
-
-* `thrid_party/WebKit/Source/core/layout/HitTestResult.cpp`
-
-	Line 468:
-
-		// ASSERT(isRectBasedTest());
-
-* `content/browser/renderer_host/input/input_router_impl.cc`
-
-	Line 503:
-
-		// Commented out the CHECK and added the conditional if.
-		// DCHECK_GT(active_renderer_fling_count_, 0);
-		// Note that we're only guaranteed to get a fling end notification from the
-		// renderer, not from any other consumers. Consequently, the GestureEventQueue
-		// cannot use this bookkeeping for logic like tap suppression.
-		if (active_renderer_fling_count_ > 0)
-			--active_renderer_fling_count_;
-
-* `content/browser/renderer_host/input/touch_event_queue.cc`
-
-	Line 33:
-
-		// const double kMaxConceivablePlatformSlopRegionLengthDipsSquared = 60. * 60.;
-
-	Line 315:
-
-	    // DCHECK_LT((gfx::PointF(event.touches[0].position) -
-	    //            touch_start_location_).LengthSquared(),
-	    //           kMaxConceivablePlatformSlopRegionLengthDipsSquared);
-
-## <a name="using_the_new_vr_ar_javascript_apis"></a> Using the new VR/AR JavaScript APIs
-
-### Build the documentation
-
-In order to build the documentation you are currently reading, there are some steps that need to be followed:
-
-1. Install JSDoc: `npm install -g jsdoc`
-2. `$ jsdoc WebARAPI.js THREE.WebAR/THREE.WebAR.js README.md`
-
-### A basic overview of the WebAR JS API
-
-This implementation of WebAR is an addition of some features on top of the [WebVR API v1.0 specification](https://webvr.info/). AR and VR share many common concepts like tracking and even a see through camera or a depth sensor can be found in both AR and VR devices. This API is still experimental and it is just a proposal os a possible solution.
-
-The main point of entry for the WebAR API is still the VRDisplay, similarly as in  WebVR. Actually, if an AR device such as Tango (which this implementation is based on) wants to be used for 6DOF (6 Degrees Of Freedom) VR experiences, the WebVR API as is could be used. The getPose call will correctly return the position and orientation acquired from the underlying hardware implementation. 
-
-But there are some new features that the WebVR v1.0 spec does not include and that provide additional functionality based on the AR underlying platform. These new characteristics can be identified using the VRDisplayCapabilities class that now exposes 2 new flags to specify if the VRDisplay is able to:
-
-* [hasPointCloud](./VRDisplayCapabilities.html): Retrieve a cloud of points acquired by a depth sensing device.
-* [hasSeeThroughCamera](./VRDisplayCapabilities.html): Use an undelying see through camera to show the real world.
-
-If any of these flags are true, a new set of functionalities and APIs can be used always using the [VRDisplay](./VRDisplay.html) as a starting point to retrieve them. The new methods are:
-
-* [getMaxPointCloudVertexCount](./VRDisplay.html): Provides the maximum number of points in the point cloud.
-* [getPointCloud](./VRDisplay.html): Updates and/or retrieves the points in the [point cloud](./VRPointCloud.html).
-* [getPickingPointAndPlaneInPointCloud](./VRDisplay.html): Allows to calculate a colission [point and plane](./VRPickingPointAndPlane.html) between a 2D position and a ray casted on to the point cloud.
-* [getSeeThroughCamera](./VRDisplay.html): Retrieves a structure that represents the [see through camera](VRSeeThroughCamera.html) so it can be used for both correct fustrum calculation and for rendering the video feed.
-
-At a glance it is obvious that some new data structures/classes have been created to support some new functionalities as the underlying Tango platform allows new types of interactions/features. Most of the calls are pretty straightforward and the documentation might provide some idea of how they could be integrated in any or nex web application. The one that might need a bit more explanation is the VRSeeThroughCamera class as it even provides some useful information (what are called the camera intrinsics), it still does not expose how it could be used to render the camera feed in an application. In the current implementation, the approach that has been selected is to create a new overloaded function in the [WebGL API](https://www.khronos.org/registry/webgl/specs/1.0). The [WebGLRenderingContext](https://www.khronos.org/registry/webgl/specs/1.0/#5.14) now exposes the following function:
-
-```
-void texImage2D(GLenum target, GLint level, GLenum internalformat, GLenum format, GLenum type, VRSeeThroughCamera? source);
-```
-
-This approach has some benefits:
-
-1. There is no need to retrieve the pixels of the image.
-2. There is full control over the camera image in WebGL (in a fragment shader for example).
-3. It uses a common way to handle video content (texImage2D already has a HTMLVideoElement overload).
-
-But the current implementation has a problem too as the way the camera image is handled inside the texImage2D call requires to use an OpenGL extension that is not available in WebGL at the moment. The Chromium modification that you can find in the repository includes the activation of this extension internally, but you also need to recall that you will need to use the extension in your shader:
-
-```
-#extension GL_OES_EGL_image_external : require
-...
-
-uniform samplerExternalOES map;
-...
-```
-
-## Some notes about developing WebAR apps using ThreeJS
-
-**IMPORTANT**: In order to use the external image OES extension, a modification to the ThreeJS engine is required. In the `getSingularSetter` function that is able to identify the set functions for the different types of uniforms/attributes in a shader, a new type needs to be added as follows:
-```
-function getSingularSetter( type ) {
-
-	switch ( type ) {
-
-		case 0x1406: return setValue1f; // FLOAT
-		case 0x8b50: return setValue2fv; // _VEC2
-		case 0x8b51: return setValue3fv; // _VEC3
-		case 0x8b52: return setValue4fv; // _VEC4
-
-		case 0x8b5a: return setValue2fm; // _MAT2
-		case 0x8b5b: return setValue3fm; // _MAT3
-		case 0x8b5c: return setValue4fm; // _MAT4
-
-		case 0x8b5e: case 36198: return setValueT1; // SAMPLER_2D  // case 36198: Added by WebAR
-		case 0x8b60: return setValueT6; // SAMPLER_CUBE
-
-		case 0x1404: case 0x8b56: return setValue1i; // INT, BOOL
-		case 0x8b53: case 0x8b57: return setValue2iv; // _VEC2
-		case 0x8b54: case 0x8b58: return setValue3iv; // _VEC3
-		case 0x8b55: case 0x8b59: return setValue4iv; // _VEC4
-
-	}
-
-}
 ```
 
