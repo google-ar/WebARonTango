@@ -1,9 +1,9 @@
 # Index
 
-* <a href="#disclaimer>Disclaimer</a>
+* <a href="#disclaimer">Disclaimer</a>
 * <a href="#overview">Overview</a>
 * <a href="#how_to_use_this_repo">How to use this repo</a>
-* Using the WebAR prototype and the new APIs
+* [Using the WebAR prototype and the new APIs](#using_the_webar_prototype_and_the_new_apis)
   * How to install and use the prototype
   * Overview of the WebAR APIs
   * Using the WebAR APIs in ThreeJS
