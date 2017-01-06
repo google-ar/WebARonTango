@@ -1,40 +1,40 @@
 # Index
 
-* Disclaimer
-* Overview
-* How to use this repo
+* <a href="#disclaimer>Disclaimer</a>
+* <a href="#overview">Overview</a>
+* <a href="#how_to_use_this_repo">How to use this repo</a>
 * Using the WebAR prototype and the new APIs
   * How to install and use the prototype
   * Overview of the WebAR APIs
   * Using the WebAR APIs in ThreeJS
   * Examples
-* How to build your own version of Chromium with WebAR APIs
+* How to build your own version of Chromium that includes the WebAR APIs
 * Supported devices
 * How to build this documentation
 * License
 * 
 
-# Overview
+# <a name="overview">Overview</a>
 
 This project's goal is to provide an initial implementation of a possible Augmented Reality (AR) API for the Web on top of Chromium. There is a precompiled and working prototype you can use right away along with documentation of the APIs and some examples. There is also a tutorial on how to build your own version of modified Chromium with the WebAR APIs in it.
 
 A major objective of this project is to get a conversation going on the subject of how to provide Augmented Reality capabilities to the web: WebAR.
 
-# Disclaimer
+# <a name="disclaimer">Disclaimer</a>
 
 Defining how a web standard will look like is a complex conversation. All the code and proposals in this project are not meant to be the definitive implementation of AR capabilities for the web, but some prototypes you can play around with at your own risk and have some starting point where to build upon.
 
-# How use this repo
+# <a name="how_to_use_this_repo">How use this repo</a>
 
 This repository can be used in 2 ways if you want to start playing around with WebAR:
 
-1. Install and use a precompiled version of the Chromium prototype with AR capabilities, learn about the new APIs and check out some examples by reading the section <a href="#using_the_prototype_and_the_new_webar_apis"><b>Using the WebAR prototype and the new APIs</b></a>.
+1. Install and use a precompiled version of the Chromium prototype with AR capabilities, learn about the new APIs and check out some examples by reading the section <a href="#using_the_webar_prototype_and_the_new_apis"><b>Using the WebAR prototype and the new APIs</b></a>.
 
-2. Compile you own version of Chromium with WebAR capabilities and contribute to the project by reading the section <a href="#how_to_build_your_own_version_of_chromium_with_webar"><b>How to build your own version of Chromium with WebAR APIs</b></a>.
+2. Compile you own version of Chromium with WebAR capabilities and contribute to the project by reading the section <a href="#how_to_build_your_own_version_of_chromium_that_includes_the_webar_apis"><b>How to build your own version of Chromium that includes the WebAR APIs</b></a>.
 
-# <a name="using_the_prototype_and_the_new_webar_apis">Using the WebAR prototype and the new APIs</a>
+# <a name="using_the_webar_prototype_and_the_new_apis">Using the WebAR prototype and the new APIs</a>
 
-## How to install and use the prototype
+## <a name="how_to_install_and_use_the_prototype">How to install and use the prototype</a>
 
 In the `bin` folder there is a precompiled version of the WebAR enabled version of Chromium. The current version is only available for Android devices with Tango capabilities.
 
@@ -44,7 +44,7 @@ To install the APK you can use the Android `adb` command from the command line. 
 bin$ adb install -r WebARChromium.apk
 ```
 
-The `-r` parameter will reinstall the APK in case you already had it.
+The `-r` parameter will reinstall the APK in case you already had it (and do nothing if you did not have it installed). There are other ways to install the APK like downloading it directly to your device via email for example and allowing Android to install it for you.
 
 The installed application will display the `WebAR Chromium` name with the Android icon.
 
@@ -58,20 +58,24 @@ The QRCode button
 
 <img src="markdown/images/QRCodeButton.png"/>
 
-allows to introduce URLs encoded in QRCodes. It will require the installation of the [Barcode Scanner App](https://play.google.com/store/apps/details?id=com.google.zxing.client.android) from GooglePlay if it is not installed on the device yet. Do not worry, the app itself will prompt you to install it and redirect you to the store automagically the first time you press the QRCode button. There are multiple QRCode generators around the web but I highly recommend to use [The QRCode Generator](https://www.the-qrcode-generator.com/).
+allows to introduce URLs encoded in QRCodes. I personally do not like introducing long/complex URLs using the on screen touch keyboard on Android, so QRCodes come to the rescue. In order to use this functionality it will be required the installation of the [Barcode Scanner App](https://play.google.com/store/apps/details?id=com.google.zxing.client.android) from GooglePlay if it is not installed on the device already. Do not worry, the app itself will prompt you to install it and redirect you to the store automagically the first time you press the QRCode button if the Barcode Scanner app is not present. There are multiple QRCode generators around the web but I highly recommend to use [The QRCode Generator](https://www.the-qrcode-generator.com/).
+
+The last introduced and loaded URL will be stored for future executions of the app. 
 
 ### Overview of the WebAR APIs
 
-This implementation of WebAR is an addition of some features on top of the [WebVR API v1.0 specification](https://webvr.info/). AR and VR share many common concepts like tracking and even a see through camera or a depth sensor can be found in both AR and VR devices. This API is still experimental and it is just a proposal os a possible solution.
+This implementation of WebAR is an addition of some features on top of the [WebVR API v1.1 specification](https://webvr.info/). AR and VR share many common concepts like tracking or even a see through camera or a depth sensor, as they can be found in both AR and VR devices. As mentioned in the disclaimer above, this API is still experimental and it is just a proposal os a possible solution.
 
-The main point of entry for the WebAR API is still the VRDisplay, similarly as in  WebVR. Actually, if an AR device such as Tango (which this implementation is based on) wants to be used for 6DOF (6 Degrees Of Freedom) VR experiences, the WebVR API as is could be used. The getPose call will correctly return the position and orientation acquired from the underlying hardware implementation. 
+If you are not familiar with the WebVR API, I highly recommend that you review it before continuing as some basic knowledge of it will be assumed in the following paragraphs.
 
-But there are some new features that the WebVR v1.0 spec does not include and that provide additional functionality based on the AR underlying platform. These new characteristics can be identified using the VRDisplayCapabilities class that now exposes 2 new flags to specify if the VRDisplay is able to:
+The main point of entry for the WebAR API is still the `VRDisplay` instance as in WebVR. Actually, if an AR device such as Tango (which this implementation is based on) wants to be used for 6DOF (6 Degrees Of Freedom) VR experiences (non AR), the WebVR API as is could be used. The `getPose` and `getFrameData` calls will correctly return the position and orientation acquired from the underlying hardware implementation. 
 
-* [hasPointCloud](./VRDisplayCapabilities.html): Retrieve a cloud of points acquired by a depth sensing device.
-* [hasSeeThroughCamera](./VRDisplayCapabilities.html): Use an undelying see through camera to show the real world.
+But there are some new features that the WebVR v1.1 spec does not include and that provide additional functionality based on the AR underlying platform. These new characteristics can be identified using the `VRDisplayCapabilities` instance obtained from the `VRDisplay` instance that now exposes 2 new flags to specify if it:
 
-If any of these flags are true, a new set of functionalities and APIs can be used always using the [VRDisplay](./VRDisplay.html) as a starting point to retrieve them. The new methods are:
+* [hasPointCloud](./VRDisplayCapabilities.html): The `VRDisplay` instance is able to provide a point cloud acquired by a depth sensing device in the underlying plataform.
+* [hasSeeThroughCamera](./VRDisplayCapabilities.html): The `VRDisplay` instance is able to use an underlying see through camera to show the real world.
+
+If any of these flags are enabled (true), a new set of functionalities and APIs can be used always using the [VRDisplay](./VRDisplay.html) as a starting point to retrieve them. The new methods in the `VRDisplay` instance are:
 
 * [getMaxPointCloudVertexCount](./VRDisplay.html): Provides the maximum number of points in the point cloud.
 * [getPointCloud](./VRDisplay.html): Updates and/or retrieves the points in the [point cloud](./VRPointCloud.html).
