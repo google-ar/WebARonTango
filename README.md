@@ -1,18 +1,17 @@
 # Index
 
-* [Disclaimer](#disclaimer)
 * [Overview](#overview)
+* [Disclaimer](#disclaimer)
 * [How to use this repo](#how_to_use_this_repo)
 * [Using the Chromium WebAR prototype and the new APIs](#using_the_chromium_webar_prototype_and_the_new_apis)
   * [How to install and use the Chromium WebAR prototype](#how_to_install_and_use_the_chromium_webar_prototype_on_android)
   * [Overview of the WebAR APIs](#overview_of_the_webar_apis)
   * [Using the WebAR APIs in ThreeJS](#using_the_webar_apis_in_threejs)
   * [Examples](#examples)
-* How to build your own version of Chromium that includes the WebAR APIs
-* Supported devices
-* How to build this documentation
-* License
-* Future work
+* [How to build your own version of Chromium with WebAR](#how_to_build_your_own_version_of_chromium_with_webar)
+* [Supported devices](#supported_devices)
+* [License](#license)
+* [Future work](#future_work)
 
 # <a name="overview">Overview</a>
 
@@ -30,7 +29,7 @@ This repository can be used in 2 ways:
 
 1. Installing the Chromium prototype, learning about the new WebAR APIs and trying the examples: <a href="#using_the_chromium_webar_prototype_and_the_new_apis"><b>Using the WebAR prototype and the new APIs</b></a>.
 
-2. Compiling you own version of Chromium with WebAR capabilities and contributing to the project: <a href="#how_to_build_your_own_version_of_chromium_that_includes_the_webar_apis"><b>How to build your own version of Chromium that includes the WebAR APIs</b></a>.
+2. Compiling you own version of Chromium with WebAR capabilities and contributing to the project: <a href="#how_to_build_your_own_version_of_chromium_with_webar"><b>How to build your own version of Chromium with WebAR</b></a>.
 
 # <a name="using_the_chromium_webar_prototype_and_the_new_apis">Using the Chromium WebAR prototype and the new APIs</a>
 
@@ -43,12 +42,12 @@ The `bin` folder in this repo holds the precompiled versions of Chromium that su
 To install the APK you can use the Android `adb` command from the command line. Assuming that you are in the `bin` folder:
 
 ```
-bin$ adb install -r WebARChromium.apk
+bin$ adb install -r ChromiumAR.apk
 ```
 
 The `-r` parameter will reinstall the APK in case you already had it (and do nothing if you did not have it installed). There are other ways to install the APK like downloading it directly to your device via email for example and allowing Android to install it for you.
 
-The installed application will display the `WebAR Chromium` name with the Android icon.
+The installed application will display the `ChromiumAR` name with the Android icon.
 
 <img src="markdown/images/WebARChromiumIcon.png"/>
 
@@ -149,7 +148,11 @@ There is also a support library available in this repository under the `THREE.We
 
 All the documentation for the THREE.WebAR.js file is available at: [http://judax.github.io/webar/doc/THREE.WebAR](http://judax.github.io/webar/doc/THREE.WebAR)
 
-## <a name="how_to_build_your_own_version_of_chromium_with_webar"></a> 1. How to build your own version of Chromium with WebAR
+## <a name="examples">Examples</a>
+
+WORK IN PROGRESS
+
+# <a name="how_to_build_your_own_version_of_chromium_with_webar"></a> 1. How to build your own version of Chromium with WebAR
 
 This repository includes only the modifications on the Chromium repository that allows to add Tango/WebAR capabilities into JavaScript. Chromium is a complex project with gigabytes of source code, resources and third party libraries. All the necessary steps to checkout the necessary tools, the Chromium source code and make the necessary modifications will be explained in this document. 
 
@@ -160,7 +163,7 @@ Building the modified version of Chromium is a 2 step process:
 1. Clone the Chromium project (copying the changes in this repository) and prepare it to be built
 2. Build, install and run.
 
-### 1. Clone the Chromium project (copying the changes in this repository) and prepare it to be built
+## 1. Clone the Chromium project (copying the changes in this repository) and prepare it to be built
 
 Chromium cloning/building instruction are available online: [https://www.chromium.org/developers/how-tos/android-build-instructions](https://www.chromium.org/developers/how-tos/android-build-instructions)
 
@@ -206,13 +209,13 @@ Open a terminal window to be able
 
 I know, many steps to be followed, but once you have completed all of them (remember that some will take a loooong time to finish), you won't need to execute them again (except from `gclient sync` that you may need to execute it occassionally).
 
-### 1.2: Build, install and run
+## 2. Build, install and run
 
 **IMPORTANT:** some changes have been done to the Chromium command buffer. These changes may require to rebuild the command buffer. The Python script to do so does not execute along with the regular building process so the script needs to be executed with the following command at least once (and everytime a new command is created in the command buffer):
 ```
 ~/chromium/src/python gpu/command_buffer/build_gles2_cmd_buffer.py
 ```
-This tutorial specified that the name of the out folder created during the setup process above is the same as the branch (webar_57.0.2958.3). This is no coincidence, as the `build_install_run.sh` shell script provided along with this documentation allows to build the Chromium project depending on the current checked out git branch. This script not only compiles Chromium but also the Tango native library called `tango_chromium` that handle the Tango SDK calls. Moreover, this script also installs the final APK on to a connected device and runs it, so it is convenient that you to connect the Tango device via USB before executing it. The project that will be built by default is the Chromium WebView project, the only one that has been modified to provide Tango/WebAR capabilities.
+This tutorial specified that the name of the out folder created during the setup process above is the same as the branch (`webar_57.0.2958.3`). This is no coincidence, as the `build_install_run.sh` shell script provided along with this documentation allows to build the Chromium project depending on the current checked out git branch. This script not only compiles Chromium but also the Tango native library called `tango_chromium` that handle the Tango SDK calls. Moreover, this script also installs the final APK on to a connected device and runs it, so it is convenient that you to connect the Tango device via USB before executing it. The project that will be built by default is the Chromium WebView project, the only one that has been modified to provide Tango/WebAR capabilities.
 ```
 ~/chromium/src/build_install_run.sh
 ```
@@ -220,12 +223,24 @@ You can review the content of the script to see what it does (it is a fairly sim
 ```
 ~/chromium/src$ ninja -C out/webar_57.0.2958.3
 ```
-The final APK will be built in the folder '~/chromium/src/out/webar_57.0.2958.3/out/apks'.
+The final APK will be built in the folder `~/chromium/src/out/webar_57.0.2958.3/out/apks`.
 
-### Build the documentation
+## A brief overview on the Chromium source code modifications to support WebAR
 
-In order to build the documentation you are currently reading, there are some steps that need to be followed:
+WORK IN PROGRESS
 
-1. Install JSDoc: `npm install -g jsdoc`
-2. `$ jsdoc WebARAPI.js THREE.WebAR/THREE.WebAR.js README.md`
+# <a name="supported_devices">Supported devices</a>
 
+The current version of Chromium that supports WebAR has been built on top of Tango and has been tested on the following devices:
+
+* Lenovo Phab 2 Pro
+  * Android version: 6.0.1
+  * Build version: PB2-690Y_S100017_160924
+  
+# <a name="license">License</a>
+
+WORK IN PROGRESS
+
+# <a name="future_work">Future work</a>
+
+WORK IN PRGRESS
