@@ -26,11 +26,11 @@ Defining how a web standard will look like is a complex conversation. All the co
 
 # <a name="how_to_use_this_repo">How use this repo</a>
 
-This repository can be used in 2 ways if you want to start playing around with WebAR:
+This repository can be used in 2 ways:
 
-1. To install the Chromium prototype, learn about the new WebAR APIs and try the examples: <a href="#using_the_chromium_webar_prototype_and_the_new_apis"><b>Using the WebAR prototype and the new APIs</b></a>.
+1. Installing the Chromium prototype, learning about the new WebAR APIs and trying the examples: <a href="#using_the_chromium_webar_prototype_and_the_new_apis"><b>Using the WebAR prototype and the new APIs</b></a>.
 
-2. To compile you own version of Chromium with WebAR capabilities and contribute to the project: <a href="#how_to_build_your_own_version_of_chromium_that_includes_the_webar_apis"><b>How to build your own version of Chromium that includes the WebAR APIs</b></a>.
+2. Compiling you own version of Chromium with WebAR capabilities and contributing to the project: <a href="#how_to_build_your_own_version_of_chromium_that_includes_the_webar_apis"><b>How to build your own version of Chromium that includes the WebAR APIs</b></a>.
 
 # <a name="using_the_chromium_webar_prototype_and_the_new_apis">Using the Chromium WebAR prototype and the new APIs</a>
 
@@ -40,7 +40,7 @@ The `bin` folder in this repo holds the precompiled versions of Chromium that su
 
 ### <a name="how_to_install_and_use_the_chromium_webar_prototype_on_android">How to install and use the Chromium WebAR prototype on Android</a>
 
-To install the APK you can use the Android `adb` command from the command line. Assuming that you are in the bin folder:
+To install the APK you can use the Android `adb` command from the command line. Assuming that you are in the `bin` folder:
 
 ```
 bin$ adb install -r WebARChromium.apk
@@ -64,7 +64,7 @@ allows to introduce URLs encoded in QRCodes. I personally do not like introducin
 
 The last introduced and loaded URL will be stored for future executions of the app. 
 
-### <a name="overview_of_the_webar_apis>Overview of the WebAR APIs</a>
+### <a name="overview_of_the_webar_apis">Overview of the WebAR APIs</a>
 
 This implementation of WebAR is an addition of some features on top of the [WebVR API specification](https://webvr.info/). AR and VR share many common concepts like motion tracking or even a see through camera or a depth sensor, as they can be found in both AR and VR devices (Google Tango, Microsoft Hololens, HTC Vive, ...). As mentioned in the disclaimer above, this API is still experimental and it is just a proposal of a possible solution.
 
