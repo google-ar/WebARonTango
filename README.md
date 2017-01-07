@@ -151,77 +151,63 @@ All the documentation for the THREE.WebAR.js file is available at: [http://judax
 
 ## <a name="how_to_build_your_own_version_of_chromium_with_webar"></a> 1. How to build your own version of Chromium with WebAR
 
-This repository includes only the modifications on the Chromium repository that allows to add Tango/WebAR capabilities into JavaScript. Chromium is a complex project with gigabytes of source code, resources and third party libraries. This repository does not include all Chromium but just the files necessary to make the changes to it in order to enable WebAR, so you will also have to checout the Chromium repository (how to do so will be explained in this tutorial). 
+This repository includes only the modifications on the Chromium repository that allows to add Tango/WebAR capabilities into JavaScript. Chromium is a complex project with gigabytes of source code, resources and third party libraries. All the necessary steps to checkout the necessary tools, the Chromium source code and make the necessary modifications will be explained in this document. 
 
-### The folder structure in this repo
-
-Let's review the content on this repository to better understand it:
-
-`/android_webview`: The modifications to the android webview Chromium project to be able to load the Tango handling dynamic library, store the URLs for future executions, read QRCodes, etc. This folder, internally, contains the Tango handling library and all the build files and resources needed. 
-
-`/device`: The modifications to the vr device files to add both the tango_vr_device class and the modifications to the vr service to be able to expose some specific data related to AR (point cloud, see through camera data, picking, etc.).
-
-`/examples`: A set of some basic examples based on straight WebGL or (mostly) using the ThreeJS framework.
-
-`/gpu`: All the modifications in the GL command buffer to be able to use the external texture extension and make the right call to Tango implementation when the texImage2D is called using the VRSeeThroughCamera instance.
-
-`/third_party`: Both the inclusion of the tango third party libraries (and the tango handling library) and the WebKit vr and webgl IDL classes modifications to be able to expose all the functionalities. ZXing is also added to be able to add the QRCode reading functionality to the WebView APK.
+The modifications to enable WebAR in Chromium are included inside the `chromium` folder in this repo.
 
 Building the modified version of Chromium is a 2 step process: 
 
 1. Clone the Chromium project (copying the changes in this repository) and prepare it to be built
-1. Build, install and run.
+2. Build, install and run.
 
-### 1.1 Clone the Chromium project (copying the changes in this repository) and prepare it to be built
+### 1. Clone the Chromium project (copying the changes in this repository) and prepare it to be built
 
-Chromium cloning/building instruction are available online. 
+Chromium cloning/building instruction are available online: [https://www.chromium.org/developers/how-tos/android-build-instructions](https://www.chromium.org/developers/how-tos/android-build-instructions)
 
-[https://www.chromium.org/developers/how-tos/android-build-instructions](https://www.chromium.org/developers/how-tos/android-build-instructions)
+Anyway, in order to help with the process, we recommend you follow the following steps. 
 
-Anyway, in order to help with the process, we recommend you follow the following steps. Remember, Tango is only available on the Android platform for the moment so in order to be able to use the modifications present in this project, you need to compile Chromium for Android that can only be done on Linux. Unfortunately, this document does not include instructions on how to setup a linux machine. Let's assume that the machine is installed along with:
+Tango is only available on the Android platform for the moment so in order to be able to use the modifications present in this project, you need to compile Chromium for Android that can only be done on Linux. Unfortunately, this document does not include instructions on how to setup a linux machine.
 
-* Java JDK 1.8 and JRE 1.8
+Let's assume that the machine is installed along with:
+
+* Java JDK and JRE 1.7+
 * Android SDK
-* Android NDK 12b
+* Android NDK 13b
 * GIT
-* Setup the PATH variable to point to the tools.
+* Setup the PATH variable to point to the tools above and be able to use them from the command line.
 
-Open a terminal window to be able 
- 1. Install depot_tools: [Tutorial](https://commondatastorage.googleapis.com/chrome-infra-docs/flat/depot_tools/docs/html/depot_tools_tutorial.html#_setting_up)
-	1. `git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git`
-	2. `export PATH=$PATH:/path/to/depot_tools`
- 2. `$ mkdir ~/chromium && cd ~/chromium`
- 3. `~/chromium$ fetch --nohooks android`.          **NOTE**: This process may take quite some time (an hour?)
- 4. Verify that the `.gclient` file has `target_os = ['android']` in it
- 5. `cd src` and then `~/chromium/src$ gclient sync`.          **NOTE**: This process may take some time too.
- 6. Checkout a specific tag to a new branch. The tag used for this build is `54.0.2796.3`. The name of the branch to checkout could be `webar_54.0.2796.3` for example: `~/chromium/src$ git checkout -b webar_54.0.2796.3 54.0.2796.3`. Choose the name of the brnach you like but remember it to create a corresponding out folder.
- 7. Create a folder for the final product compilation with the same name as the branch: `~/chromium/src$ mkdir -p out/webar_54.0.2796.3`
- 8. Create and edit a new file `out/webar_54.0.2796.3/args.gn` with the command `~/chromium/src$ gedit out/webar_54.0.2796.3/args.gn` and copy and paste the following content in it:
-	```
-	target_os = "android"
-	target_cpu = "arm"  # (default)
-	is_debug = false  # (default)
+Open a terminal window to be able
 
-	# Other args you may want to set:
-	is_component_build = true
-	is_clang = true
-	symbol_level = 1  # Faster build with fewer symbols. -g1 rather than -g2
-	enable_incremental_javac = true  # Much faster; experimental
-	```
- 9. Copy and paste all the content from the current folder of the WebAR repo into the chromium/src folder. Override every possible conflict that may arise if you use the file explorer. Otherwise, you can use the following command line: `cp -r PATH_TO_THIS_FOLDER/* ~/chromium/src`
- 10. `~/chromium/src$ gn args out/webar_54.0.2796.3`.          **NOTE**: just exit "q!" in vi when it opens and shows args.gn (modified in the previous step using a proper editor ;))
- 11. `~/chromium/src$ build/install-build-deps-android.sh` 
- 12. Execute the following commands and select the right choice on each. Do not worry if some commands do not have any effect.
- 	```
-	sudo update-alternatives --config javac
-	sudo update-alternatives --config java
-	sudo update-alternatives --config javaws
-	sudo update-alternatives --config javap
-	sudo update-alternatives --config jar
-	sudo update-alternatives --config jarsigner
-	```
- 13. `~/chromium/src$ gclient sync`
- 14. `~/chromium/src$ . build/android/envsetup.sh`
+1. Install depot_tools: [Tutorial](https://commondatastorage.googleapis.com/chrome-infra-docs/flat/depot_tools/docs/html/depot_tools_tutorial.html#_setting_up). You can also follow these 2 steps:
+  1. `git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git`
+  2. `export PATH=$PATH:/path/to/depot_tools`
+2. Create the `chromium` folder: `$ mkdir ~/chromium && cd ~/chromium`
+3. Checkout the Chromium repo: `~/chromium$ fetch --nohooks android`.
+  **NOTE**: This process may take a long time (an hour?)
+4. Verify that the `.gclient` file has `target_os = ['android']` in it: `~/chromium$ cat .gclient`
+5. `~/chromium$ cd src` and then `~/chromium/src$ gclient sync`.
+  **NOTE**: This process may take some time too.
+6. Checkout a specific tag to a new branch. The tag used for this build is `57.0.2958.3`. The name of the branch to checkout could be `webar_57.0.2958.3` for example: `~/chromium/src$ git checkout -b webar_57.0.2958.3 57.0.2958.3`. Choose the name of the brnach you like but remember it to create a corresponding out folder later on.
+7. Create a folder for the final product compilation with the same name as the branch: `~/chromium/src$ mkdir -p out/webar_57.0.2958.3`
+8. Create and edit a new file `out/webar_57.0.2958.3/args.gn` with the command `~/chromium/src$ gedit out/webar_57.0.2958.3/args.gn` and copy and paste the following content in it:
+```
+target_os = "android"
+target_cpu = "arm"  # (default)
+is_debug = false  # (default)
+
+# Other args you may want to set:
+is_component_build = true
+is_clang = true
+symbol_level = 1  # Faster build with fewer symbols. -g1 rather than -g2
+```
+9. Copy and paste all the content from the `chromium/src` folder of this repository the `~/chromium/src` folder just created some steps before. Override every possible conflict that may arise if you use the file explorer by merging and replacing. Otherwise, you can use the following command line: `cp -r PATH_TO_THIS_FOLDER/* ~/chromium/src`
+10. Prepare to build: `~/chromium/src$ gn args out/webar_57.0.2958.3`.
+  **NOTE**: once the command is executed, the vi editor will show you the content of the `args.gn` file just edited a few steps before. Just exit with `:q!`.
+11. Install the build dependencies: `~/chromium/src$ build/install-build-deps-android.sh` 
+12. Synchronize the resources once again: `~/chromium/src$ gclient sync`
+13. Setup the environment: `~/chromium/src$ . build/android/envsetup.sh`
+
+I know, many steps to be followed, but once you have completed all of them (remember that some will take a loooong time to finish), you won't need to execute them again (except from `gclient sync` that you may need to execute it occassionally).
 
 ### 1.2: Build, install and run
 
@@ -229,10 +215,15 @@ Open a terminal window to be able
 ```
 ~/chromium/src/python gpu/command_buffer/build_gles2_cmd_buffer.py
 ```
-This tutorial specified that the name of the out folder created during the setup process above is the same as the branch (webar_54.0.2796.3). This is no coincidence, as the `build_install_run.sh` shell script provided along with this documentation allows to build the Chromium project depending on the current checked out git branch. This script not only compiles Chromium but also the Tango native library called `tango_chromium` that handle the Tango SDK calls. Moreover, this script also installs the final APK on to a connected device and runs it, so it is convenient that you to connect the Tango device via USB before executing it. The project that will be built by default is the Chromium WebView project, the only one that has been modified to provide Tango/WebAR capabilities.
+This tutorial specified that the name of the out folder created during the setup process above is the same as the branch (webar_57.0.2958.3). This is no coincidence, as the `build_install_run.sh` shell script provided along with this documentation allows to build the Chromium project depending on the current checked out git branch. This script not only compiles Chromium but also the Tango native library called `tango_chromium` that handle the Tango SDK calls. Moreover, this script also installs the final APK on to a connected device and runs it, so it is convenient that you to connect the Tango device via USB before executing it. The project that will be built by default is the Chromium WebView project, the only one that has been modified to provide Tango/WebAR capabilities.
 ```
 ~/chromium/src/build_install_run.sh
 ```
+You can review the content of the script to see what it does (it is a fairly simple script) but if you would like to compile the final APK on your own you could do it by executing the following command:
+```
+~/chromium/src$ ninja -C out/webar_57.0.2958.3
+```
+The final APK will be built in the folder '~/chromium/src/out/webar_57.0.2958.3/out/apks'.
 
 ### Build the documentation
 
