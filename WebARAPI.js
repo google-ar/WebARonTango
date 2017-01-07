@@ -95,7 +95,7 @@
 * @name VRPointCloud
 * @class
 * @description A class that represents the point cloud acquired by the underlying VRDisplay when a call to getPointCloud is made. A point cloud is just a set of triplets (x, y, z) that represent each 3D position of each vertex/point in the point cloud. In order to make this structure as fast as possible, the Float32Array is always of the maximum vertex count possible depending on the underlywing VRDisplay. Of course, the exact number of points that have been correctly acquired is also provided in the VRPointCloud instance.
-* NOTE: In order to improve performance, a single point Float32Array is allocated with the maximum capacity of points that the underlying SDK could provide. This is why the vertexCount property is also passed along with the vertices property. It is up to the developer to correctly use/copy the values.
+* NOTE: In order to improve performance, a single Float32Array instance is allocated with the maximum capacity of points that the underlying SDK could provide. This is why the numberOfPoints property is also passed along with the points property. It is up to the developer to correctly use/copy the values.
 */
 
 /**
@@ -108,7 +108,7 @@
 /**
 * @name VRPointCloud#points
 * @type {Float32Array}
-* @description An array of triplets representing each 3D vertices of the point cloud.
+* @description An array of triplets representing each 3D vertices of the point cloud. The size of this array is always of the maximum number of points the underlying platform can provide in order to improvde performance. The real number of points is provided in the numberOfPoints property. The remaining points when the real number of points is less than the maximum possible is filled with the maximum possible float value so they can be discarded.
 * @readonly
 */
 
