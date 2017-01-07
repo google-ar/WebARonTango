@@ -1,22 +1,22 @@
 # Index
 
-* <a href="#disclaimer">Disclaimer</a>
-* <a href="#overview">Overview</a>
-* <a href="#how_to_use_this_repo">How to use this repo</a>
-* [Using the WebAR prototype and the new APIs](#using_the_webar_prototype_and_the_new_apis)
-  * How to install and use the prototype
-  * Overview of the WebAR APIs
-  * Using the WebAR APIs in ThreeJS
-  * Examples
+* [Disclaimer](#disclaimer)
+* [Overview](#overview)
+* [How to use this repo](#how_to_use_this_repo)
+* [Using the Chromium WebAR prototype and the new APIs](#using_the_chromium_webar_prototype_and_the_new_apis)
+  * [How to install and use the Chromium WebAR prototype](#how_to_install_and_use_the_chromium_webar_prototype_on_android)
+  * [Overview of the WebAR APIs](#overview_of_the_webar_apis)
+  * [Using the WebAR APIs in ThreeJS](#using_the_webar_apis_in_threejs)
+  * [Examples](#examples)
 * How to build your own version of Chromium that includes the WebAR APIs
 * Supported devices
 * How to build this documentation
 * License
-* 
+* Future work
 
 # <a name="overview">Overview</a>
 
-This project's goal is to provide an initial implementation of a possible Augmented Reality (AR) API for the Web on top of Chromium. There is a precompiled and working prototype you can use right away along with documentation of the APIs and some examples. There is also a tutorial on how to build your own version of modified Chromium with the WebAR APIs in it.
+This project's goal is to provide an initial implementation of a possible Augmented Reality (AR) API for the Web on top of Chromium. The initial prorotype is built on top of the [Tango](https://get.google.com/tango/) platform for Android by Google. Maybe, more platforms will be supported in the future. There is a precompiled and working prototype you can use right away along with documentation of the APIs and some examples. There is also a tutorial on how to build your own version of modified Chromium with the WebAR APIs in it.
 
 A major objective of this project is to get a conversation going on the subject of how to provide Augmented Reality capabilities to the web: WebAR.
 
@@ -28,15 +28,17 @@ Defining how a web standard will look like is a complex conversation. All the co
 
 This repository can be used in 2 ways if you want to start playing around with WebAR:
 
-1. Install and use a precompiled version of the Chromium prototype with AR capabilities, learn about the new APIs and check out some examples by reading the section <a href="#using_the_webar_prototype_and_the_new_apis"><b>Using the WebAR prototype and the new APIs</b></a>.
+1. To install the Chromium prototype, learn about the new WebAR APIs and try the examples: <a href="#using_the_chromium_webar_prototype_and_the_new_apis"><b>Using the WebAR prototype and the new APIs</b></a>.
 
-2. Compile you own version of Chromium with WebAR capabilities and contribute to the project by reading the section <a href="#how_to_build_your_own_version_of_chromium_that_includes_the_webar_apis"><b>How to build your own version of Chromium that includes the WebAR APIs</b></a>.
+2. To compile you own version of Chromium with WebAR capabilities and contribute to the project: <a href="#how_to_build_your_own_version_of_chromium_that_includes_the_webar_apis"><b>How to build your own version of Chromium that includes the WebAR APIs</b></a>.
 
-# <a name="using_the_webar_prototype_and_the_new_apis">Using the WebAR prototype and the new APIs</a>
+# <a name="using_the_chromium_webar_prototype_and_the_new_apis">Using the Chromium WebAR prototype and the new APIs</a>
 
-## <a name="how_to_install_and_use_the_prototype">How to install and use the prototype</a>
+## <a name="how_to_install_and_use_the_prototype">How to install and use the Chromium WebAR prototype</a>
 
-In the `bin` folder there is a precompiled version of the WebAR enabled version of Chromium. The current version is only available for Android devices with Tango capabilities.
+The `bin` folder in this repo holds the precompiled versions of Chromium that support the WebAR API. Check the [Supported devices]() section to learn what devices/platforms are currently supported and have been tested. 
+
+### <a name="how_to_install_and_use_the_chromium_webar_prototype_on_android">How to install and use the Chromium WebAR prototype on Android</a>
 
 To install the APK you can use the Android `adb` command from the command line. Assuming that you are in the bin folder:
 
@@ -58,31 +60,33 @@ The QRCode button
 
 <img src="markdown/images/QRCodeButton.png"/>
 
-allows to introduce URLs encoded in QRCodes. I personally do not like introducing long/complex URLs using the on screen touch keyboard on Android, so QRCodes come to the rescue. In order to use this functionality it will be required the installation of the [Barcode Scanner App](https://play.google.com/store/apps/details?id=com.google.zxing.client.android) from GooglePlay if it is not installed on the device already. Do not worry, the app itself will prompt you to install it and redirect you to the store automagically the first time you press the QRCode button if the Barcode Scanner app is not present. There are multiple QRCode generators around the web but I highly recommend to use [The QRCode Generator](https://www.the-qrcode-generator.com/).
+allows to introduce URLs encoded in QRCodes. I personally do not like introducing long/complex URLs using the on screen touch keyboard on Android, so QRCodes can come handy (not mandatory to be used). In order to use this functionality it will be required the installation of the [Barcode Scanner App](https://play.google.com/store/apps/details?id=com.google.zxing.client.android) from GooglePlay if it is not already installed on the device. Do not worry, the app itself will prompt you to install it and redirect you to the store automagically the first time you press the QRCode button if the Barcode Scanner app is not present. There are multiple QRCode generators around the web but I highly recommend to use [The QRCode Generator](https://www.the-qrcode-generator.com/).
 
 The last introduced and loaded URL will be stored for future executions of the app. 
 
-### Overview of the WebAR APIs
+### <a name="overview_of_the_webar_apis>Overview of the WebAR APIs</a>
 
-This implementation of WebAR is an addition of some features on top of the [WebVR API v1.1 specification](https://webvr.info/). AR and VR share many common concepts like tracking or even a see through camera or a depth sensor, as they can be found in both AR and VR devices. As mentioned in the disclaimer above, this API is still experimental and it is just a proposal os a possible solution.
+This implementation of WebAR is an addition of some features on top of the [WebVR API specification](https://webvr.info/). AR and VR share many common concepts like motion tracking or even a see through camera or a depth sensor, as they can be found in both AR and VR devices (Google Tango, Microsoft Hololens, HTC Vive, ...). As mentioned in the disclaimer above, this API is still experimental and it is just a proposal of a possible solution.
 
-If you are not familiar with the WebVR API, I highly recommend that you review it before continuing as some basic knowledge of it will be assumed in the following paragraphs.
+If you are not familiar with the [WebVR API](https://webvr.info/), I highly recommend that you review it before continuing as some basic knowledge of it will be assumed in the following paragraphs.
 
-The main point of entry for the WebAR API is still the `VRDisplay` instance as in WebVR. Actually, if an AR device such as Tango (which this implementation is based on) wants to be used for 6DOF (6 Degrees Of Freedom) VR experiences (non AR), the WebVR API as is could be used. The `getPose` and `getFrameData` calls will correctly return the position and orientation acquired from the underlying hardware implementation. 
+All the documentation specific to the new APIs inside WebVR can be found online at: [http://judax.github.io/webar/doc/webarapi](http://judax.github.io/webar/doc/webarapi) that is generated from the file WebARAPI.js found in this repository.
 
-But there are some new features that the WebVR v1.1 spec does not include and that provide additional functionality based on the AR underlying platform. These new characteristics can be identified using the `VRDisplayCapabilities` instance obtained from the `VRDisplay` instance that now exposes 2 new flags to specify if it:
+The main point of entry for the WebAR API is still the `VRDisplay` instance as in WebVR. Actually, if an AR device such as Tango wants to be used for 6DOF (6 Degrees Of Freedom) VR experiences (non AR), the WebVR API as is could be used. The `getPose` and `getFrameData` calls will correctly return the position and orientation acquired from the underlying hardware implementation. 
 
-* [hasPointCloud](./VRDisplayCapabilities.html): The `VRDisplay` instance is able to provide a point cloud acquired by a depth sensing device in the underlying plataform.
-* [hasSeeThroughCamera](./VRDisplayCapabilities.html): The `VRDisplay` instance is able to use an underlying see through camera to show the real world.
+But there are some new features that the WebVR spec does not include and that provide additional functionality based on the underlying AR platform. These new characteristics can be identified using the `VRDisplayCapabilities` instance obtained from the `VRDisplay` instance that now exposes 2 new flags to specify if the device:
 
-If any of these flags are enabled (true), a new set of functionalities and APIs can be used always using the [VRDisplay](./VRDisplay.html) as a starting point to retrieve them. The new methods in the `VRDisplay` instance are:
+* [hasPointCloud](http://judax.github.io/webar/doc/webarapi/VRDisplayCapabilities.html): The `VRDisplay` instance is able to provide a point cloud acquired by a depth sensing device in the underlying plataform.
+* [hasSeeThroughCamera](http://judax.github.io/webar/doc/webarapi/VRDisplayCapabilities.html): The `VRDisplay` instance is able to use an underlying see through camera to show the real world.
 
-* [getMaxPointCloudVertexCount](./VRDisplay.html): Provides the maximum number of points in the point cloud.
-* [getPointCloud](./VRDisplay.html): Updates and/or retrieves the points in the [point cloud](./VRPointCloud.html).
-* [getPickingPointAndPlaneInPointCloud](./VRDisplay.html): Allows to calculate a colission [point and plane](./VRPickingPointAndPlane.html) between a 2D position and a ray casted on to the point cloud.
-* [getSeeThroughCamera](./VRDisplay.html): Retrieves a structure that represents the [see through camera](VRSeeThroughCamera.html) so it can be used for both correct fustrum calculation and for rendering the video feed.
+If any of these flags are enabled (true), a new set of functionalities and APIs can be used always using the [VRDisplay](http://judax.github.io/webar/doc/webarapi/VRDisplay.html) as a starting point. The new methods in the `VRDisplay` instance are:
 
-At a glance it is obvious that some new data structures/classes have been created to support some new functionalities as the underlying Tango platform allows new types of interactions/features. Most of the calls are pretty straightforward and the documentation might provide some idea of how they could be integrated in any or nex web application. The one that might need a bit more explanation is the VRSeeThroughCamera class as it even provides some useful information (what are called the camera intrinsics), it still does not expose how it could be used to render the camera feed in an application. In the current implementation, the approach that has been selected is to create a new overloaded function in the [WebGL API](https://www.khronos.org/registry/webgl/specs/1.0). The [WebGLRenderingContext](https://www.khronos.org/registry/webgl/specs/1.0/#5.14) now exposes the following function:
+* [getMaxNumberOfPointsInPointCloud](http://judax.github.io/webar/doc/webarapi/VRDisplay.html): Provides the maximum number of points in the point cloud.
+* [getPointCloud](http://judax.github.io/webar/doc/webarapi/VRDisplay.html): Updates and/or also retrieves the points in the [point cloud](http://judax.github.io/webar/doc/webarapi/VRPointCloud.html).
+* [getPickingPointAndPlaneInPointCloud](http://judax.github.io/webar/doc/webarapi/VRDisplay.html): Allows to calculate a colission [point and plane](http://judax.github.io/webar/doc/webarapi/VRPickingPointAndPlane.html) between a normalized 2D position and a ray casted on to the point cloud.
+* [getSeeThroughCamera](http://judax.github.io/webar/doc/webarapi/VRDisplay.html): Retrieves a structure that represents the [see through camera](http://judax.github.io/webar/doc/webarapi/VRSeeThroughCamera.html) so it can be used for both correct fustrum calculation and for rendering the video feed.
+
+At a glance it is obvious that some new data structures/classes have been created to support some new functionalities as the underlying Tango platform allows new types of interactions/features. Most of the calls are pretty straightforward and the documentation might provide some idea of how they could be integrated in any web application. The one that might need a bit more explanation is the [VRSeeThroughCamera](http://judax.github.io/webar/doc/webarapi/VRSeeThroughCamera.html) class as it provides some useful information about the camera parameters (what are called the camera intrinsics), but still does not expose how it could be used to render the camera feed in an application. In the current implementation, the approach that has been selected is to create a new overloaded function in the [WebGL API](https://www.khronos.org/registry/webgl/specs/1.0). The [WebGLRenderingContext](https://www.khronos.org/registry/webgl/specs/1.0/#5.14) now exposes the following function:
 
 ```
 void texImage2D(GLenum target, GLint level, GLenum internalformat, GLenum format, GLenum type, VRSeeThroughCamera? source);
@@ -90,11 +94,11 @@ void texImage2D(GLenum target, GLint level, GLenum internalformat, GLenum format
 
 This approach has some benefits:
 
-1. There is no need to retrieve the pixels of the image.
+1. There is no need to retrieve the pixels of the image (it is not very efficient to pass a whole frame from native to JavaScript).
 2. There is full control over the camera image in WebGL (in a fragment shader for example).
-3. It uses a common way to handle video content (texImage2D already has a HTMLVideoElement overload).
+3. It uses a common way to handle video content (`texImage2D` already has some overloads for using `HTMLVideoElement`, `HTMLCanvasElement` or `HTMLImageElement` among others).
 
-But the current implementation has a problem too as the way the camera image is handled inside the texImage2D call requires to use an OpenGL extension that is not available in WebGL at the moment. The Chromium modification that you can find in the repository includes the activation of this extension internally, but you also need to recall that you will need to use the extension in your shader:
+But the current implementation has a problem too as the way the camera image is handled inside the `texImage2D` call requires to use an OpenGL extension that is not available in WebGL at the moment: [OES_EGL_image_external](https://www.khronos.org/registry/gles/extensions/OES/OES_EGL_image_external.txt). The Android Chromium WebAR modification in this repository includes the activation of this extension internally. It is important to note that the fragment shader to render the video feed will also need to use the corresponding extension:
 
 ```
 #extension GL_OES_EGL_image_external : require
@@ -104,9 +108,12 @@ uniform samplerExternalOES map;
 ...
 ```
 
-## Some notes about developing WebAR apps using ThreeJS
+The best recommendation to better understand the new WebAR API is to review the examples provided in this repository that try to explain some of the new functionalities from the ground up both using plain WebGL and also [ThreeJS](http://threejs.org), the most widely used 3D engine on the web.
 
-**IMPORTANT**: In order to use the external image OES extension, a modification to the ThreeJS engine is required. In the `getSingularSetter` function that is able to identify the set functions for the different types of uniforms/attributes in a shader, a new type needs to be added as follows:
+## <a name="using_the_webar_apis_in_threejs">Using the WebAR APIs in ThreeJS</a>
+
+As mentioned in the [previous section](#overview_of_the_webar_apis), in order to use the video feed from the underlying Tango platform, there's the need to use a WebGL extension that is not available in the WebGL standard at the moment. The Chromium implemenetation in this repository activates it so fragment shaders may use it. In the case of ThreeJS, as it internally maps the uniforms in the shaders, a very simple modification to the engine is required. In the `getSingularSetter` function that is able to identify the set-functions for the different types of uniforms/attributes in a shader, a new type needs to be added as follows:
+
 ```
 function getSingularSetter( type ) {
 
@@ -133,6 +140,14 @@ function getSingularSetter( type ) {
 
 }
 ```
+
+See that the case 36198 is the id that identifies the shader uniforms of type `samplerExternalOES` used in the extension.
+
+There is no additional modifications needed to the ThreeJS engine.
+
+There is also a support library available in this repository under the `THREE.WebAR` folder that provides some functionalities to ease the use of the underlying WebAR APIs in ThreeJS by creating the basic types of structures needed like the `THREE.Mesh` instance that represents the video camera quad (along with the corresponding `THREE.VideoTexture` instance and the right fragment shader), the `THREE.Camera` instance that represents the orthogonal camera to correctly render the video camera feed, a `VRPointCloud` structure that handles a point mesh with a `THREE.BufferGeometry` internally to render the point cloud, etc.
+
+All the documentation for the THREE.WebAR.js file is available at: [http://judax.github.io/webar/doc/THREE.WebAR](http://judax.github.io/webar/doc/THREE.WebAR)
 
 ## <a name="how_to_build_your_own_version_of_chromium_with_webar"></a> 1. How to build your own version of Chromium with WebAR
 
