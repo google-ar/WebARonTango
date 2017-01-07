@@ -221,7 +221,7 @@ void GvrDevice::ResetPose() {
     gvr_api->RecenterTracking();
 }
 
-unsigned GvrDevice::GetMaxPointCloudVertexCount()
+unsigned GvrDevice::GetMaxNumberOfPointsInPointCloud()
 {
   return 0;
 }
@@ -239,16 +239,6 @@ mojom::VRSeeThroughCameraPtr GvrDevice::GetSeeThroughCamera()
 mojom::VRPickingPointAndPlanePtr GvrDevice::GetPickingPointAndPlaneInPointCloud(float x, float y)
 {
   return nullptr;
-}
-
-mojo::Array<float> GvrDevice::GetPoseMatrix()
-{
-  return nullptr;
-}
-
-int GvrDevice::GetSeeThroughCameraOrientation()
-{
-  return 0;
 }
 
 void GvrDevice::RequestPresent(const base::Callback<void(bool)>& callback) {

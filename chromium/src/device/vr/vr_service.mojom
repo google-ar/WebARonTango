@@ -44,8 +44,8 @@ struct VREyeParameters {
 };
 
 struct VRPointCloud {
-  uint32 vertexCount;
-  array<float>? vertices;
+  uint32 numberOfPoints;
+  array<float>? points;
 };
 
 struct VRPickingPointAndPlane {
@@ -62,6 +62,7 @@ struct VRSeeThroughCamera {
   double focalLengthY;
   double pointX;
   double pointY;
+  int64 orientation;
 };
 
 struct VRStageParameters {
@@ -77,7 +78,6 @@ struct VRDisplayInfo {
   VRStageParameters? stageParameters;
   VREyeParameters leftEye;
   VREyeParameters rightEye;
-//  VRPointCloud? pointCloud;
 };
 
 struct VRLayerBounds {
@@ -113,17 +113,13 @@ interface VRDisplay {
   ResetPose();
 
   [Sync]
-  GetMaxPointCloudVertexCount() => (uint32 maxPointCloudVertexCount);
+  GetMaxNumberOfPointsInPointCloud() => (uint32 maxNumberOfPointsInPointCloud);
   [Sync]
   GetPointCloud(bool justUpdatePointCloud, uint32 pointsToSkip) => (VRPointCloud pointCloud);
   [Sync]
   GetSeeThroughCamera() => (VRSeeThroughCamera seeThroughCamera);
   [Sync]
   GetPickingPointAndPlaneInPointCloud(float x, float y) => (VRPickingPointAndPlane? pointAndPlane);
-  [Sync]
-  GetPoseMatrix() => (array<float, 16> poseMatrix);
-  [Sync]
-  GetSeeThroughCameraOrientation() => (int32 orientation);
 
   RequestPresent(bool secureOrigin) => (bool success);
   ExitPresent();

@@ -6,8 +6,7 @@
 
 namespace blink {
 
-VRSeeThroughCamera::VRSeeThroughCamera(VRDisplay* vrDisplay): m_vrDisplay(vrDisplay)
-	, m_width(0)
+VRSeeThroughCamera::VRSeeThroughCamera(): m_width(0)
 	, m_height(0)
 	, m_textureWidth(0)
 	, m_textureHeight(0)
@@ -15,6 +14,7 @@ VRSeeThroughCamera::VRSeeThroughCamera(VRDisplay* vrDisplay): m_vrDisplay(vrDisp
 	, m_focalLengthY(0)
 	, m_pointX(0)
 	, m_pointY(0)
+	, m_orientation(0)
 {
 }
 
@@ -60,7 +60,7 @@ double VRSeeThroughCamera::pointY() const
 
 long VRSeeThroughCamera::orientation()
 {
-	return m_vrDisplay->getSeeThroughCameraOrientation();
+	return m_orientation;
 }
 
 void VRSeeThroughCamera::setSeeThroughCamera(const device::mojom::blink::VRSeeThroughCameraPtr& seeThroughCameraPtr)
@@ -73,11 +73,11 @@ void VRSeeThroughCamera::setSeeThroughCamera(const device::mojom::blink::VRSeeTh
 	m_focalLengthY = seeThroughCameraPtr->focalLengthY;
 	m_pointX = seeThroughCameraPtr->pointX;
 	m_pointY = seeThroughCameraPtr->pointY;
+	m_orientation = seeThroughCameraPtr->orientation;
 }
 
 DEFINE_TRACE(VRSeeThroughCamera)
 {
-    visitor->trace(m_vrDisplay);
 }
 
 } // namespace blink

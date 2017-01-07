@@ -4887,7 +4887,6 @@ void WebGLRenderingContextBase::texImageHelperVRSeeThroughCamera(
 
   if (m_cameraImageTextureId != 0) 
   {
-    VLOG(0) << "JUDAX: WebGLRenderingContextBase::texImageHelperVRSeeThroughCamera" << std::endl;
     contextGL()->UpdateTextureExternalOes(m_cameraImageTextureId);
     contextGL()->Finish();
   }

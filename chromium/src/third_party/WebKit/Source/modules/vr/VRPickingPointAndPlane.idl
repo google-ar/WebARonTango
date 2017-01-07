@@ -3,5 +3,4 @@
 ] interface VRPickingPointAndPlane {
     readonly attribute Float32Array? point;
     readonly attribute Float32Array? plane;
-    readonly attribute boolean correctValues;
 };

@@ -46,12 +46,23 @@ rm -rf Backup_WebAR/chromium/src/android_webview/test/shell/tango/libs
 rm -rf Backup_WebAR/chromium/src/android_webview/test/shell/tango/obj
 rm -rf Backup_WebAR/chromium/src/android_webview/test/shell/tango/jni/objs
 rm -rf Backup_WebAR/chromium/src/android_webview/test/shell/VRWebGL
-
+# APK
+# Get the branch name to know the output folder
+cd src
+BRANCH_NAME=$(git symbolic-ref -q HEAD)
+BRANCH_NAME=${BRANCH_NAME##refs/heads/}
+BRANCH_NAME=${BRANCH_NAME:-HEAD}
+cd ..
+mkdir Backup_WebAR/bin
+cp src/out/$BRANCH_NAME/apks/AndroidWebView.apk Backup_WebAR/bin/ChromiumAR.apk
 # Build script, notes, backup script, examples, ... 
 cp src/build_install_run.sh Backup_WebAR/chromium/src/
 # cp src/Notes*.txt Backup_WebAR/chromium/src/
 mkdir -p Backup_WebAR/examples
 cp -r ~/Coding/judax.github.io/webar/* Backup_WebAR/examples
 cp ./backupwebar.sh Backup_WebAR/chromium
+
+
+cp -r Backup_WebAR/* WebAR
 
 

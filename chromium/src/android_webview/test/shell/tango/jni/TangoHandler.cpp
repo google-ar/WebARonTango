@@ -250,10 +250,12 @@ void TangoHandler::releaseInstance()
 TangoHandler::TangoHandler(): connected(false)
 	, tangoConfig(nullptr)
 	, lastTangoImageBufferTimestamp(0)
+#ifdef TANGO_GET_POSE_ALONG_WITH_TEXTURE_UPDATE
 	, poseIsCorrect(false)
+#endif
 	, latestTangoPointCloud(0)
 	, latestTangoPointCloudRetrieved(false)
-	, maxPointCloudVertexCount(0)
+	, maxNumberOfPointsInPointCloud(0)
 	, pointCloudManager(0)
 	, cameraImageYUV(0)
 	, cameraImageYUVSize(0)
@@ -271,18 +273,20 @@ TangoHandler::TangoHandler(): connected(false)
     pthread_mutexattr_t	attr;
     pthread_mutexattr_init( &attr );
     pthread_mutexattr_settype( &attr, PTHREAD_MUTEX_ERRORCHECK );
-    // pthread_mutex_init( &pointCloudMutex, &attr );
     pthread_mutex_init( &cameraImageMutex, &attr );
+#ifdef TANGO_GET_POSE_ALONG_WITH_TEXTURE_UPDATE
     pthread_mutex_init( &poseMutex, &attr );
+#endif
     pthread_cond_init( &cameraImageCondition, NULL );
     pthread_mutexattr_destroy( &attr );	
 }
 
 TangoHandler::~TangoHandler() 
 {
-    // pthread_mutex_destroy( &pointCloudMutex );
     pthread_mutex_destroy( &cameraImageMutex );
+#ifdef TANGO_GET_POSE_ALONG_WITH_TEXTURE_UPDATE
     pthread_mutex_destroy( &poseMutex );
+#endif
     pthread_cond_destroy( &cameraImageCondition );
 }
 
@@ -369,9 +373,9 @@ void TangoHandler::onTangoServiceConnected(JNIEnv* env, jobject binder)
 		LOGE("TangoHandler::onTangoServiceConnected, Get max_point_cloud_elements failed");
 		std::exit(EXIT_SUCCESS);
 	}
-	maxPointCloudVertexCount = static_cast<uint32_t>(maxPointCloudVertexCount_temp);
+	maxNumberOfPointsInPointCloud = static_cast<uint32_t>(maxPointCloudVertexCount_temp);
 
-    result = TangoSupport_createPointCloudManager(maxPointCloudVertexCount, &pointCloudManager);
+    result = TangoSupport_createPointCloudManager(maxNumberOfPointsInPointCloud, &pointCloudManager);
     if (result != TANGO_SUCCESS) 
     {
 		LOGE("TangoHandler::onTangoServiceConnected, TangoSupport_createPointCloudManager failed");
@@ -438,11 +442,9 @@ void TangoHandler::onTangoServiceConnected(JNIEnv* env, jobject binder)
 
 void TangoHandler::onPause() 
 {
-	// pthread_mutex_lock( &pointCloudMutex );
 #ifdef TANGO_USE_POINT_CLOUD
 	TangoSupport_freePointCloudManager(pointCloudManager);
 #endif
-	// pthread_mutex_unlock( &pointCloudMutex );
 
 	TangoConfig_free(tangoConfig);
 	tangoConfig = nullptr;
@@ -538,15 +540,15 @@ bool TangoHandler::getPoseMatrix(float* matrix)
 	return result;
 }
 
-uint32_t TangoHandler::getMaxPointCloudVertexCount() const
+uint32_t TangoHandler::getMaxNumberOfPointsInPointCloud() const
 {
-	return maxPointCloudVertexCount;
+	return maxNumberOfPointsInPointCloud;
 }
 
-bool TangoHandler::getPointCloud(uint32_t* count, float* xyz, bool justUpdatePointCloud, unsigned pointsToSkip)
+bool TangoHandler::getPointCloud(uint32_t* numberOfPoints, float* points, bool justUpdatePointCloud, unsigned pointsToSkip)
 {
 	// In case the point cloud retrieval fails, 0 points should be returned.
-	*count = 0;
+	*numberOfPoints = 0;
 
 	pointsToSkip += 1;
 
@@ -562,7 +564,7 @@ bool TangoHandler::getPointCloud(uint32_t* count, float* xyz, bool justUpdatePoi
 
 			// It is possible that the transform matrix retrieval fails but the count is already there/correct.
 			// TODO: Soon, the transformation of the points should be done in a shader in the application side, so the matrix retrieval could inside this method will be avoided.
-			*count = std::ceil(latestTangoPointCloud->num_points / pointsToSkip);
+			*numberOfPoints = std::ceil(latestTangoPointCloud->num_points / pointsToSkip);
 
 			TangoMatrixTransformData depthCameraMatrixTransform;
 			TangoSupport_getMatrixTransformAtTime(
@@ -580,17 +582,17 @@ bool TangoHandler::getPointCloud(uint32_t* count, float* xyz, bool justUpdatePoi
 				if (result == TANGO_SUCCESS)
 				{
 					uint32_t offset;
-					float* points = tangoPointCloud.points[0];
-					// float* points = latestTangoPointCloud->points[0];
+					float* ptrToPoints = tangoPointCloud.points[0];
+					// float* ptrToPoints = latestTangoPointCloud->points[0];
 					for (uint32_t i = 0, j = 0; i < tangoPointCloud.num_points; i += pointsToSkip, j += 3) 
 					{
 						offset = i * 4;
-						xyz[j    ] = points[offset    ];
-						xyz[j + 1] = points[offset + 1];
-						xyz[j + 2] = points[offset + 2];
+						points[j    ] = ptrToPoints[offset    ];
+						points[j + 1] = ptrToPoints[offset + 1];
+						points[j + 2] = ptrToPoints[offset + 2];
 					}
 					// Cannot make this call anymore as the structure is a 4 value array per point (the fourth being the confidence factor).
-					// memcpy(xyz, latestTangoPointCloud->points[0], sizeof(float) * latestTangoPointCloud->num_points * 3);
+					// memcpy(points, latestTangoPointCloud->points[0], sizeof(float) * latestTangoPointCloud->num_points * 3);
 				}
 				else
 				{
@@ -607,9 +609,6 @@ bool TangoHandler::getPointCloud(uint32_t* count, float* xyz, bool justUpdatePoi
 		{
 			LOGE("TangoHandler::getPointCloud, retrieving the latest point cloud failed.");
 		}
-
-		// pthread_mutex_unlock( &pointCloudMutex );
-
 	}
 
 	return connected;

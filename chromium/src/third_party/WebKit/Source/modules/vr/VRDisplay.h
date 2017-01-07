@@ -66,12 +66,10 @@ class VRDisplay final : public EventTargetWithInlineData,
   VRPose* getPose();
   void resetPose();
 
-  unsigned getMaxPointCloudVertexCount();
+  unsigned getMaxNumberOfPointsInPointCloud();
   VRPointCloud* getPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip);
   VRPickingPointAndPlane* getPickingPointAndPlaneInPointCloud(float x, float y);
   VRSeeThroughCamera* getSeeThroughCamera();
-  DOMFloat32Array* getPoseMatrix();
-  int getSeeThroughCameraOrientation();
 
   double depthNear() const { return m_depthNear; }
   double depthFar() const { return m_depthFar; }

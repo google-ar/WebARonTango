@@ -14,7 +14,7 @@ namespace blink {
 class VRSeeThroughCamera final : public GarbageCollected<VRSeeThroughCamera>, public ScriptWrappable {
     DEFINE_WRAPPERTYPEINFO();
 public:
-    VRSeeThroughCamera(VRDisplay* vrDisplay);
+    VRSeeThroughCamera();
 
     unsigned long width() const;
     unsigned long height() const;
@@ -30,7 +30,6 @@ public:
 
     DECLARE_VIRTUAL_TRACE()
 private:
-    Member<VRDisplay> m_vrDisplay; // NOTE: Is there a weak member?
 	unsigned long m_width;
 	unsigned long m_height;
 	unsigned long m_textureWidth;
@@ -39,6 +38,7 @@ private:
     double m_focalLengthY;
     double m_pointX;
     double m_pointY;
+    long m_orientation;
 };
 
 } // namespace blink

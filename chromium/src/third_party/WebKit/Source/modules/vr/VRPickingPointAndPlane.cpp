@@ -6,7 +6,7 @@
 
 namespace blink {
 
-VRPickingPointAndPlane::VRPickingPointAndPlane(): m_correctValues(false)
+VRPickingPointAndPlane::VRPickingPointAndPlane()
 {
     m_point = DOMFloat32Array::create(3);
     m_plane = DOMFloat32Array::create(4);
@@ -14,8 +14,6 @@ VRPickingPointAndPlane::VRPickingPointAndPlane(): m_correctValues(false)
 
 void VRPickingPointAndPlane::setPickingPointAndPlane(const device::mojom::blink::VRPickingPointAndPlanePtr& pickingPointAndPlanePtr)
 {
-    m_correctValues = false;
-
     if (pickingPointAndPlanePtr.is_null())
         return;
 
@@ -25,7 +23,6 @@ void VRPickingPointAndPlane::setPickingPointAndPlane(const device::mojom::blink:
     for (size_t i = 0; i < 4; i++) {
     	m_plane->data()[i] = (float)pickingPointAndPlanePtr->plane[i];
     }
-    m_correctValues = true;
 }
 
 DEFINE_TRACE(VRPickingPointAndPlane)

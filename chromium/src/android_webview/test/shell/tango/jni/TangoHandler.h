@@ -69,8 +69,8 @@ public:
 	bool getPose(TangoPoseData* tangoPoseData);
 	bool getPoseMatrix(float* matrix);
 
-	uint32_t getMaxPointCloudVertexCount() const;
-	bool getPointCloud(uint32_t* count, float* xyz, bool justUpdatePointCloud, unsigned pointsToSkip);
+	uint32_t getMaxNumberOfPointsInPointCloud() const;
+	bool getPointCloud(uint32_t* numberOfPoints, float* points, bool justUpdatePointCloud, unsigned pointsToSkip);
 	bool getPickingPointAndPlaneInPointCloud(float x, float y, double* point, double* plane);
 
 	bool getCameraImageSize(uint32_t* width, uint32_t* height);
@@ -99,12 +99,13 @@ private:
 	double lastTangoImageBufferTimestamp;
 	std::time_t lastTangoImagebufferTimestampTime;
 
+#ifdef TANGO_GET_POSE_ALONG_WITH_TEXTURE_UPDATE
 	pthread_mutex_t poseMutex;
 	TangoPoseData pose;
 	bool poseIsCorrect;
+#endif
 
-	// pthread_mutex_t pointCloudMutex;
-	uint32_t maxPointCloudVertexCount;
+	uint32_t maxNumberOfPointsInPointCloud;
 	TangoSupportPointCloudManager* pointCloudManager;
 	TangoPointCloud* latestTangoPointCloud;
 	bool latestTangoPointCloudRetrieved;

@@ -32,12 +32,10 @@ class VRDisplayImpl : public mojom::VRDisplay {
   void GetPose(const GetPoseCallback& callback) override;
   void ResetPose() override;
 
-  void GetMaxPointCloudVertexCount(const GetMaxPointCloudVertexCountCallback& callback) override;
+  void GetMaxNumberOfPointsInPointCloud(const GetMaxNumberOfPointsInPointCloudCallback& callback) override;
   void GetPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip, const GetPointCloudCallback& callback) override;
   void GetPickingPointAndPlaneInPointCloud(float x, float y, const GetPickingPointAndPlaneInPointCloudCallback& callback) override;
   void GetSeeThroughCamera(const GetSeeThroughCameraCallback& callback) override;
-  void GetPoseMatrix(const GetPoseMatrixCallback& callback) override;
-  void GetSeeThroughCameraOrientation(const GetSeeThroughCameraOrientationCallback& callback) override;
 
   void RequestPresent(bool secure_origin,
                       const RequestPresentCallback& callback) override;

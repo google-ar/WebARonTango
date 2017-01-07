@@ -20,56 +20,47 @@ namespace {
 
 } // namespace
 
-VRPointCloud::VRPointCloud(): m_vertexCount(0), m_lastVertexCount(0)
+VRPointCloud::VRPointCloud(): m_numberOfPoints(0), m_lastNumberOfPoints(0)
 {
 }
 
-unsigned int VRPointCloud::vertexCount() const
+unsigned int VRPointCloud::numberOfPoints() const
 {
-    return m_vertexCount;
+    return m_numberOfPoints;
 }
 
-DOMFloat32Array* VRPointCloud::vertices() const
+DOMFloat32Array* VRPointCloud::points() const
 {
-    return m_vertices;
+    return m_points;
 }
 
 void VRPointCloud::setPointCloud(device::mojom::blink::VRPointCloudPtr& pointCloudPtr)
 {
-	if (pointCloudPtr.is_null() || !pointCloudPtr->vertices || pointCloudPtr->vertexCount == 0)
-	{
-		if (m_vertices)
-		{
-			std::fill_n(m_vertices->data(), m_lastVertexCount * 3, std::numeric_limits<float>::max());
-			// memset(m_vertices->data(), FLT_MAX, m_lastVertexCount * 3 * sizeof(float));
-		}
-		m_vertexCount = m_lastVertexCount = 0;
-	}
-	else 
-	{
-		if (!m_vertices)
-		{
-			// The retrieved VRPointCloudPtr creates a vertices array of the maximum size (check the GetPointCloud method in the tango_vr_device.cc file)
-			m_vertices = DOMFloat32Array::create(pointCloudPtr->vertices.value().size());
-			std::fill_n(m_vertices->data(), pointCloudPtr->vertices.value().size(), std::numeric_limits<float>::max());
-			// memset(m_vertices->data(), FLT_MAX, pointCloudPtr->vertices.size() * sizeof(float));
-		}
+	if (pointCloudPtr.is_null()) return;
 
-		m_vertexCount = pointCloudPtr->vertexCount;
-		memcpy(m_vertices->data(), &(pointCloudPtr->vertices.value().front()), m_vertexCount * 3 * sizeof(float));
-		if (m_vertexCount < m_lastVertexCount)
-		{
-			std::fill_n(m_vertices->data() + (m_vertexCount * 3), (m_lastVertexCount - m_vertexCount) * 3, std::numeric_limits<float>::max());
-			// memset(m_vertices->data() + (m_vertexCount * 3), FLT_MAX, (m_lastVertexCount - m_vertexCount) * 3 * sizeof(float));
-		}
-		m_lastVertexCount = m_vertexCount;
+	// Create the points array the first time a valid point cloud is passed.
+	// The point cloud will always provide an array with the maximum number of possible points so our array will always be ready
+	// to store all the possible points. But as the actual detected number of points of the point cloud could be less, all the other
+	// values will be filled with the maximum possible float value.
+	if (!m_points) {
+		m_points = DOMFloat32Array::create(pointCloudPtr->points.value().size());
+		std::fill_n(m_points->data(), pointCloudPtr->points.value().size(), std::numeric_limits<float>::max());
+	}	
+	m_numberOfPoints = pointCloudPtr->numberOfPoints;
+	if (m_numberOfPoints > 0) {
+		memcpy(m_points->data(), &(pointCloudPtr->points.value().front()), m_numberOfPoints * 3 * sizeof(float));
 	}
+	if (m_numberOfPoints < m_lastNumberOfPoints)
+	{
+		std::fill_n(m_points->data() + (m_numberOfPoints * 3), (m_lastNumberOfPoints - m_numberOfPoints) * 3, std::numeric_limits<float>::max());
+	}
+	m_lastNumberOfPoints = m_numberOfPoints;
 }
 
 
 DEFINE_TRACE(VRPointCloud)
 {
-    visitor->trace(m_vertices);
+    visitor->trace(m_points);
 }
 
 } // namespace blink

@@ -114,9 +114,9 @@ void TangoVRDevice::ResetPose() {
   // TODO
 }
 
-unsigned TangoVRDevice::GetMaxPointCloudVertexCount()
+unsigned TangoVRDevice::GetMaxNumberOfPointsInPointCloud()
 {
-  return TangoHandler::getInstance()->getMaxPointCloudVertexCount();
+  return TangoHandler::getInstance()->getMaxNumberOfPointsInPointCloud();
 }
 
 mojom::VRPointCloudPtr TangoVRDevice::GetPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip)
@@ -124,10 +124,10 @@ mojom::VRPointCloudPtr TangoVRDevice::GetPointCloud(bool justUpdatePointCloud, u
   TangoHandler* tangoHandler = TangoHandler::getInstance();
   mojom::VRPointCloudPtr pointCloudPtr;
   pointCloudPtr = mojom::VRPointCloud::New();
-  pointCloudPtr->vertices.emplace(tangoHandler->getMaxPointCloudVertexCount() * 3);
-  if (!tangoHandler->getPointCloud(&(pointCloudPtr->vertexCount), &(pointCloudPtr->vertices.value()[0]), justUpdatePointCloud, pointsToSkip))
+  pointCloudPtr->points.emplace(tangoHandler->getMaxNumberOfPointsInPointCloud() * 3);
+  if (!tangoHandler->getPointCloud(&(pointCloudPtr->numberOfPoints), &(pointCloudPtr->points.value()[0]), justUpdatePointCloud, pointsToSkip))
   {
-    pointCloudPtr->vertices.value().clear();
+    return nullptr;
   }
   return pointCloudPtr;
 }
@@ -141,6 +141,7 @@ mojom::VRSeeThroughCameraPtr TangoVRDevice::GetSeeThroughCamera()
   tangoHandler->getCameraImageTextureSize(&(seeThroughCameraPtr->textureWidth), &(seeThroughCameraPtr->textureHeight));
   tangoHandler->getCameraFocalLength(&(seeThroughCameraPtr->focalLengthX), &(seeThroughCameraPtr->focalLengthY));
   tangoHandler->getCameraPoint(&(seeThroughCameraPtr->pointX), &(seeThroughCameraPtr->pointY));
+  seeThroughCameraPtr->orientation = tangoHandler->getSensorOrientation();
   return seeThroughCameraPtr;
 }
 
@@ -155,21 +156,6 @@ mojom::VRPickingPointAndPlanePtr TangoVRDevice::GetPickingPointAndPlaneInPointCl
     return nullptr;
   }
   return pickingPointAndPlanePtr;
-}
-
-mojo::Array<float> TangoVRDevice::GetPoseMatrix() 
-{
-  mojo::Array<float> poseMatrix = mojo::Array<float>::New(16);
-  if (!TangoHandler::getInstance()->getPoseMatrix(&(poseMatrix.front())))
-  {
-//    poseMatrix = nullptr;
-  }
-  return poseMatrix;
-}
-
-int TangoVRDevice::GetSeeThroughCameraOrientation()
-{
-  return TangoHandler::getInstance()->getSensorOrientation();
 }
 
 void TangoVRDevice::RequestPresent(const base::Callback<void(bool)>& callback) {

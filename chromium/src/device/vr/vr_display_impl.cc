@@ -43,14 +43,14 @@ void VRDisplayImpl::ResetPose() {
   device_->ResetPose();
 }
 
-void VRDisplayImpl::GetMaxPointCloudVertexCount(const GetMaxPointCloudVertexCountCallback& callback) 
+void VRDisplayImpl::GetMaxNumberOfPointsInPointCloud(const GetMaxNumberOfPointsInPointCloudCallback& callback) 
 {
   if (!device_->IsAccessAllowed(this)) {
     callback.Run(0);
     return;
   }
 
-  callback.Run(device_->GetMaxPointCloudVertexCount());
+  callback.Run(device_->GetMaxNumberOfPointsInPointCloud());
 }
 
 void VRDisplayImpl::GetPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip, const GetPointCloudCallback& callback) {
@@ -79,25 +79,6 @@ void VRDisplayImpl::GetSeeThroughCamera(const GetSeeThroughCameraCallback& callb
   }
 
   callback.Run(device_->GetSeeThroughCamera());
-}
-
-void VRDisplayImpl::GetPoseMatrix(const GetPoseMatrixCallback& callback) {
-  if (!device_->IsAccessAllowed(this)) {
-    // callback.Run(nullptr);
-    // callback.Run(mojo::Array<float>::New());
-    return;
-  }
-
-  callback.Run(device_->GetPoseMatrix());
-}
-
-void VRDisplayImpl::GetSeeThroughCameraOrientation(const GetSeeThroughCameraOrientationCallback& callback) {
-  if (!device_->IsAccessAllowed(this)) {
-    callback.Run(0);
-    return;
-  }
-
-  callback.Run(device_->GetSeeThroughCameraOrientation());
 }
 
 void VRDisplayImpl::RequestPresent(bool secure_origin,

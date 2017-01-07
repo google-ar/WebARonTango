@@ -46,13 +46,13 @@
 			WebAR (Tango) QRCode ThreeJS Example <a href="https://github.com/judax" target="_blank">Iker Jamardo</a>
 		</div>
 
-		<script src="three.js"></script>
-		<script src="Detector.js"></script>
-		<script src="stats.min.js"></script>
-		<script src="VRControls.js"></script>
-		<script src="THREE.WebAR.js"></script>
-		<script src="dat.gui.min.js"></script>
-		<script src="qrcode.js"></script>
+		<script src="../libs/three.js"></script>
+		<script src="../libs/Detector.js"></script>
+		<script src="../libs/stats.min.js"></script>
+		<script src="../libs/VRControls.js"></script>
+		<script src="../libs/THREE.WebAR.js"></script>
+		<script src="../libs/dat.gui.min.js"></script>
+		<script src="../libs/qrcode.js"></script>
 
 		<script>
 			// function GUI() {
@@ -150,7 +150,7 @@
 				qrcodeMesh.position.set(0, 0, -1);
 				scene.add( qrcodeMesh );
 				var textureLoader = new THREE.TextureLoader();
-				var pictureTexture = textureLoader.load("picture.jpg");
+				var pictureTexture = textureLoader.load("../resources/images/picture.jpg");
 				var pictureMaterial = new THREE.MeshLambertMaterial( {
 					map: pictureTexture,
 					color: 0xFFFFFF,

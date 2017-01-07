@@ -26,12 +26,10 @@ class DEVICE_VR_EXPORT VRDevice {
   virtual mojom::VRDisplayInfoPtr GetVRDevice() = 0;
   virtual mojom::VRPosePtr GetPose() = 0;
   virtual void ResetPose() = 0;
-  virtual unsigned GetMaxPointCloudVertexCount() = 0;
+  virtual unsigned GetMaxNumberOfPointsInPointCloud() = 0;
   virtual mojom::VRPointCloudPtr GetPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip) = 0;
   virtual mojom::VRSeeThroughCameraPtr GetSeeThroughCamera() = 0;
   virtual mojom::VRPickingPointAndPlanePtr GetPickingPointAndPlaneInPointCloud(float x, float y) = 0;
-  virtual mojo::Array<float> GetPoseMatrix() = 0;
-  virtual int GetSeeThroughCameraOrientation() = 0;
 
   virtual void RequestPresent(const base::Callback<void(bool)>& callback) = 0;
   virtual void SetSecureOrigin(bool secure_origin) = 0;

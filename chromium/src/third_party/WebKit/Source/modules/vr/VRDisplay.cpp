@@ -140,7 +140,7 @@ void VRDisplay::update(const device::mojom::blink::VRDisplayInfoPtr& display) {
 
   if (display->capabilities->hasSeeThroughCamera) {
     if (!m_seeThroughCamera) {
-      m_seeThroughCamera = new VRSeeThroughCamera(this);
+      m_seeThroughCamera = new VRSeeThroughCamera();
     }
   }
 
@@ -214,85 +214,55 @@ void VRDisplay::resetPose() {
   m_display->ResetPose();
 }
 
-unsigned VRDisplay::getMaxPointCloudVertexCount()
-{
+unsigned VRDisplay::getMaxNumberOfPointsInPointCloud() {
   if (!m_display)
     return 0;
 
   unsigned result;
-  m_display->GetMaxPointCloudVertexCount(&result);
+  m_display->GetMaxNumberOfPointsInPointCloud(&result);
 
   return result;
 }
 
-VRPointCloud* VRDisplay::getPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip)
-{
-  if (!m_display)
+VRPointCloud* VRDisplay::getPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip) {
+  if (!m_display || !m_pointCloud)
     return nullptr;
 
-  device::mojom::blink::VRPointCloudPtr pointCloud;
-  m_display->GetPointCloud(justUpdatePointCloud, pointsToSkip, &pointCloud);
-  if (m_pointCloud)
-  {
-    m_pointCloud->setPointCloud(pointCloud);
+  device::mojom::blink::VRPointCloudPtr mojoPointCloud;
+  m_display->GetPointCloud(justUpdatePointCloud, pointsToSkip, &mojoPointCloud);
+  if (mojoPointCloud.is_null()) {
+    return nullptr;
+  }
+  else {
+    m_pointCloud->setPointCloud(mojoPointCloud);
   }
   return m_pointCloud;
 }
 
-VRPickingPointAndPlane* VRDisplay::getPickingPointAndPlaneInPointCloud(float x, float y)
-{
-  if (!m_display)
+VRPickingPointAndPlane* VRDisplay::getPickingPointAndPlaneInPointCloud(float x, float y) {
+  if (!m_display || !m_pickingPointAndPlane)
     return nullptr;
 
-  device::mojom::blink::VRPickingPointAndPlanePtr picikingPointAndPlane;
-  m_display->GetPickingPointAndPlaneInPointCloud(x, y, &picikingPointAndPlane);
-  if (m_pickingPointAndPlane)
-  {
-      m_pickingPointAndPlane->setPickingPointAndPlane(picikingPointAndPlane);
+  device::mojom::blink::VRPickingPointAndPlanePtr mojoPickingPointAndPlane;
+  m_display->GetPickingPointAndPlaneInPointCloud(x, y, &mojoPickingPointAndPlane);
+  if (mojoPickingPointAndPlane.is_null()) {
+    return nullptr;
+  }
+  else {
+    m_pickingPointAndPlane->setPickingPointAndPlane(mojoPickingPointAndPlane);
   }
   return m_pickingPointAndPlane;
 }
 
 VRSeeThroughCamera* VRDisplay::getSeeThroughCamera()
 {
-  if (!m_display)
+  if (!m_display || !m_seeThroughCamera)
     return nullptr;
 
-  if (m_seeThroughCamera)
-  {
-      device::mojom::blink::VRSeeThroughCameraPtr seeThroughCamera;
-      m_display->GetSeeThroughCamera(&seeThroughCamera);
-      m_seeThroughCamera->setSeeThroughCamera(seeThroughCamera);
-  }
+  device::mojom::blink::VRSeeThroughCameraPtr seeThroughCamera;
+  m_display->GetSeeThroughCamera(&seeThroughCamera);
+  m_seeThroughCamera->setSeeThroughCamera(seeThroughCamera);
   return m_seeThroughCamera;
-}
-
-DOMFloat32Array* VRDisplay::getPoseMatrix()
-{
-  if (!m_display)
-    return nullptr;
-
-  mojo::WTFArray<float> poseMatrix;
-  // m_display->GetPoseMatrix(&poseMatrix);
-  if (!poseMatrix.is_null())
-  {
-      if (!m_poseMatrix)
-      {
-          m_poseMatrix = DOMFloat32Array::create(16);
-      }
-      memcpy(m_poseMatrix->data(), &(poseMatrix.front()), 16 * sizeof(float));    
-  }
-  return m_poseMatrix;
-}
-
-int VRDisplay::getSeeThroughCameraOrientation()
-{
-  if (!m_display)
-    return 0;
-
-  int32_t orientation;
-  m_display->GetSeeThroughCameraOrientation(&orientation);
-  return orientation;
 }
 
 VREyeParameters* VRDisplay::getEyeParameters(const String& whichEye) {

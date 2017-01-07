@@ -18,17 +18,17 @@ class VRPointCloud final : public GarbageCollected<VRPointCloud>, public ScriptW
 public:
     VRPointCloud();
 
-    unsigned int vertexCount() const;
-    DOMFloat32Array* vertices() const;
+    unsigned int numberOfPoints() const;
+    DOMFloat32Array* points() const;
 
     void setPointCloud(device::mojom::blink::VRPointCloudPtr& pointCloudPtr);
 
     DECLARE_VIRTUAL_TRACE()
 
 private:
-    unsigned long m_vertexCount;
-    unsigned long m_lastVertexCount;
-    Member<DOMFloat32Array> m_vertices;
+    unsigned long m_numberOfPoints;
+    unsigned long m_lastNumberOfPoints;
+    Member<DOMFloat32Array> m_points;
 };
 
 } // namespace blink

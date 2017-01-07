@@ -27,12 +27,10 @@ class GvrDevice : public VRDevice {
   mojom::VRPosePtr GetPose() override;
   void ResetPose() override;
 
-  unsigned GetMaxPointCloudVertexCount() override;
+  unsigned GetMaxNumberOfPointsInPointCloud() override;
   mojom::VRPointCloudPtr GetPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip) override;
   mojom::VRSeeThroughCameraPtr GetSeeThroughCamera() override;
   mojom::VRPickingPointAndPlanePtr GetPickingPointAndPlaneInPointCloud(float x, float y) override;
-  mojo::Array<float> GetPoseMatrix() override;
-  int GetSeeThroughCameraOrientation() override;
 
   void RequestPresent(const base::Callback<void(bool)>& callback) override;
   void SetSecureOrigin(bool secure_origin) override;

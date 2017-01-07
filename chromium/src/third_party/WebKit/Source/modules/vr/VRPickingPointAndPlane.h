@@ -20,7 +20,6 @@ public:
     
     DOMFloat32Array* point() const { return m_point; }
     DOMFloat32Array* plane() const { return m_plane; }
-    bool correctValues() const { return m_correctValues; }
 
     void setPickingPointAndPlane(const device::mojom::blink::VRPickingPointAndPlanePtr&);
 
@@ -29,7 +28,6 @@ public:
 private:
     Member<DOMFloat32Array> m_point;
     Member<DOMFloat32Array> m_plane;
-    bool m_correctValues;
 };
 
 } // namespace blink
