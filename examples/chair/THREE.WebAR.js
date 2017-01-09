@@ -161,7 +161,7 @@ THREE.WebAR.createVRSeeThroughCameraMesh = function(vrDisplay) {
 	if (vrDisplay) {
 		var seeThroughCamera = vrDisplay.getSeeThroughCamera();
 		video = seeThroughCamera;
-		// HACK: Needed to tell the THEE.VideoTextue that the video is ready and that the texture needs update.
+		// HACK: Needed to tell the THREE.VideoTextue that the video is ready and that the texture needs update.
 		video.readyState = 2;
 		video.HAVE_CURRENT_DATA = 2;
 

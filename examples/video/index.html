@@ -14,12 +14,21 @@
     </script>
 
 <title>WebAR Video Example by Iker Jamardo</title>
+
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<style>
+    body {
+        font-family: Monospace;
+        background-color: #000000;
+        margin: 0px;
+        overflow: hidden;
+    }
+</style>
+
 <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
 
-<!-- <meta name="viewport" content="initial-scale=1.0, user-scalable=no"> -->
-
-<script type="text/javascript" src="glMatrix-0.9.5.min.js"></script>
-<script type="text/javascript" src="stats.min.js"></script>
+<script type="text/javascript" src="../libs/glMatrix-0.9.5.min.js"></script>
+<script type="text/javascript" src="../libs/stats.min.js"></script>
 
 <script id="video-shader-fs-oes" type="x-shader/x-fragment">
     #extension GL_OES_EGL_image_external : require
@@ -150,8 +159,8 @@
         }
         else {
             this.seeThroughCamera = document.createElement("video");
-            this.seeThroughCamera.src = "sintel.webm";
-            // this.seeThroughCamera.src = "firefox.ogv";
+            // this.seeThroughCamera.src = "../resources/videos/sintel.webm";
+            this.seeThroughCamera.src = "../resources/videos/firefox.ogv";
             this.seeThroughCamera.play();
             this.seeThroughCamera.orientation = 0;
             this.program = getProgram(gl, "video-shader-vs", "video-shader-fs");

@@ -33,7 +33,7 @@
 */
 
 /**
-* @method VRDisplay#getMaxPointCloudVertexCount
+* @method VRDisplay#getMaxNumberOfPointsInPointCloud
 * @description Returns the maximum number of points/vertices that the VRDisplay is able to represent. This value will be bigger than 0 only if the VRDisplay is able to provide a point cloud. 
 * @see VRDisplayCapabilities
 * @returns {long} - The maximum number of points/vertices that the VRDisplay is able to represent (0 if the underlying VRDisplay does not support point cloud provisioning). 
@@ -43,7 +43,7 @@
 * @method VRDisplay#getPointCloud
 * @description Returns an instance of {@link VRPointCloud} that represents the point cloud acquired by the underlying hardware at the moment of the call.
 * @see VRDisplayCapabilities
-* @param {boolean} justUpdatePointCloud - A flag to indicate if the whole point cloud should be retrieved or just updated internally. Updating the point cloud without retrieving the points may be useful if the point cloud won't be used in JS (for rendering it, for exmaple) but picking will be used. true to only update the point cloud returning 0 points and false to both update and return all the points detected up until the moment of the call.
+* @param {boolean} justUpdatePointCloud - A flag to indicate if the whole point cloud should be retrieved or just updated internally. Updating the point cloud without retrieving the points may be useful if the point cloud won't be used in JS (for rendering it, for exmaple) but picking will be used. This parameter should be true to only update the point cloud returning 0 points and false to both update and return all the points detected up until the moment of the call.
 * @param {number} pointsToSkip - An integer value to indicate how many points to skip when all the points are returned (justUpdatePointCloud = false). This parameter allows to return a less dense point cloud by skipping 1, 2, 3, ... points. A value of 0 will return all the points. A value of 1 will skip every other point returning half the number of points (1/2), a value of 2 will skip 2 of every other points returning one third of the number of points (1/3), etc. In essence, this value will specify the number of point to return skipping some points. numberOfPointsToReturn = numberOfDetectedPoints / (pointsToSkip + 1). 
 * @returns {VRPointCloud} - An instance of a {@link VRPointCloud} with the points/vertices that the VRDisplay has detected or null if the underlying VRDisplay does not support point cloud provisioning.
 */
@@ -54,7 +54,7 @@
 * @see VRDisplayCapabilities
 * @param {float} x - The horizontal normalized value (0-1) of the screen position.
 * @param {float} y - The vertival normalized value (0-1) of the screen position.
-* @returns {VRPickingPointAndPlane} - An instance of a {@link VRPickingPointAndPlane} to represent the collision point and plane normal of the ray traced from the passed (x, y) 2D position into the 3D mesh represented by the point cloud.
+* @returns {VRPickingPointAndPlane} - An instance of a {@link VRPickingPointAndPlane} to represent the collision point and plane normal of the ray traced from the passed (x, y) 2D position into the 3D mesh represented by the point cloud. null is returned if no support for point cloud is provided by the VRDisplay or if no colission has been detected.
 */
 
 /**
@@ -87,13 +87,6 @@
 * @readonly
 */
 
-/**
-* @name VRPickingPointAndPlane#correctValues
-* @type {boolean}
-* @description A flag that indicates if the values of the point and plane are correct (true) or no collision was found between the casted ray and the point cloud mesh (false).
-* @readonly
-*/
-
 // ==================================================================================
 // VRPointCloud
 // ==================================================================================
@@ -102,20 +95,20 @@
 * @name VRPointCloud
 * @class
 * @description A class that represents the point cloud acquired by the underlying VRDisplay when a call to getPointCloud is made. A point cloud is just a set of triplets (x, y, z) that represent each 3D position of each vertex/point in the point cloud. In order to make this structure as fast as possible, the Float32Array is always of the maximum vertex count possible depending on the underlywing VRDisplay. Of course, the exact number of points that have been correctly acquired is also provided in the VRPointCloud instance.
-* NOTE: In order to improve performance, a single point Float32Array is allocated with the maximum capacity of points that the underlying SDK could provide. This is why the vertexCount property is also passed along with the vertices property. It is up to the developer to correctly use/copy the values.
+* NOTE: In order to improve performance, a single Float32Array instance is allocated with the maximum capacity of points that the underlying SDK could provide. This is why the numberOfPoints property is also passed along with the points property. It is up to the developer to correctly use/copy the values.
 */
 
 /**
-* @name VRPointCloud#vertexCount
+* @name VRPointCloud#numberOfPoints
 * @type {long}
-* @description The real number of vertices in the point cloud that have been identified by the underlying system.
+* @description The real number of points in the point cloud that have been identified by the underlying system.
 * @readonly
 */
 
 /**
-* @name VRPointCloud#vertices
+* @name VRPointCloud#points
 * @type {Float32Array}
-* @description An array of triplets representing each 3D vertices of the point cloud.
+* @description An array of triplets representing each 3D vertices of the point cloud. The size of this array is always of the maximum number of points the underlying platform can provide in order to improvde performance. The real number of points is provided in the numberOfPoints property. The remaining points when the real number of points is less than the maximum possible is filled with the maximum possible float value so they can be discarded.
 * @readonly
 */
 

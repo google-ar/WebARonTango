@@ -1,0 +1,194 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=utf-8"> <style>
+	.KEYW {color: #933;}
+	.COMM {color: #bbb; font-style: italic;}
+	.NUMB {color: #393;}
+	.STRN {color: #393;}
+	.REGX {color: #339;}
+	.line {border-right: 1px dotted #666; color: #666; font-style: normal;}
+	</style></head><body><pre><span class='line'>  1</span> <span class="COMM">// ==================================================================================</span><span class="WHIT">
+<span class='line'>  2</span> </span><span class="COMM">// VRDisplayCapabilities</span><span class="WHIT">
+<span class='line'>  3</span> </span><span class="COMM">// ==================================================================================</span><span class="WHIT">
+<span class='line'>  4</span> 
+<span class='line'>  5</span> </span><span class="COMM">/**
+<span class='line'>  6</span> * @name VRDisplayCapabilities
+<span class='line'>  7</span> * @class 
+<span class='line'>  8</span> * @description Added some properties to the VRDisplayCapabilities class of the WebVR spec {@link https://w3c.github.io/webvr/#interface-vrdisplay}.
+<span class='line'>  9</span> */</span><span class="WHIT">
+<span class='line'> 10</span> 
+<span class='line'> 11</span> </span><span class="COMM">/**
+<span class='line'> 12</span> * @name VRDisplayCapabilities#hasPointCloud
+<span class='line'> 13</span> * @type {boolean}
+<span class='line'> 14</span> * @description A flag that indicates if the VRDisplay is able to provide a point cloud (true) or not (false).
+<span class='line'> 15</span> * @readonly
+<span class='line'> 16</span> */</span><span class="WHIT">
+<span class='line'> 17</span> 
+<span class='line'> 18</span> </span><span class="COMM">/**
+<span class='line'> 19</span> * @name VRDisplayCapabilities#hasSeeThroughCamera
+<span class='line'> 20</span> * @type {boolean}
+<span class='line'> 21</span> * @description A flag that indicates if the VRDisplay is able to provide a VRSeeThroughCamera instance (true) or not (false).
+<span class='line'> 22</span> * @readonly
+<span class='line'> 23</span> */</span><span class="WHIT">
+<span class='line'> 24</span> 
+<span class='line'> 25</span> </span><span class="COMM">// ==================================================================================</span><span class="WHIT">
+<span class='line'> 26</span> </span><span class="COMM">// VRDisplay</span><span class="WHIT">
+<span class='line'> 27</span> </span><span class="COMM">// ==================================================================================</span><span class="WHIT">
+<span class='line'> 28</span> 
+<span class='line'> 29</span> </span><span class="COMM">/**
+<span class='line'> 30</span> * @name VRDisplay
+<span class='line'> 31</span> * @class
+<span class='line'> 32</span> * @description WebAR devices will be exposed as VRDisplay instances. The pose estimation is exposed using the exact same methods as in any other VR display, although in the case of the Tango underlying implementation, the pose will be 6DOF (position and orientation). Some new methods have been added though to the VRDisplay class of the WebVR spec to provide new functionalities {@link https://w3c.github.io/webvr/#interface-vrdisplay}.
+<span class='line'> 33</span> */</span><span class="WHIT">
+<span class='line'> 34</span> 
+<span class='line'> 35</span> </span><span class="COMM">/**
+<span class='line'> 36</span> * @method VRDisplay#getMaxNumberOfPointsInPointCloud
+<span class='line'> 37</span> * @description Returns the maximum number of points/vertices that the VRDisplay is able to represent. This value will be bigger than 0 only if the VRDisplay is able to provide a point cloud. 
+<span class='line'> 38</span> * @see VRDisplayCapabilities
+<span class='line'> 39</span> * @returns {long} - The maximum number of points/vertices that the VRDisplay is able to represent (0 if the underlying VRDisplay does not support point cloud provisioning). 
+<span class='line'> 40</span> */</span><span class="WHIT">
+<span class='line'> 41</span> 
+<span class='line'> 42</span> </span><span class="COMM">/**
+<span class='line'> 43</span> * @method VRDisplay#getPointCloud
+<span class='line'> 44</span> * @description Returns an instance of {@link VRPointCloud} that represents the point cloud acquired by the underlying hardware at the moment of the call.
+<span class='line'> 45</span> * @see VRDisplayCapabilities
+<span class='line'> 46</span> * @param {boolean} justUpdatePointCloud - A flag to indicate if the whole point cloud should be retrieved or just updated internally. Updating the point cloud without retrieving the points may be useful if the point cloud won't be used in JS (for rendering it, for exmaple) but picking will be used. This parameter should be true to only update the point cloud returning 0 points and false to both update and return all the points detected up until the moment of the call.
+<span class='line'> 47</span> * @param {number} pointsToSkip - An integer value to indicate how many points to skip when all the points are returned (justUpdatePointCloud = false). This parameter allows to return a less dense point cloud by skipping 1, 2, 3, ... points. A value of 0 will return all the points. A value of 1 will skip every other point returning half the number of points (1/2), a value of 2 will skip 2 of every other points returning one third of the number of points (1/3), etc. In essence, this value will specify the number of point to return skipping some points. numberOfPointsToReturn = numberOfDetectedPoints / (pointsToSkip + 1). 
+<span class='line'> 48</span> * @returns {VRPointCloud} - An instance of a {@link VRPointCloud} with the points/vertices that the VRDisplay has detected or null if the underlying VRDisplay does not support point cloud provisioning.
+<span class='line'> 49</span> */</span><span class="WHIT">
+<span class='line'> 50</span> 
+<span class='line'> 51</span> </span><span class="COMM">/**
+<span class='line'> 52</span> * @method VRDisplay#getPickingPointAndPlaneInPointCloud
+<span class='line'> 53</span> * @description Returns an instance of {@link VRPickingPointAndPlane} that represents a point and a plane normal defined at the collision point in 3D between the point cloud and the given 2D point of the screen. IMPORTANT: The point cloud needs to be at least updated by calling getPointCloud before calling this method. The returned value will always be null if the underlying VRDisplay does not support point cloud provisioning. The internal algorithm will use the provided 2D point to cast a ray against the point cloud and return the collision point and normal of the plane in the point cloud mesh.
+<span class='line'> 54</span> * @see VRDisplayCapabilities
+<span class='line'> 55</span> * @param {float} x - The horizontal normalized value (0-1) of the screen position.
+<span class='line'> 56</span> * @param {float} y - The vertival normalized value (0-1) of the screen position.
+<span class='line'> 57</span> * @returns {VRPickingPointAndPlane} - An instance of a {@link VRPickingPointAndPlane} to represent the collision point and plane normal of the ray traced from the passed (x, y) 2D position into the 3D mesh represented by the point cloud. null is returned if no support for point cloud is provided by the VRDisplay or if no colission has been detected.
+<span class='line'> 58</span> */</span><span class="WHIT">
+<span class='line'> 59</span> 
+<span class='line'> 60</span> </span><span class="COMM">/**
+<span class='line'> 61</span> * @method VRDisplay#getSeeThroughCamera
+<span class='line'> 62</span> * @description Returns an instance of {@link VRSeeThroughCamera} that represents a see through camera (both for AR or VR). The underlying VRDisplay needs to be able to provide such a camera or this method will return null.
+<span class='line'> 63</span> * @see VRDisplayCapabilities
+<span class='line'> 64</span> * @returns {VRSeeThroughCamera} - An instance of a {@link VRSeeThroughCamera} to represent a see through camera or null if no camera is supported.
+<span class='line'> 65</span> */</span><span class="WHIT">
+<span class='line'> 66</span> 
+<span class='line'> 67</span> </span><span class="COMM">// ==================================================================================</span><span class="WHIT">
+<span class='line'> 68</span> </span><span class="COMM">// ==================================================================================</span><span class="WHIT">
+<span class='line'> 69</span> 
+<span class='line'> 70</span> </span><span class="COMM">/**
+<span class='line'> 71</span> * @name VRPickingPointAndPlane
+<span class='line'> 72</span> * @class
+<span class='line'> 73</span> * @description A class that represents the point where a collision happened between a ray and the VRPointCloud mesh and the normal of the plane of that same collision.
+<span class='line'> 74</span> */</span><span class="WHIT">
+<span class='line'> 75</span> 
+<span class='line'> 76</span> </span><span class="COMM">/**
+<span class='line'> 77</span> * @name VRPickingPointAndPlane#point
+<span class='line'> 78</span> * @type {Float32Array}
+<span class='line'> 79</span> * @description An array of 3 values representing the 3D position of the collision point between a casted ray and the point cloud mesh.
+<span class='line'> 80</span> * @readonly
+<span class='line'> 81</span> */</span><span class="WHIT">
+<span class='line'> 82</span> 
+<span class='line'> 83</span> </span><span class="COMM">/**
+<span class='line'> 84</span> * @name VRPickingPointAndPlane#plane
+<span class='line'> 85</span> * @type {Float32Array}
+<span class='line'> 86</span> * @description An array of 4 values representing the coeficients of the values in the equation of the plane where there was a collision between a casted ray and the point cloud mesh.
+<span class='line'> 87</span> * @readonly
+<span class='line'> 88</span> */</span><span class="WHIT">
+<span class='line'> 89</span> 
+<span class='line'> 90</span> </span><span class="COMM">// ==================================================================================</span><span class="WHIT">
+<span class='line'> 91</span> </span><span class="COMM">// VRPointCloud</span><span class="WHIT">
+<span class='line'> 92</span> </span><span class="COMM">// ==================================================================================</span><span class="WHIT">
+<span class='line'> 93</span> 
+<span class='line'> 94</span> </span><span class="COMM">/**
+<span class='line'> 95</span> * @name VRPointCloud
+<span class='line'> 96</span> * @class
+<span class='line'> 97</span> * @description A class that represents the point cloud acquired by the underlying VRDisplay when a call to getPointCloud is made. A point cloud is just a set of triplets (x, y, z) that represent each 3D position of each vertex/point in the point cloud. In order to make this structure as fast as possible, the Float32Array is always of the maximum vertex count possible depending on the underlywing VRDisplay. Of course, the exact number of points that have been correctly acquired is also provided in the VRPointCloud instance.
+<span class='line'> 98</span> * NOTE: In order to improve performance, a single Float32Array instance is allocated with the maximum capacity of points that the underlying SDK could provide. This is why the numberOfPoints property is also passed along with the points property. It is up to the developer to correctly use/copy the values.
+<span class='line'> 99</span> */</span><span class="WHIT">
+<span class='line'>100</span> 
+<span class='line'>101</span> </span><span class="COMM">/**
+<span class='line'>102</span> * @name VRPointCloud#numberOfPoints
+<span class='line'>103</span> * @type {long}
+<span class='line'>104</span> * @description The real number of points in the point cloud that have been identified by the underlying system.
+<span class='line'>105</span> * @readonly
+<span class='line'>106</span> */</span><span class="WHIT">
+<span class='line'>107</span> 
+<span class='line'>108</span> </span><span class="COMM">/**
+<span class='line'>109</span> * @name VRPointCloud#points
+<span class='line'>110</span> * @type {Float32Array}
+<span class='line'>111</span> * @description An array of triplets representing each 3D vertices of the point cloud. The size of this array is always of the maximum number of points the underlying platform can provide in order to improvde performance. The real number of points is provided in the numberOfPoints property. The remaining points when the real number of points is less than the maximum possible is filled with the maximum possible float value so they can be discarded.
+<span class='line'>112</span> * @readonly
+<span class='line'>113</span> */</span><span class="WHIT">
+<span class='line'>114</span> 
+<span class='line'>115</span> </span><span class="COMM">// ==================================================================================</span><span class="WHIT">
+<span class='line'>116</span> </span><span class="COMM">// VRSeeThroughCamera</span><span class="WHIT">
+<span class='line'>117</span> </span><span class="COMM">// ==================================================================================</span><span class="WHIT">
+<span class='line'>118</span> 
+<span class='line'>119</span> </span><span class="COMM">/**
+<span class='line'>120</span> * @name VRSeeThroughCamera
+<span class='line'>121</span> * @class
+<span class='line'>122</span> * @description A class that represents a see through camera. Both VR and AR displays may provide access to a camera that can be used to show the reality around the user. This class provides information about the camera characteristics and it can also be used to render each frame acquired from the camera.
+<span class='line'>123</span> */</span><span class="WHIT">
+<span class='line'>124</span> 
+<span class='line'>125</span> </span><span class="COMM">/**
+<span class='line'>126</span> * @name VRSeeThroughCamera#width
+<span class='line'>127</span> * @type {long}
+<span class='line'>128</span> * @description The horizontal size of the camera.
+<span class='line'>129</span> * @readonly
+<span class='line'>130</span> */</span><span class="WHIT">
+<span class='line'>131</span> 
+<span class='line'>132</span> </span><span class="COMM">/**
+<span class='line'>133</span> * @name VRSeeThroughCamera#height
+<span class='line'>134</span> * @type {long}
+<span class='line'>135</span> * @description The vertical size of the camera.
+<span class='line'>136</span> * @readonly
+<span class='line'>137</span> */</span><span class="WHIT">
+<span class='line'>138</span> 
+<span class='line'>139</span> </span><span class="COMM">/**
+<span class='line'>140</span> * @name VRSeeThroughCamera#textureWidth
+<span class='line'>141</span> * @type {long}
+<span class='line'>142</span> * @description The horizontal size of the texture used to hold each camera frame. It can be the same or a bigger value than the camera width.
+<span class='line'>143</span> * @readonly
+<span class='line'>144</span> */</span><span class="WHIT">
+<span class='line'>145</span> 
+<span class='line'>146</span> </span><span class="COMM">/**
+<span class='line'>147</span> * @name VRSeeThroughCamera#textureHeight
+<span class='line'>148</span> * @type {long}
+<span class='line'>149</span> * @description The vertical size of the texture used to hold each camera frame. It can be the same or a bigger value than the camera height.
+<span class='line'>150</span> * @readonly
+<span class='line'>151</span> */</span><span class="WHIT">
+<span class='line'>152</span> 
+<span class='line'>153</span> </span><span class="COMM">/**
+<span class='line'>154</span> * @name VRSeeThroughCamera#focalLengthX
+<span class='line'>155</span> * @type {double}
+<span class='line'>156</span> * @description The hortizontal focal length.
+<span class='line'>157</span> * @readonly
+<span class='line'>158</span> */</span><span class="WHIT">
+<span class='line'>159</span> 
+<span class='line'>160</span> </span><span class="COMM">/**
+<span class='line'>161</span> * @name VRSeeThroughCamera#focalLengthY
+<span class='line'>162</span> * @type {double}
+<span class='line'>163</span> * @description The vertical focal length.
+<span class='line'>164</span> * @readonly
+<span class='line'>165</span> */</span><span class="WHIT">
+<span class='line'>166</span> 
+<span class='line'>167</span> </span><span class="COMM">/**
+<span class='line'>168</span> * @name VRSeeThroughCamera#pointX
+<span class='line'>169</span> * @type {double}
+<span class='line'>170</span> * @description The horizontal value that represents the center of the camera.
+<span class='line'>171</span> * @readonly
+<span class='line'>172</span> */</span><span class="WHIT">
+<span class='line'>173</span> 
+<span class='line'>174</span> </span><span class="COMM">/**
+<span class='line'>175</span> * @name VRSeeThroughCamera#pointY
+<span class='line'>176</span> * @type {double}
+<span class='line'>177</span> * @description The vertical value that represents the center of the camera.
+<span class='line'>178</span> * @readonly
+<span class='line'>179</span> */</span><span class="WHIT">
+<span class='line'>180</span> 
+<span class='line'>181</span> </span><span class="COMM">/**
+<span class='line'>182</span> * @name VRSeeThroughCamera#orientation
+<span class='line'>183</span> * @type {long}
+<span class='line'>184</span> * @description The orientation of the camera.
+<span class='line'>185</span> * @readonly
+<span class='line'>186</span> */</span><span class="WHIT">
+<span class='line'>187</span> </span></pre></body></html>
