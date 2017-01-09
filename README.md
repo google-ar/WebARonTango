@@ -21,6 +21,8 @@ A major objective of this project is to get a conversation going on the subject 
 
 # <a name="disclaimer">Disclaimer</a>
 
+**This is not an official Google product.**
+
 Defining how a web standard will look like is a complex conversation. All the code and proposals in this project are not meant to be the definitive implementation of AR capabilities for the web, but some prototypes you can play around with at your own risk and have some starting point where to build upon.
 
 # <a name="how_to_use_this_repo">How use this repo</a>
