@@ -241,7 +241,7 @@ The current version of Chromium that supports WebAR has been built on top of Tan
   
 # <a name="license">License</a>
 
-WORK IN PROGRESS
+Apache License Version 2.0 (see the `LICENSE' file inside this repo).
 
 # <a name="future_work">Future work</a>
 
