@@ -1862,6 +1862,21 @@ void WebGL2RenderingContextBase::compressedTexImage2D(
       static_cast<uint8_t*>(data->baseAddress()) + srcOffset);
 }
 
+void WebGL2RenderingContextBase::compressedTexImage2D(GLenum target,
+                                                      GLint level,
+                                                      GLenum internalformat,
+                                                      GLsizei width,
+                                                      GLsizei height,
+                                                      GLint border,
+                                                      GLsizei imageSize,
+                                                      GLintptr offset) {
+  if (isContextLost())
+    return;
+  contextGL()->CompressedTexImage2D(target, level, internalformat, width,
+                                    height, border, imageSize,
+                                    reinterpret_cast<uint8_t*>(offset));
+}
+
 void WebGL2RenderingContextBase::compressedTexSubImage2D(
     GLenum target,
     GLint level,
@@ -1909,6 +1924,22 @@ void WebGL2RenderingContextBase::compressedTexSubImage2D(
       static_cast<uint8_t*>(data->baseAddress()) + srcOffset);
 }
 
+void WebGL2RenderingContextBase::compressedTexSubImage2D(GLenum target,
+                                                         GLint level,
+                                                         GLint xoffset,
+                                                         GLint yoffset,
+                                                         GLsizei width,
+                                                         GLsizei height,
+                                                         GLenum format,
+                                                         GLsizei imageSize,
+                                                         GLintptr offset) {
+  if (isContextLost())
+    return;
+  contextGL()->CompressedTexSubImage2D(target, level, xoffset, yoffset, width,
+                                       height, format, imageSize,
+                                       reinterpret_cast<uint8_t*>(offset));
+}
+
 void WebGL2RenderingContextBase::compressedTexImage3D(
     GLenum target,
     GLint level,
@@ -1942,6 +1973,22 @@ void WebGL2RenderingContextBase::compressedTexImage3D(
       target, level, internalformat, width, height, depth, border,
       srcLengthOverride,
       static_cast<uint8_t*>(data->baseAddress()) + srcOffset);
+}
+
+void WebGL2RenderingContextBase::compressedTexImage3D(GLenum target,
+                                                      GLint level,
+                                                      GLenum internalformat,
+                                                      GLsizei width,
+                                                      GLsizei height,
+                                                      GLsizei depth,
+                                                      GLint border,
+                                                      GLsizei imageSize,
+                                                      GLintptr offset) {
+  if (isContextLost())
+    return;
+  contextGL()->CompressedTexImage3D(target, level, internalformat, width,
+                                    height, depth, border, imageSize,
+                                    reinterpret_cast<uint8_t*>(offset));
 }
 
 void WebGL2RenderingContextBase::compressedTexSubImage3D(
@@ -1979,6 +2026,24 @@ void WebGL2RenderingContextBase::compressedTexSubImage3D(
       target, level, xoffset, yoffset, zoffset, width, height, depth, format,
       srcLengthOverride,
       static_cast<uint8_t*>(data->baseAddress()) + srcOffset);
+}
+
+void WebGL2RenderingContextBase::compressedTexSubImage3D(GLenum target,
+                                                         GLint level,
+                                                         GLint xoffset,
+                                                         GLint yoffset,
+                                                         GLint zoffset,
+                                                         GLsizei width,
+                                                         GLsizei height,
+                                                         GLsizei depth,
+                                                         GLenum format,
+                                                         GLsizei imageSize,
+                                                         GLintptr offset) {
+  if (isContextLost())
+    return;
+  contextGL()->CompressedTexSubImage3D(target, level, xoffset, yoffset, zoffset,
+                                       width, height, depth, format, imageSize,
+                                       reinterpret_cast<uint8_t*>(offset));
 }
 
 GLint WebGL2RenderingContextBase::getFragDataLocation(WebGLProgram* program,
@@ -2385,9 +2450,9 @@ void WebGL2RenderingContextBase::vertexAttribIPointer(GLuint index,
   }
   if (!validateValueFitNonNegInt32("vertexAttribIPointer", "offset", offset))
     return;
-  if (!m_boundArrayBuffer) {
+  if (!m_boundArrayBuffer && offset != 0) {
     synthesizeGLError(GL_INVALID_OPERATION, "vertexAttribIPointer",
-                      "no bound ARRAY_BUFFER");
+                      "no ARRAY_BUFFER is bound and offset is non-zero");
     return;
   }
 
@@ -3249,8 +3314,8 @@ void WebGL2RenderingContextBase::transformFeedbackVaryings(
       keepAlive;  // Must keep these instances alive while looking at their data
   Vector<const char*> varyingStrings;
   for (size_t i = 0; i < varyings.size(); ++i) {
-    keepAlive.append(varyings[i].ascii());
-    varyingStrings.append(keepAlive.back().data());
+    keepAlive.push_back(varyings[i].ascii());
+    varyingStrings.push_back(keepAlive.back().data());
   }
 
   contextGL()->TransformFeedbackVaryings(objectOrZero(program), varyings.size(),
@@ -3434,8 +3499,8 @@ Vector<GLuint> WebGL2RenderingContextBase::getUniformIndices(
       keepAlive;  // Must keep these instances alive while looking at their data
   Vector<const char*> uniformStrings;
   for (size_t i = 0; i < uniformNames.size(); ++i) {
-    keepAlive.append(uniformNames[i].ascii());
-    uniformStrings.append(keepAlive.back().data());
+    keepAlive.push_back(uniformNames[i].ascii());
+    uniformStrings.push_back(keepAlive.back().data());
   }
 
   result.resize(uniformNames.size());
@@ -4496,10 +4561,6 @@ DEFINE_TRACE(WebGL2RenderingContextBase) {
 }
 
 DEFINE_TRACE_WRAPPERS(WebGL2RenderingContextBase) {
-  if (isContextLost()) {
-    return;
-  }
-
   visitor->traceWrappers(m_transformFeedbackBinding);
   visitor->traceWrappers(m_readFramebufferBinding);
   visitor->traceWrappers(m_boundCopyReadBuffer);

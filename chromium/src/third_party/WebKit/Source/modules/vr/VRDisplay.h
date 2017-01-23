@@ -97,7 +97,7 @@ class VRDisplay final : public EventTargetWithInlineData,
   const AtomicString& interfaceName() const override;
 
   // ContextLifecycleObserver implementation.
-  void contextDestroyed() override;
+  void contextDestroyed(ExecutionContext*) override;
 
   // ScriptWrappable implementation.
   bool hasPendingActivity() const final;

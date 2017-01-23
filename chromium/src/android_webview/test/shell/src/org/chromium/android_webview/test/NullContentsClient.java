@@ -20,6 +20,7 @@ import android.webkit.WebChromeClient;
 import org.chromium.android_webview.AwContentsClient;
 import org.chromium.android_webview.AwContentsClientBridge;
 import org.chromium.android_webview.AwHttpAuthHandler;
+import org.chromium.android_webview.AwRenderProcessGoneDetail;
 import org.chromium.android_webview.AwWebResourceResponse;
 import org.chromium.android_webview.JsPromptResultReceiver;
 import org.chromium.android_webview.JsResultReceiver;
@@ -251,5 +252,10 @@ public class NullContentsClient extends AwContentsClient {
 
     @Override
     public void onPermissionRequestCanceled(AwPermissionRequest awPermissionRequest) {
+    }
+
+    @Override
+    public boolean onRenderProcessGone(AwRenderProcessGoneDetail detail) {
+        return false;
     }
 }

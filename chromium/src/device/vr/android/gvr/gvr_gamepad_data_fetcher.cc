@@ -4,6 +4,7 @@
 
 #include "device/vr/android/gvr/gvr_gamepad_data_fetcher.h"
 
+#include "base/memory/ptr_util.h"
 #include "base/strings/utf_string_conversions.h"
 
 #include "device/vr/android/gvr/gvr_delegate.h"

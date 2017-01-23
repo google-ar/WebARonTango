@@ -1,4 +1,11 @@
 clear; reset;
+# A crappy way to know if GOMA is being used to build chromium.
+# TODO: Parse the args.gn file to know if goma is actually being used or not.
+if [ -n "$GOMA_DIR" ]; then
+	echo "Making sure that goma is started..."
+	python "$GOMA_DIR/goma_ctl.py" ensure_start
+	echo "Ensured that goma has started!"
+fi
 echo "Rebuilding libtango.so..."
 cd android_webview/test/shell/tango/jni
 ./ndkbuild.sh
@@ -33,8 +40,17 @@ if [ $? -eq 0 ]; then
 	if [ $? -eq 0 ]; then
 		echo "Regenerated!"
 		echo "Building $APK_TYPE for Android at 'out/$BRANCH_NAME' folder..."
-		ninja -C "out/$BRANCH_NAME" -j 320 "$APK_TYPE"
-		if [ $? -eq 0 ]; then
+		NINJA_RESULT=0
+		# A crappy way to know if GOMA is being used to build chromium.
+		# TODO: Parse the args.gn file to know if goma is actually being used or not.
+		if [ -z "$GOMA_DIR" ]; then
+			ninja -C "out/$BRANCH_NAME $APK_TYPE"
+			NINJA_RESULT=$?
+		else
+			ninja -C "out/$BRANCH_NAME" -j 320 "$APK_TYPE"
+			NINJA_RESULT=$?
+		fi
+		if [ $NINJA_RESULT -eq 0 ]; then
 			echo "Built!"
 			echo "Installing $APK_TYPE on Android device..."
 			adb install -r "out/$BRANCH_NAME/apks/$APK_FILE_NAME.apk"

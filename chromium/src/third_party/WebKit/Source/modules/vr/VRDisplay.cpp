@@ -395,9 +395,9 @@ ScriptPromise VRDisplay::requestPresent(ScriptState* scriptState,
     return promise;
   }
 
-  m_layer = layers[0];
-
-  if (!m_layer.source()) {
+  // If what we were given has an invalid source, need to exit fullscreen with
+  // previous, valid source, so delay m_layer reassignment
+  if (!layers[0].source()) {
     forceExitPresent();
     DOMException* exception =
         DOMException::create(InvalidStateError, "Invalid layer source.");
@@ -405,6 +405,7 @@ ScriptPromise VRDisplay::requestPresent(ScriptState* scriptState,
     ReportPresentationResult(PresentationResult::InvalidLayerSource);
     return promise;
   }
+  m_layer = layers[0];
 
   CanvasRenderingContext* renderingContext =
       m_layer.source()->renderingContext();
@@ -629,6 +630,7 @@ void VRDisplay::updateLayerBounds() {
     leftBounds->top = 0.0f;
     leftBounds->width = 0.5f;
     leftBounds->height = 1.0f;
+    m_layer.setLeftBounds({0.0f, 0.0f, 0.5f, 1.0f});
   }
 
   if (m_layer.rightBounds().size() == 4) {
@@ -642,6 +644,7 @@ void VRDisplay::updateLayerBounds() {
     rightBounds->top = 0.0f;
     rightBounds->width = 0.5f;
     rightBounds->height = 1.0f;
+    m_layer.setRightBounds({0.5f, 0.0f, 0.5f, 1.0f});
   }
 
   m_display->UpdateLayerBounds(std::move(leftBounds), std::move(rightBounds));
@@ -651,7 +654,7 @@ HeapVector<VRLayer> VRDisplay::getLayers() {
   HeapVector<VRLayer> layers;
 
   if (m_isPresenting) {
-    layers.append(m_layer);
+    layers.push_back(m_layer);
   }
 
   return layers;
@@ -819,8 +822,9 @@ const AtomicString& VRDisplay::interfaceName() const {
   return EventTargetNames::VRDisplay;
 }
 
-void VRDisplay::contextDestroyed() {
+void VRDisplay::contextDestroyed(ExecutionContext*) {
   forceExitPresent();
+  m_scriptedAnimationController.clear();
 }
 
 bool VRDisplay::hasPendingActivity() const {
@@ -841,10 +845,6 @@ DEFINE_TRACE(VRDisplay) {
   visitor->trace(m_renderingContext);
   visitor->trace(m_scriptedAnimationController);
   visitor->trace(m_pendingPresentResolvers);
-  visitor->trace(m_pointCloud);
-  visitor->trace(m_pickingPointAndPlane);
-  visitor->trace(m_seeThroughCamera);
-  visitor->trace(m_poseMatrix);
 }
 
 }  // namespace blink

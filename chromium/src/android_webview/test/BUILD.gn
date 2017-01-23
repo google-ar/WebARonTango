@@ -35,7 +35,6 @@ android_apk("android_webview_apk") {
   java_files = [
     "shell/src/org/chromium/android_webview/shell/TangoJniNative.java",
     "shell/src/org/chromium/android_webview/shell/TangoInitializationHelper.java",
-    "shell/src/org/chromium/android_webview/shell/Utils.java",
     "shell/src/org/chromium/android_webview/shell/AwShellActivity.java",
     "shell/src/org/chromium/android_webview/shell/AwShellApplication.java",
     "shell/src/org/chromium/android_webview/shell/AwShellResourceProvider.java",
@@ -127,9 +126,12 @@ instrumentation_test_apk("android_webview_test_apk") {
   apk_under_test = ":android_webview_apk"
   android_manifest = "../javatests/AndroidManifest.xml"
   deps = [
+    "//android_webview:android_webview_crash_services_java",
     "//android_webview:android_webview_java",
     "//base:base_java",
     "//base:base_java_test_support",
+    "//components/minidump_uploader:minidump_uploader_java",
+    "//components/minidump_uploader:minidump_uploader_javatests",
     "//components/policy/android:policy_java",
     "//components/policy/android:policy_java_test_support",
     "//components/web_contents_delegate_android:web_contents_delegate_android_java",
@@ -139,6 +141,7 @@ instrumentation_test_apk("android_webview_test_apk") {
     "//device/geolocation:geolocation_java_test_support",
     "//net/android:net_java",
     "//net/android:net_java_test_support",
+    "//third_party/android_support_test_runner:runner_java",
     "//third_party/android_tools:legacy_http_javalib",
     "//ui/android:ui_java",
   ]
@@ -217,6 +220,7 @@ instrumentation_test_apk("android_webview_test_apk") {
     "../javatests/src/org/chromium/android_webview/test/WebViewAsynchronousFindApisTest.java",
     "../javatests/src/org/chromium/android_webview/test/WebViewFindApisTestBase.java",
     "../javatests/src/org/chromium/android_webview/test/WebViewModalDialogOverrideTest.java",
+    "../javatests/src/org/chromium/android_webview/test/crash/MinidumpUploaderTest.java",
     "../javatests/src/org/chromium/android_webview/test/util/AwQuotaManagerBridgeTestUtil.java",
     "../javatests/src/org/chromium/android_webview/test/util/AwTestTouchUtils.java",
     "../javatests/src/org/chromium/android_webview/test/util/CommonResources.java",
@@ -290,7 +294,6 @@ android_library("android_webview_unittests_java") {
   deps = [
     "//android_webview:android_webview_java",
     "//base:base_java",
-    "//base:base_java_test_support",
     "//content/public/test/android:content_java_test_support",
   ]
   java_files = [

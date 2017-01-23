@@ -155,9 +155,9 @@ target(link_target_type, "service_sources") {
   include_dirs = [ 
     "//third_party/mesa/src/include",
     # WebAR BEGIN
-    "//third_party/tango/libtango_chromium/armeabi-v7a",
-    "//third_party/tango/libtango_client_api/armeabi-v7a",
-    "//third_party/tango/libtango_support_api/armeabi-v7a"
+    "//third_party/tango/libtango_chromium",
+    "//third_party/tango/libtango_client_api",
+    "//third_party/tango/libtango_support_api"
     # WebAR END
   ]
 

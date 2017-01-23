@@ -42,8 +42,8 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := libtango_chromium
 LOCAL_C_INCLUDES := \
 	. \
-	../../../../../third_party/tango/libtango_client_api/armeabi-v7a \
-	../../../../../third_party/tango/libtango_support_api/armeabi-v7a
+	../../../../../third_party/tango/libtango_client_api \
+	../../../../../third_party/tango/libtango_support_api
 LOCAL_SRC_FILES := TangoHandler.cpp \
                    TangoHandlerJNIInterface.cpp
 LOCAL_CFLAGS := -std=c++14 -Werror -fexceptions

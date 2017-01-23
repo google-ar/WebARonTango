@@ -4,6 +4,7 @@
 
 #include "device/vr/vr_service_impl.h"
 
+#include "base/memory/ptr_util.h"
 #include "base/message_loop/message_loop.h"
 #include "base/run_loop.h"
 #include "device/vr/test/fake_vr_device.h"

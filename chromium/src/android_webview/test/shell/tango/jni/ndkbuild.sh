@@ -1,3 +1,7 @@
+# Copyright 2017 The Chromium Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
 # Rebuilt (-B) specifying the makefile to use and the output folder for the final libraries and intermediate files
 echo "Rebuilding..."
 # Add V=1 for a verbose output that shows the commands that are being executed.
@@ -21,7 +25,7 @@ EXIT_CODE=$?
 if [ $EXIT_CODE -ne 0 ]; then 
 	exit $EXIT_CODE
 fi
-cp TangoHandler.h ../../../../../third_party/tango/libtango_chromium/armeabi-v7a
+cp TangoHandler.h ../../../../../third_party/tango/libtango_chromium
 EXIT_CODE=$?
 if [ $EXIT_CODE -ne 0 ]; then 
 	exit $EXIT_CODE

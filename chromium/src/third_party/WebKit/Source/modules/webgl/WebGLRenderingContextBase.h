@@ -582,13 +582,13 @@ class MODULES_EXPORT WebGLRenderingContextBase : public CanvasRenderingContext,
   };
 
   PassRefPtr<Image> getImage(AccelerationHint, SnapshotReason) const override;
-  ImageData* toImageData(SnapshotReason) const override;
+  ImageData* toImageData(SnapshotReason) override;
   void setFilterQuality(SkFilterQuality) override;
   bool isWebGL2OrHigher() { return version() >= 2; }
 
   void getHTMLOrOffscreenCanvas(HTMLCanvasElementOrOffscreenCanvas&) const;
 
-  void commit(ScriptState*, ExceptionState&);
+  ScriptPromise commit(ScriptState*, ExceptionState&);
 
  protected:
   friend class EXTDisjointTimerQuery;
@@ -893,7 +893,7 @@ class MODULES_EXPORT WebGLRenderingContextBase : public CanvasRenderingContext,
   void registerExtension(Member<T>& extensionPtr,
                          ExtensionFlags flags = ApprovedExtension,
                          const char* const* prefixes = nullptr) {
-    m_extensions.append(TraceWrapperMember<ExtensionTracker>(
+    m_extensions.push_back(TraceWrapperMember<ExtensionTracker>(
         this, TypedExtensionTracker<T>::create(extensionPtr, flags, prefixes)));
   }
 
@@ -1675,9 +1675,11 @@ class MODULES_EXPORT WebGLRenderingContextBase : public CanvasRenderingContext,
                            const IntRect& sourceSubRectangle);
   void texImageBitmapByGPU(ImageBitmap*, GLuint, GLenum, GLenum, GLint, bool);
 
+  sk_sp<SkImage> makeImageSnapshot(SkImageInfo&);
+
   uint8_t* m_cameraImageRGB;
   GLuint m_cameraImageTextureId;
-
+  
   const unsigned m_version;
 
   bool isPaintable() const final { return drawingBuffer(); }

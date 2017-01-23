@@ -59,9 +59,9 @@ if (current_cpu == "arm" || current_cpu == "arm64") {
       configs += [ "//third_party/gvr-android-sdk:libgvr_config" ]
 
       include_dirs = [ 
-        "../../third_party/tango/libtango_chromium/armeabi-v7a",
-        "../../third_party/tango/libtango_client_api/armeabi-v7a",
-        "../../third_party/tango/libtango_support_api/armeabi-v7a"
+        "../../third_party/tango/libtango_chromium",
+        "../../third_party/tango/libtango_client_api",
+        "../../third_party/tango/libtango_support_api"
       ]
 
       ldflags += [

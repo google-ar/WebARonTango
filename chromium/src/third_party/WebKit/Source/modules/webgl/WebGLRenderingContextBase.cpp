@@ -92,7 +92,9 @@
 #include "platform/graphics/GraphicsContext.h"
 #include "platform/graphics/UnacceleratedImageBufferSurface.h"
 #include "platform/graphics/gpu/AcceleratedImageBufferSurface.h"
+#include "platform/graphics/gpu/SharedGpuContext.h"
 #include "public/platform/Platform.h"
+#include "skia/ext/texture_handle.h"
 #include "wtf/CheckedNumeric.h"
 #include "wtf/Functional.h"
 #include "wtf/PtrUtil.h"
@@ -103,9 +105,9 @@
 
 #include "modules/vr/VRSeeThroughCamera.h"
 
-#include "TangoHandler.h"
+// #include "TangoHandler.h"
 
-using tango_chromium::TangoHandler;
+// using tango_chromium::TangoHandler;
 
 namespace blink {
 
@@ -603,8 +605,8 @@ createContextProviderOnWorkerThread(
   ContextProviderCreationInfo creationInfo;
   creationInfo.contextAttributes = contextAttributes;
   creationInfo.glInfo = glInfo;
-  creationInfo.url = url;
-  WebTaskRunner* taskRunner =
+  creationInfo.url = url.copy();
+  RefPtr<WebTaskRunner> taskRunner =
       Platform::current()->mainThread()->getWebTaskRunner();
   taskRunner->postTask(BLINK_FROM_HERE,
                        crossThreadBind(&createContextProviderOnMainThread,
@@ -684,7 +686,7 @@ WebGLRenderingContextBase::createWebGraphicsContext3DProvider(
   // the page settings; in particular, if WebGL contexts were lost one or more
   // times via the GL_ARB_robustness extension.
   if (!frame->loader().client()->allowWebGL(settings &&
-                                            settings->webGLEnabled())) {
+                                            settings->getWebGLEnabled())) {
     canvas->dispatchEvent(WebGLContextEvent::create(
         EventTypeNames::webglcontextcreationerror, false, true,
         "Web page was not allowed to create a WebGL context."));
@@ -718,34 +720,46 @@ ImageBitmap* WebGLRenderingContextBase::transferToImageBitmapBase(
   return ImageBitmap::create(drawingBuffer()->transferToStaticBitmapImage());
 }
 
-void WebGLRenderingContextBase::commit(ScriptState* scriptState,
-                                       ExceptionState& exceptionState) {
+ScriptPromise WebGLRenderingContextBase::commit(
+    ScriptState* scriptState,
+    ExceptionState& exceptionState) {
   UseCounter::Feature feature = UseCounter::OffscreenCanvasCommitWebGL;
   UseCounter::count(scriptState->getExecutionContext(), feature);
-  if (!getOffscreenCanvas()) {
+  if (!offscreenCanvas()) {
     exceptionState.throwDOMException(InvalidStateError,
                                      "Commit() was called on a rendering "
                                      "context that was not created from an "
                                      "OffscreenCanvas.");
-    return;
+    return exceptionState.reject(scriptState);
   }
   // no HTMLCanvas associated, thrown InvalidStateError
-  if (!getOffscreenCanvas()->hasPlaceholderCanvas()) {
+  if (!offscreenCanvas()->hasPlaceholderCanvas()) {
     exceptionState.throwDOMException(InvalidStateError,
                                      "Commit() was called on a context whose "
                                      "OffscreenCanvas is not associated with a "
                                      "canvas element.");
-    return;
+    return exceptionState.reject(scriptState);
   }
-  if (!drawingBuffer())
-    return;
-  double commitStartTime = WTF::monotonicallyIncreasingTime();
-  // TODO(crbug.com/646864): Make commit() work correctly with
-  // { preserveDrawingBuffer : true }.
-  getOffscreenCanvas()->getOrCreateFrameDispatcher()->dispatchFrame(
-      std::move(drawingBuffer()->transferToStaticBitmapImage()),
-      commitStartTime,
-      drawingBuffer()->contextProvider()->isSoftwareRendering());
+  if (!drawingBuffer()) {
+    return offscreenCanvas()->commit(nullptr, false, scriptState);
+  }
+
+  RefPtr<StaticBitmapImage> image;
+  if (creationAttributes().preserveDrawingBuffer()) {
+    int width = drawingBuffer()->size().width();
+    int height = drawingBuffer()->size().height();
+    SkImageInfo imageInfo =
+        SkImageInfo::Make(width, height, kRGBA_8888_SkColorType,
+                          creationAttributes().alpha() ? kPremul_SkAlphaType
+                                                       : kOpaque_SkAlphaType);
+    image = StaticBitmapImage::create(makeImageSnapshot(imageInfo));
+  } else {
+    image = drawingBuffer()->transferToStaticBitmapImage();
+  }
+
+  return offscreenCanvas()->commit(
+      std::move(image),
+      drawingBuffer()->contextProvider()->isSoftwareRendering(), scriptState);
 }
 
 PassRefPtr<Image> WebGLRenderingContextBase::getImage(
@@ -774,22 +788,47 @@ PassRefPtr<Image> WebGLRenderingContextBase::getImage(
   return buffer->newImageSnapshot(hint, reason);
 }
 
-ImageData* WebGLRenderingContextBase::toImageData(SnapshotReason reason) const {
-  // TODO: Furnish toImageData in webgl renderingcontext for jpeg and webp
-  // images. See crbug.com/657531.
+sk_sp<SkImage> WebGLRenderingContextBase::makeImageSnapshot(
+    SkImageInfo& imageInfo) {
+  drawingBuffer()->resolveAndBindForReadAndDraw();
+  gpu::gles2::GLES2Interface* gl = SharedGpuContext::gl();
+
+  SkSurfaceProps disableLCDProps(0, kUnknown_SkPixelGeometry);
+  sk_sp<SkSurface> surface = SkSurface::MakeRenderTarget(
+      SharedGpuContext::gr(), SkBudgeted::kYes, imageInfo, 0,
+      imageInfo.alphaType() == kOpaque_SkAlphaType ? nullptr
+                                                   : &disableLCDProps);
+  GLuint textureId = skia::GrBackendObjectToGrGLTextureInfo(
+                         surface->getTextureHandle(
+                             SkSurface::kDiscardWrite_TextureHandleAccess))
+                         ->fID;
+
+  drawingBuffer()->copyToPlatformTexture(
+      gl, textureId, GL_RGBA, GL_UNSIGNED_BYTE, 0, true, false, IntPoint(0, 0),
+      IntRect(IntPoint(0, 0), drawingBuffer()->size()), BackBuffer);
+  return surface->makeImageSnapshot();
+}
+
+ImageData* WebGLRenderingContextBase::toImageData(SnapshotReason reason) {
   ImageData* imageData = nullptr;
   // TODO(ccameron): WebGL should produce sRGB images.
   // https://crbug.com/672299
-  if (this->drawingBuffer()) {
-    sk_sp<SkImage> snapshot =
-        this->drawingBuffer()
-            ->transferToStaticBitmapImage()
-            ->imageForCurrentFrame(ColorBehavior::transformToGlobalTarget());
+  if (drawingBuffer()) {
+    // For un-premultiplied data
+    imageData = paintRenderingResultsToImageData(BackBuffer);
+    if (imageData) {
+      return imageData;
+    }
+
+    int width = drawingBuffer()->size().width();
+    int height = drawingBuffer()->size().height();
+    SkImageInfo imageInfo =
+        SkImageInfo::Make(width, height, kRGBA_8888_SkColorType,
+                          creationAttributes().alpha() ? kPremul_SkAlphaType
+                                                       : kOpaque_SkAlphaType);
+    sk_sp<SkImage> snapshot = makeImageSnapshot(imageInfo);
     if (snapshot) {
-      imageData = ImageData::create(this->getOffscreenCanvas()->size());
-      SkImageInfo imageInfo = SkImageInfo::Make(
-          this->drawingBufferWidth(), this->drawingBufferHeight(),
-          kRGBA_8888_SkColorType, kUnpremul_SkAlphaType);
+      imageData = ImageData::create(drawingBuffer()->size());
       snapshot->readPixels(imageInfo, imageData->data()->data(),
                            imageInfo.minRowBytes(), 0, 0);
     }
@@ -1280,7 +1319,7 @@ void WebGLRenderingContextBase::setupFlags() {
   if (canvas()) {
     if (Page* p = canvas()->document().page()) {
       m_synthesizedErrorsToConsole =
-          p->settings().webGLErrorsToConsoleEnabled();
+          p->settings().getWebGLErrorsToConsoleEnabled();
     }
   }
 
@@ -1290,7 +1329,7 @@ void WebGLRenderingContextBase::setupFlags() {
 
 void WebGLRenderingContextBase::addCompressedTextureFormat(GLenum format) {
   if (!m_compressedTextureFormats.contains(format))
-    m_compressedTextureFormats.append(format);
+    m_compressedTextureFormats.push_back(format);
 }
 
 void WebGLRenderingContextBase::removeAllCompressedTextureFormats() {
@@ -2686,7 +2725,7 @@ WebGLRenderingContextBase::getAttachedShaders(WebGLProgram* program) {
   for (unsigned i = 0; i < sizeof(shaderType) / sizeof(GLenum); ++i) {
     WebGLShader* shader = program->getAttachedShader(shaderType[i]);
     if (shader)
-      shaderObjects.append(shader);
+      shaderObjects.push_back(shader);
   }
   return shaderObjects;
 }
@@ -2834,7 +2873,7 @@ ScriptValue WebGLRenderingContextBase::getExtension(ScriptState* scriptState,
   }
 
   v8::Local<v8::Value> wrappedExtension =
-      toV8(extension, scriptState->context()->Global(), scriptState->isolate());
+      ToV8(extension, scriptState->context()->Global(), scriptState->isolate());
 
   return ScriptValue(scriptState, wrappedExtension);
 }
@@ -3385,7 +3424,7 @@ Nullable<Vector<String>> WebGLRenderingContextBase::getSupportedExtensions() {
       const char* const* prefixes = tracker->prefixes();
       for (; *prefixes; ++prefixes) {
         String prefixedName = String(*prefixes) + tracker->extensionName();
-        result.append(prefixedName);
+        result.push_back(prefixedName);
       }
     }
   }
@@ -3607,6 +3646,17 @@ ScriptValue WebGLRenderingContextBase::getUniform(
                 break;
               case GL_SAMPLER_3D:
               case GL_SAMPLER_2D_ARRAY:
+              case GL_SAMPLER_2D_SHADOW:
+              case GL_SAMPLER_CUBE_SHADOW:
+              case GL_SAMPLER_2D_ARRAY_SHADOW:
+              case GL_INT_SAMPLER_2D:
+              case GL_INT_SAMPLER_CUBE:
+              case GL_INT_SAMPLER_3D:
+              case GL_INT_SAMPLER_2D_ARRAY:
+              case GL_UNSIGNED_INT_SAMPLER_2D:
+              case GL_UNSIGNED_INT_SAMPLER_CUBE:
+              case GL_UNSIGNED_INT_SAMPLER_3D:
+              case GL_UNSIGNED_INT_SAMPLER_2D_ARRAY:
                 baseType = GL_INT;
                 length = 1;
                 break;
@@ -4088,7 +4138,8 @@ void WebGLRenderingContextBase::readPixelsHelper(GLint x,
     return;
   // Due to WebGL's same-origin restrictions, it is not possible to
   // taint the origin using the WebGL API.
-  ASSERT(canvas()->originClean());
+  DCHECK(canvas() ? canvas()->originClean() : offscreenCanvas()->originClean());
+
   // Validate input parameters.
   if (!pixels) {
     synthesizeGLError(GL_INVALID_VALUE, "readPixels",
@@ -5287,9 +5338,17 @@ void WebGLRenderingContextBase::texImageHelperHTMLVideoElement(
     // Go through the fast path doing a GPU-GPU textures copy without a readback
     // to system memory if possible.  Otherwise, it will fall back to the normal
     // SW path.
-    if (video->copyVideoTextureToPlatformTexture(
-            contextGL(), texture->object(), internalformat, type,
-            m_unpackPremultiplyAlpha, m_unpackFlipY)) {
+
+    // Note that neither
+    // HTMLVideoElement::copyVideoTextureToPlatformTexture nor
+    // ImageBuffer::copyToPlatformTexture allocate the destination texture
+    // any more.
+    texImage2DBase(target, level, internalformat, video->videoWidth(),
+                   video->videoHeight(), 0, format, type, nullptr);
+
+    if (video->copyVideoTextureToPlatformTexture(contextGL(), texture->object(),
+                                                 m_unpackPremultiplyAlpha,
+                                                 m_unpackFlipY)) {
       return;
     }
 
@@ -5312,11 +5371,6 @@ void WebGLRenderingContextBase::texImageHelperHTMLVideoElement(
 
         // This is a straight GPU-GPU copy, any necessary color space conversion
         // was handled in the paintCurrentFrameInContext() call.
-
-        // Note that copyToPlatformTexture no longer allocates the destination
-        // texture.
-        texImage2DBase(target, level, internalformat, video->videoWidth(),
-                       video->videoHeight(), 0, format, type, nullptr);
 
         if (imageBuffer->copyToPlatformTexture(
                 functionIDToSnapshotReason(functionID), contextGL(),
@@ -6205,9 +6259,9 @@ void WebGLRenderingContextBase::vertexAttribPointer(GLuint index,
   }
   if (!validateValueFitNonNegInt32("vertexAttribPointer", "offset", offset))
     return;
-  if (!m_boundArrayBuffer) {
+  if (!m_boundArrayBuffer && offset != 0) {
     synthesizeGLError(GL_INVALID_OPERATION, "vertexAttribPointer",
-                      "no bound ARRAY_BUFFER");
+                      "no ARRAY_BUFFER is bound and offset is non-zero");
     return;
   }
 
@@ -7499,8 +7553,8 @@ bool WebGLRenderingContextBase::validateDrawElements(const char* functionName,
 void WebGLRenderingContextBase::dispatchContextLostEvent(TimerBase*) {
   WebGLContextEvent* event = WebGLContextEvent::create(
       EventTypeNames::webglcontextlost, false, true, "");
-  if (getOffscreenCanvas())
-    getOffscreenCanvas()->dispatchEvent(event);
+  if (offscreenCanvas())
+    offscreenCanvas()->dispatchEvent(event);
   else
     canvas()->dispatchEvent(event);
   m_restoreAllowed = event->defaultPrevented();
@@ -7530,7 +7584,7 @@ void WebGLRenderingContextBase::maybeRestoreContext(TimerBase*) {
     Settings* settings = frame->settings();
 
     if (!frame->loader().client()->allowWebGL(settings &&
-                                              settings->webGLEnabled()))
+                                              settings->getWebGLEnabled()))
       return;
   }
 
@@ -7546,9 +7600,8 @@ void WebGLRenderingContextBase::maybeRestoreContext(TimerBase*) {
       toPlatformContextAttributes(creationAttributes(), version());
   Platform::GraphicsInfo glInfo;
   std::unique_ptr<WebGraphicsContext3DProvider> contextProvider;
-  const auto& url = canvas()
-                        ? canvas()->document().topDocument().url()
-                        : getOffscreenCanvas()->getExecutionContext()->url();
+  const auto& url = canvas() ? canvas()->document().topDocument().url()
+                             : offscreenCanvas()->getExecutionContext()->url();
   if (isMainThread()) {
     contextProvider = WTF::wrapUnique(
         Platform::current()->createOffscreenGraphicsContext3DProvider(
@@ -7603,7 +7656,7 @@ void WebGLRenderingContextBase::maybeRestoreContext(TimerBase*) {
   if (canvas())
     canvas()->dispatchEvent(event);
   else
-    getOffscreenCanvas()->dispatchEvent(event);
+    offscreenCanvas()->dispatchEvent(event);
 }
 
 String WebGLRenderingContextBase::ensureNotNull(const String& text) const {
@@ -7682,10 +7735,10 @@ void WebGLRenderingContextBase::synthesizeGLError(
   }
   if (!isContextLost()) {
     if (!m_syntheticErrors.contains(error))
-      m_syntheticErrors.append(error);
+      m_syntheticErrors.push_back(error);
   } else {
     if (!m_lostContextErrors.contains(error))
-      m_lostContextErrors.append(error);
+      m_lostContextErrors.push_back(error);
   }
   InspectorInstrumentation::didFireWebGLError(canvas(), errorType);
 }
@@ -7729,8 +7782,8 @@ IntSize WebGLRenderingContextBase::clampedCanvasSize() const {
     width = canvas()->width();
     height = canvas()->height();
   } else {
-    width = getOffscreenCanvas()->width();
-    height = getOffscreenCanvas()->height();
+    width = offscreenCanvas()->width();
+    height = offscreenCanvas()->height();
   }
   return IntSize(clamp(width, 1, m_maxViewportDims[0]),
                  clamp(height, 1, m_maxViewportDims[1]));
@@ -7892,7 +7945,7 @@ void WebGLRenderingContextBase::getHTMLOrOffscreenCanvas(
   if (canvas())
     result.setHTMLCanvasElement(canvas());
   else
-    result.setOffscreenCanvas(getOffscreenCanvas());
+    result.setOffscreenCanvas(offscreenCanvas());
 }
 
 }  // namespace blink

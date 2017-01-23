@@ -533,6 +533,43 @@ class WebGL2RenderingContextBase : public WebGLRenderingContextBase {
                                DOMArrayBufferView*,
                                GLuint,
                                GLuint);
+  void compressedTexImage2D(GLenum target,
+                            GLint level,
+                            GLenum internalformat,
+                            GLsizei width,
+                            GLsizei height,
+                            GLint border,
+                            GLsizei imageSize,
+                            GLintptr offset);
+  void compressedTexSubImage2D(GLenum target,
+                               GLint level,
+                               GLint xoffset,
+                               GLint yoffset,
+                               GLsizei width,
+                               GLsizei height,
+                               GLenum format,
+                               GLsizei imageSize,
+                               GLintptr offset);
+  void compressedTexImage3D(GLenum target,
+                            GLint level,
+                            GLenum internalformat,
+                            GLsizei width,
+                            GLsizei height,
+                            GLsizei depth,
+                            GLint border,
+                            GLsizei imageSize,
+                            GLintptr offset);
+  void compressedTexSubImage3D(GLenum target,
+                               GLint level,
+                               GLint xoffset,
+                               GLint yoffset,
+                               GLint zoffset,
+                               GLsizei width,
+                               GLsizei height,
+                               GLsizei depth,
+                               GLenum format,
+                               GLsizei imageSize,
+                               GLintptr offset);
 
   // Have to re-declare/re-define the following compressedTex{Sub}Image2D
   // functions from the base class. This is because the above

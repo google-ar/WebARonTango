@@ -7,7 +7,7 @@
 
 #include "device/vr/android/gvr/gvr_device_provider.h"
 #include "device/vr/vr_export.h"
-#include "third_party/gvr-android-sdk/src/ndk/include/vr/gvr/capi/include/gvr_types.h"
+#include "third_party/gvr-android-sdk/src/libraries/headers/vr/gvr/capi/include/gvr_types.h"
 
 namespace gvr {
 class GvrApi;

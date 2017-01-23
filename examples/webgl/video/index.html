@@ -1,0 +1,461 @@
+<html>
+<!-- Thid code uses the WebGL Learning lessons source code as a base although it has been hugely adapted to the specific needs of this example. -->
+<head>
+    
+<script>
+    // Catch any possible error and show an alert. Useful for "hacky" debugging.
+    window.addEventListener('error', function(event) {
+        var errorMessage = event.message;
+        var url = event.filename;
+        var lineNumber = event.lineno;
+        var columnNumber = event.colno;
+        alert("ERROR: " + errorMessage + " at " + url + " : " + lineNumber + " : " + columnNumber);
+    });
+</script>
+
+<title>WebGL WebAR Video Example by Iker Jamardo</title>
+
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<style>
+    body {
+        font-family: Monospace;
+        background-color: #000000;
+        margin: 0px;
+        overflow: hidden;
+    }
+</style>
+
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+<script type="text/javascript" src="../../libs/third_party/glMatrix-0.9.5.min.js"></script>
+<script type="text/javascript" src="../../libs/third_party/stats.min.js"></script>
+
+<!-- Fragment shader using the external image texture extension -->
+<script id="video-shader-fs-oes" type="x-shader/x-fragment">
+    #extension GL_OES_EGL_image_external : require
+
+    precision mediump float;
+
+    varying vec2 vTextureCoord;
+
+    uniform samplerExternalOES uSampler;
+
+    void main(void) {
+        gl_FragColor = texture2D(uSampler, vTextureCoord);
+    }
+</script>
+
+<!-- Fragment shader NOT using the external image texture extension -->
+<script id="video-shader-fs" type="x-shader/x-fragment">
+    precision mediump float;
+
+    varying vec2 vTextureCoord;
+
+    uniform sampler2D uSampler;
+
+    void main(void) {
+        gl_FragColor = texture2D(uSampler, vTextureCoord);
+    }
+</script>
+
+<script id="video-shader-vs" type="x-shader/x-vertex">
+    attribute vec3 aVertexPosition;
+    attribute vec2 aTextureCoord;
+
+    uniform mat4 uMVMatrix;
+    uniform mat4 uPMatrix;
+
+    varying vec2 vTextureCoord;
+
+    void main(void) {
+        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+        vTextureCoord = aTextureCoord;
+    }
+</script>
+
+<script type="text/javascript">
+
+    // The used global variables
+    var videoQuad = null;
+    var vrDisplay = null;
+    var stats;
+    var gl;
+
+    /**
+    * Calculate a projection matrix using the camera intrinsics.
+    */
+    function calculateProjectionMatrix(width, height, fx, fy, cx, cy, near, far) {
+        var xscale = near / fx;
+        var yscale = near / fy;
+
+        var xoffset = (cx - (width / 2.0)) * xscale;
+        // Color camera's coordinates has y pointing downwards so we negate this term.
+        var yoffset = -(cy - (height / 2.0)) * yscale;
+
+        var projectionMatrix = mat4.frustum(xscale * -width / 2.0 - xoffset, xscale * width / 2.0 - xoffset,yscale * -height / 2.0 - yoffset, yscale * height / 2.0 - yoffset, near, far);
+        return projectionMatrix;
+    }
+
+    /**
+    * Calculate the correct orientation depending on the device and the camera orientations.
+    */
+    function combineOrientations(screenOrientation, seeThroughCameraOrientation) {
+        seeThroughCameraOrientationIndex = 0;
+        switch (seeThroughCameraOrientation) {
+            case 90:
+                seeThroughCameraOrientationIndex = 1;
+                break;
+            case 180:
+                seeThroughCameraOrientationIndex = 2;
+                break;
+            case 270:
+                seeThroughCameraOrientationIndex = 3;
+                break;
+            default:
+                seeThroughCameraOrientationIndex = 0;
+                break;
+        }
+        screenOrientationIndex = 0;
+        switch (screenOrientation) {
+            case 90:
+                screenOrientationIndex = 1;
+                break;
+            case 180:
+                screenOrientationIndex = 2;
+                break;
+            case 270:
+                screenOrientationIndex = 3;
+                break;
+            default:
+                screenOrientationIndex = 0;
+                break;
+        }
+        ret = screenOrientationIndex - seeThroughCameraOrientationIndex;
+        if (ret < 0) {
+            ret += 4;
+        }
+        return (ret % 4);
+    }
+
+    /**
+    * A simple class to handle the background video.
+    */
+    function VideoQuad(gl, vrDisplay) {
+
+        this.vrDisplay = vrDisplay;
+
+        if (this.vrDisplay) {
+            this.seeThroughCamera = vrDisplay.getSeeThroughCamera();
+            this.program = getProgram(gl, "video-shader-vs", "video-shader-fs-oes");
+        }
+        else {
+            this.seeThroughCamera = document.createElement("video");
+            // this.seeThroughCamera.src = "../resources/videos/sintel.webm";
+            this.seeThroughCamera.src = "../resources/videos/firefox.ogv";
+            this.seeThroughCamera.play();
+            this.seeThroughCamera.orientation = 0;
+            this.program = getProgram(gl, "video-shader-vs", "video-shader-fs");
+        }
+
+        gl.useProgram(this.program);
+
+        this.vertexPositionAttribute = gl.getAttribLocation(this.program, "aVertexPosition");
+        this.textureCoordAttribute = gl.getAttribLocation(this.program, "aTextureCoord");
+        this.projectionMatrixUniform = gl.getUniformLocation(this.program, "uPMatrix");
+        this.mvMatrixUniform = gl.getUniformLocation(this.program, "uMVMatrix");
+        this.samplerUniform = gl.getUniformLocation(this.program, "uSampler");
+
+        this.vertexPositionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexPositionBuffer);
+        var vertices = [
+          -1.0,  1.0, 0.0, 
+          -1.0, -1.0, 0.0,
+           1.0,  1.0, 0.0, 
+           1.0, -1.0, 0.0
+        ];
+        var f32Vertices = new Float32Array(vertices);
+        gl.bufferData(gl.ARRAY_BUFFER, f32Vertices, gl.STATIC_DRAW);
+        this.vertexPositionBuffer.itemSize = 3;
+        this.vertexPositionBuffer.numItems = 12;
+
+        this.textureCoordBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.textureCoordBuffer);
+        // Precalculate different texture UV coordinates depending on the possible orientation of the device.
+        var textureCoords = null;
+        if (this.vrDisplay) {
+            textureCoords = [
+                [ 
+                    0.0, 0.0,
+                    0.0, this.seeThroughCamera.height / this.seeThroughCamera.textureHeight,
+                    this.seeThroughCamera.width / this.seeThroughCamera.textureWidth, 0.0,
+                    this.seeThroughCamera.width / this.seeThroughCamera.textureWidth, this.seeThroughCamera.height / this.seeThroughCamera.textureHeight
+                ],
+                [ 
+                    this.seeThroughCamera.width / this.seeThroughCamera.textureWidth, 0.0,
+                    0.0, 0.0,
+                    this.seeThroughCamera.width / this.seeThroughCamera.textureWidth, this.seeThroughCamera.height / this.seeThroughCamera.textureHeight,
+                    0.0, this.seeThroughCamera.height / this.seeThroughCamera.textureHeight
+                ],
+                [
+                    this.seeThroughCamera.width / this.seeThroughCamera.textureWidth, this.seeThroughCamera.height / this.seeThroughCamera.textureHeight,
+                    this.seeThroughCamera.width / this.seeThroughCamera.textureWidth, 0.0,
+                    0.0, this.seeThroughCamera.height / this.seeThroughCamera.textureHeight,
+                    0.0, 0.0
+                ],
+                [
+                    0.0, this.seeThroughCamera.height / this.seeThroughCamera.textureHeight,
+                    this.seeThroughCamera.width / this.seeThroughCamera.textureWidth, this.seeThroughCamera.height / this.seeThroughCamera.textureHeight,
+                    0.0, 0.0,
+                    this.seeThroughCamera.width / this.seeThroughCamera.textureWidth, 0.0
+                ]
+            ];
+        }
+        else {
+            textureCoords = [
+                [0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0],
+                [1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0],
+                [1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+                [0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0]
+            ];
+        }
+        this.f32TextureCoords = [];
+        for (var i = 0; i < textureCoords.length; i++) {
+            this.f32TextureCoords.push(new Float32Array(textureCoords[i]));
+        }
+        // Store the current combined orientation to check if it has changed during the update calls and use the correct texture coordinates.
+        this.combinedOrientation = combineOrientations(screen.orientation.angle, this.seeThroughCamera.orientation);
+
+        gl.bufferData(gl.ARRAY_BUFFER, this.f32TextureCoords[this.combinedOrientation], gl.STATIC_DRAW);
+        this.textureCoordBuffer.itemSize = 2;
+        this.textureCoordBuffer.numItems = 8;
+
+        this.indexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+        var indices = [
+            0, 1, 2, 2, 1, 3
+        ];
+        var ui16Indices = new Uint16Array(indices);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, ui16Indices, gl.STATIC_DRAW);
+        this.indexBuffer.itemSize = 1;
+        this.indexBuffer.numItems = 6;
+
+        this.texture = gl.createTexture();
+
+        gl.useProgram(null);
+
+//        this.projectionMatrix = calculateProjectionMatrix(this.seeThroughCamera.width, this.seeThroughCamera.height, this.seeThroughCamera.focalLengthX, this.seeThroughCamera.focalLengthY, this.seeThroughCamera.pointX, this.seeThroughCamera.pointY, 0.1, 100.0); //mat4.create();
+//        this.mvMatrix = mat4.create();
+//        mat4.identity(this.mvMatrix);
+//        mat4.translate(this.mvMatrix, [0.0, 0.0, -15.0]);
+        this.projectionMatrix = mat4.create();
+        mat4.identity(this.projectionMatrix);
+        this.mvMatrix = mat4.create();
+        mat4.identity(this.mvMatrix);
+
+        return this;
+    }
+
+    VideoQuad.prototype.update = function(gl) {
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
+
+        // gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+
+        // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+
+        // gl.texParameteri(gl.TETXURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        // gl.texParameteri(gl.TETXURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        // gl.texParameteri(gl.TETXURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+
+        // gl.generateMipmap(gl.TEXTURE_2D);
+
+        // This call updates the VRSeeThorughCamera texture to render a new frame.
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, this.seeThroughCamera );
+        gl.bindTexture(gl.TEXTURE_2D, null);
+
+        return this;
+    };
+
+    VideoQuad.prototype.render = function(gl) {
+        gl.useProgram(this.program);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexPositionBuffer);
+        gl.enableVertexAttribArray(this.vertexPositionAttribute);
+        gl.vertexAttribPointer(this.vertexPositionAttribute, this.vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.textureCoordBuffer);
+        var combinedOrientation =   combineOrientations(screen.orientation.angle, this.seeThroughCamera.orientation);
+        if (combinedOrientation !== this.combinedOrientation) {
+
+            // alert("combinedOrientation changed: from " + this.combinedOrientation + " to " + combinedOrientation + ", screen = " + screen.orientation.angle + ", camera = " + this.seeThroughCamera.orientation);
+
+            this.combinedOrientation = combinedOrientation;
+            gl.bufferData(gl.ARRAY_BUFFER, this.f32TextureCoords[this.combinedOrientation], gl.STATIC_DRAW);
+        }
+        gl.enableVertexAttribArray(this.textureCoordAttribute);
+        gl.vertexAttribPointer(this.textureCoordAttribute, this.textureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
+        gl.uniform1i(this.samplerUniform, 0);
+
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+
+        gl.uniformMatrix4fv(this.projectionMatrixUniform, false, this.projectionMatrix);
+        gl.uniformMatrix4fv(this.mvMatrixUniform, false, this.mvMatrix);
+
+        gl.drawElements(gl.TRIANGLES, this.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+
+        // Disable enabled states to allow other render calls to correctly work 
+        gl.disableVertexAttribArray(this.vertexPositionAttribute);
+        gl.disableVertexAttribArray(this.textureCoordAttribute);
+        gl.bindBuffer(gl.ARRAY_BUFFER, null);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+        gl.useProgram(null);
+        return this;
+    };
+
+    function getGL(canvas) {
+        var gl;
+        try {
+            gl = canvas.getContext("experimental-webgl");
+            gl.viewportWidth = canvas.width;
+            gl.viewportHeight = canvas.height;
+        } catch (e) {
+            alert(e);
+        }
+        if (!gl) {
+            alert("Could not initialise WebGL, sorry :-(");
+        }
+        return gl;
+    }
+
+    function getShader(gl, id) {
+        var shaderScript = document.getElementById(id);
+        if (!shaderScript) {
+            return null;
+        }
+
+        var str = "";
+        var k = shaderScript.firstChild;
+        while (k) {
+            if (k.nodeType == 3) {
+                str += k.textContent;
+            }
+            k = k.nextSibling;
+        }
+
+        var shader;
+        if (shaderScript.type == "x-shader/x-fragment") {
+            shader = gl.createShader(gl.FRAGMENT_SHADER);
+        } else if (shaderScript.type == "x-shader/x-vertex") {
+            shader = gl.createShader(gl.VERTEX_SHADER);
+        } else {
+            return null;
+        }
+
+        gl.shaderSource(shader, str);
+        gl.compileShader(shader);
+
+        var result = gl.getShaderParameter(shader, gl.COMPILE_STATUS)
+        if (!result) {
+            alert(gl.getShaderInfoLog(shader));
+            return null;
+        }
+
+        return shader;
+    }
+
+    function getProgram(gl, vs, fs) {
+        var vertexShader = getShader(gl, vs);
+        var fragmentShader = getShader(gl, fs);
+        if (!fragmentShader) {
+            return null;
+        }
+
+        var shaderProgram = gl.createProgram();
+        gl.attachShader(shaderProgram, vertexShader);
+        gl.attachShader(shaderProgram, fragmentShader);
+        gl.linkProgram(shaderProgram);
+
+        var result = gl.getProgramParameter(shaderProgram, gl.LINK_STATUS);
+        // alert("getProgramParameter result = " + result);
+        if (!result) {
+            alert("Could not initialise shaders");
+        }
+
+        return shaderProgram;
+    }
+
+    function initVideoQuad(gl, readyCallback) {
+        if (navigator.getVRDisplays) {
+            navigator.getVRDisplays().then(function(vrDisplays) {
+                if (vrDisplays && vrDisplays.length > 0) {
+                    for (var i = 0; i < vrDisplays.length; i++) {
+                        vrDisplay = vrDisplays[i];
+                        if (vrDisplay.displayName === "Tango VR Device") {
+                            videoQuad = new VideoQuad(gl, vrDisplay);
+                            readyCallback();
+                            break;
+                        }
+                    }
+                }
+            });
+        }
+        else 
+        {
+            alert("No navigator.getVRDisplays");
+            videoQuad = new VideoQuad(gl, null);
+            videoQuad.seeThroughCamera.addEventListener("canplaythrough", readyCallback);
+        }
+    }
+
+    function raf() {
+        stats.update();
+
+        // videoQuad.update(gl);
+
+        gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+        // videoQuad.render(gl);
+
+        requestAnimationFrame(raf);
+    }
+
+</script>
+
+
+</head>
+
+
+<body onload="webGLStart();">
+    <script>
+        function webGLStart() {
+            var canvas = document.createElement("canvas");
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            document.body.appendChild(canvas);
+
+            stats = new Stats();
+            document.body.appendChild( stats.dom );
+
+            gl = getGL(canvas);
+            gl.clearColor(0.2, 0.2, 0.2, 1.0);
+
+            initVideoQuad(gl, function() {
+                window.addEventListener("resize", function(event) {
+                    gl.viewportWidth = canvas.width = window.innerWidth;
+                    gl.viewportHeight = canvas.height = window.innerHeight;
+                });
+
+                requestAnimationFrame(raf);
+            });            
+
+        }
+    </script>
+</body>
+
+</html>

@@ -6,6 +6,7 @@ package org.chromium.android_webview.shell;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -93,6 +94,54 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
     private ImageButton mPrevButton;
     private ImageButton mNextButton;
     private ImageButton mQRCodeButton;
+
+    private static AlertDialog createAlertDialog(Context context, String title,
+            String message, DialogInterface.OnClickListener onClickListener,
+            int numberOfButtons, String yesButtonText, String noButtonText,
+            String cancelButtonText)
+    {
+        AlertDialog alertDialog = new AlertDialog.Builder(context).create();
+        alertDialog.setTitle(title);
+        alertDialog.setMessage(message);
+        alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, yesButtonText,
+                onClickListener);
+        if (numberOfButtons > 1)
+        {
+            alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, noButtonText,
+                    onClickListener);
+        }
+        if (numberOfButtons > 2)
+        {
+            alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, cancelButtonText,
+                    onClickListener);
+        }
+        return alertDialog;
+    }    
+
+    private static AlertDialog createPromptDialog(Context context, EditText editText, String title,
+            String message, DialogInterface.OnClickListener onClickListener,
+            int numberOfButtons, String yesButtonText, String noButtonText,
+            String cancelButtonText)
+    {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setView(editText);        
+        AlertDialog alertDialog = builder.create();
+        alertDialog.setTitle(title);
+        alertDialog.setMessage(message);
+        alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, yesButtonText,
+                onClickListener);
+        if (numberOfButtons > 1)
+        {
+            alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, noButtonText,
+                    onClickListener);
+        }
+        if (numberOfButtons > 2)
+        {
+            alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, cancelButtonText,
+                    onClickListener);
+        }
+        return alertDialog;
+    }    
 
     // Tango Service connection.
     ServiceConnection mTangoServiceConnection = new ServiceConnection()
@@ -253,7 +302,7 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
 
             @Override
             public void handleJsAlert(String url, String message, final JsResultReceiver receiver) {
-                Utils.createAlertDialog(AwShellActivity.this, url, message, new DialogInterface.OnClickListener()
+                createAlertDialog(AwShellActivity.this, url, message, new DialogInterface.OnClickListener()
                 {
                     @Override
                     public void onClick(DialogInterface dialog, int which)
@@ -266,7 +315,7 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
             @Override
             public void handleJsPrompt(String url, String message, String defaultValue, final JsPromptResultReceiver receiver) {
                 final EditText editText = new EditText(AwShellActivity.this);
-                Utils.createPromptDialog(AwShellActivity.this, editText, url, message, new DialogInterface.OnClickListener()
+                createPromptDialog(AwShellActivity.this, editText, url, message, new DialogInterface.OnClickListener()
                 {
                     @Override
                     public void onClick(DialogInterface dialog, int which)
@@ -285,7 +334,7 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
 
             @Override
             public void handleJsConfirm(String url, String message, final JsResultReceiver receiver) {
-                Utils.createAlertDialog(AwShellActivity.this, url, message, new DialogInterface.OnClickListener()
+                createAlertDialog(AwShellActivity.this, url, message, new DialogInterface.OnClickListener()
                 {
                     @Override
                     public void onClick(DialogInterface dialog, int which)
@@ -305,7 +354,7 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
 
             @Override
             public void onReceivedError(int errorCode, String description, String failingUrl) { 
-                Utils.createAlertDialog(AwShellActivity.this, "ERROR: " + errorCode, failingUrl + ": " + description, null, 1, "Ok", null, null).show();                
+                createAlertDialog(AwShellActivity.this, "ERROR: " + errorCode, failingUrl + ": " + description, null, 1, "Ok", null, null).show();                
             }
 
             // @Override
@@ -313,7 +362,7 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
             //     String failingUrl = request.url;
             //     int errorCode = error.errorCode;
             //     String description = error.description;
-            //     Utils.createAlertDialog(AwShellActivity.this, "ERROR: " + errorCode, failingUrl + ": " + description, null, 1, "Ok", null, null).show();                
+            //     createAlertDialog(AwShellActivity.this, "ERROR: " + errorCode, failingUrl + ": " + description, null, 1, "Ok", null, null).show();                
             // }
 
             @Override
@@ -323,7 +372,7 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
                 if (failingUrl.toLowerCase(Locale.getDefault()).contains("favicon.ico")) return;
                 int errorCode = response.getStatusCode();
                 String description = response.getReasonPhrase();
-                Utils.createAlertDialog(AwShellActivity.this, "HTTP ERROR: " + errorCode, failingUrl + ": " + description, null, 1, "Ok", null, null).show();                
+                createAlertDialog(AwShellActivity.this, "HTTP ERROR: " + errorCode, failingUrl + ": " + description, null, 1, "Ok", null, null).show();                
             }
 
             @Override
@@ -440,7 +489,6 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
                 mUrlTextView.clearFocus();
                 setKeyboardVisibilityForUrl(false);
                 mAwTestContainerView.requestFocus();
-
                 return true;
             }
         });
@@ -531,7 +579,7 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
             }
             catch(MalformedURLException e)
             {               
-                Utils.createAlertDialog(this, "Not an URL", "The read QRCode does not represent a valid URL.", null, 1, "Ok", null, null).show();
+                createAlertDialog(this, "Not an URL", "The read QRCode does not represent a valid URL.", null, 1, "Ok", null, null).show();
             }
         }
     }

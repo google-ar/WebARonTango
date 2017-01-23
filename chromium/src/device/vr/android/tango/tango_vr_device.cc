@@ -149,8 +149,8 @@ mojom::VRPickingPointAndPlanePtr TangoVRDevice::GetPickingPointAndPlaneInPointCl
 {
   mojom::VRPickingPointAndPlanePtr pickingPointAndPlanePtr;
   pickingPointAndPlanePtr = mojom::VRPickingPointAndPlane::New();
-  pickingPointAndPlanePtr->point = mojo::Array<double>::New(3);
-  pickingPointAndPlanePtr->plane = mojo::Array<double>::New(4);
+  pickingPointAndPlanePtr->point = std::vector<double>(3);
+  pickingPointAndPlanePtr->plane = std::vector<double>(4);
   if (!TangoHandler::getInstance()->getPickingPointAndPlaneInPointCloud(x, y, &(pickingPointAndPlanePtr->point[0]), &(pickingPointAndPlanePtr->plane[0])))
   {
     return nullptr;

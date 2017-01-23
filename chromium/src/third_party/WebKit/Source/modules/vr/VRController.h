@@ -45,7 +45,7 @@ class VRController final : public GarbageCollectedFinalized<VRController>,
   void onGetDisplays();
 
   // ContextLifecycleObserver.
-  void contextDestroyed() override;
+  void contextDestroyed(ExecutionContext*) override;
   void dispose();
 
   Member<NavigatorVR> m_navigatorVR;
