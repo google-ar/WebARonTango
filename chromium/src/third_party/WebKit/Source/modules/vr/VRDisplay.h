@@ -37,6 +37,7 @@ class VRPose;
 class VRPointCloud;
 class VRPickingPointAndPlane;
 class VRSeeThroughCamera;
+class VRADF;
 
 class WebGLRenderingContextBase;
 
@@ -70,6 +71,9 @@ class VRDisplay final : public EventTargetWithInlineData,
   VRPointCloud* getPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip);
   VRPickingPointAndPlane* getPickingPointAndPlaneInPointCloud(float x, float y);
   VRSeeThroughCamera* getSeeThroughCamera();
+  HeapVector<Member<VRADF>> getADFs();
+  void enableADF(const String&);
+  void disableADF();
 
   double depthNear() const { return m_depthNear; }
   double depthFar() const { return m_depthFar; }

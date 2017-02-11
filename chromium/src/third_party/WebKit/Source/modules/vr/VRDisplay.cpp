@@ -26,6 +26,7 @@
 #include "modules/vr/VRPointCloud.h"
 #include "modules/vr/VRPickingPointAndPlane.h"
 #include "modules/vr/VRSeeThroughCamera.h"
+#include "modules/vr/VRADF.h"
 #include "modules/webgl/WebGLRenderingContextBase.h"
 #include "platform/Histogram.h"
 #include "platform/UserGestureIndicator.h"
@@ -119,6 +120,7 @@ void VRDisplay::update(const device::mojom::blink::VRDisplayInfoPtr& display) {
   m_capabilities->setMaxLayers(display->capabilities->canPresent ? 1 : 0);
   m_capabilities->setHasPointCloud(display->capabilities->hasPointCloud);
   m_capabilities->setHasSeeThroughCamera(display->capabilities->hasSeeThroughCamera);
+  m_capabilities->setHasADFSupport(display->capabilities->hasADFSupport);
 
   // Ignore non presenting delegate
   bool isValid = display->leftEye->renderWidth > 0;
@@ -263,6 +265,39 @@ VRSeeThroughCamera* VRDisplay::getSeeThroughCamera()
   m_display->GetSeeThroughCamera(&seeThroughCamera);
   m_seeThroughCamera->setSeeThroughCamera(seeThroughCamera);
   return m_seeThroughCamera;
+}
+
+HeapVector<Member<VRADF>> VRDisplay::getADFs()
+{
+  HeapVector<Member<VRADF>> adfs;
+  if (!m_display)
+    return adfs;
+  Vector<device::mojom::blink::VRADFPtr> mojomADFs;
+  if (m_display->GetADFs(&mojomADFs) && !mojomADFs.isEmpty())
+  {
+    adfs.resize(mojomADFs.size());
+    for (size_t i = 0; i < mojomADFs.size(); i++)
+    {
+      VRADF* adf = new VRADF();
+      adf->setADF(mojomADFs[i]);
+      adfs[i] = adf;
+    }
+  }
+  return adfs;
+}
+
+void VRDisplay::enableADF(const String& uuid)
+{
+  if (!m_display)
+    return;
+  m_display->EnableADF(uuid);
+}
+
+void VRDisplay::disableADF()
+{
+  if (!m_display)
+    return;
+  m_display->DisableADF();
 }
 
 VREyeParameters* VRDisplay::getEyeParameters(const String& whichEye) {

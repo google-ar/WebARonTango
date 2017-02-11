@@ -5,7 +5,6 @@
 #ifndef VRSeeThroughCamera_h
 #define VRSeeThroughCamera_h
 
-#include "modules/vr/VRDisplay.h"
 #include "bindings/core/v8/ScriptWrappable.h"
 #include "device/vr/vr_service.mojom-blink.h"
 

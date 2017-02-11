@@ -10,7 +10,10 @@ VRDisplayCapabilities::VRDisplayCapabilities()
     : m_hasOriention(false),
       m_hasPosition(false),
       m_hasExternalDisplay(false),
-      m_canPresent(false) {}
+      m_canPresent(false),
+      m_hasPointCloud(false),
+      m_hasSeeThroughCamera(false),
+      m_hasADFSupport(false) {}
 
 DEFINE_TRACE(VRDisplayCapabilities) {}
 

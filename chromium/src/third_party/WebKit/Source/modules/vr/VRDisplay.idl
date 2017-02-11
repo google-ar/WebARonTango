@@ -34,6 +34,9 @@ enum VREye {
     VRPointCloud getPointCloud(boolean justUpdatePointCloud, unsigned long pointsToSkip);
     VRPickingPointAndPlane getPickingPointAndPlaneInPointCloud(float x, float y);
     VRSeeThroughCamera getSeeThroughCamera();
+    sequence<VRADF> getADFs();
+    void enableADF(DOMString uuid);
+    void disableADF();
 
     attribute double depthNear;
     attribute double depthFar;

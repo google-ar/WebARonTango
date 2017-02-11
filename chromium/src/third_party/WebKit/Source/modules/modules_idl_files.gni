@@ -274,6 +274,7 @@ modules_idl_files =
                     "vr/VRSeeThroughCamera.idl",
                     "vr/VRPointCloud.idl",
                     "vr/VRPickingPointAndPlane.idl",
+                    "vr/VRADF.idl",
                     "webaudio/AnalyserNode.idl",
                     "webaudio/AudioBuffer.idl",
                     "webaudio/AudioBufferCallback.idl",
