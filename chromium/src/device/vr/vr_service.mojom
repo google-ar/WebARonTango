@@ -33,6 +33,7 @@ struct VRDisplayCapabilities {
   bool canPresent;
   bool hasPointCloud;
   bool hasSeeThroughCamera;
+  bool hasADFSupport;
 };
 
 // Information about the optical properties for an eye in a VRDisplay.
@@ -63,6 +64,12 @@ struct VRSeeThroughCamera {
   double pointX;
   double pointY;
   int64 orientation;
+};
+
+struct VRADF {
+  string uuid;
+  string name;
+  uint64 creationTime;
 };
 
 struct VRStageParameters {
@@ -120,6 +127,10 @@ interface VRDisplay {
   GetSeeThroughCamera() => (VRSeeThroughCamera seeThroughCamera);
   [Sync]
   GetPickingPointAndPlaneInPointCloud(float x, float y) => (VRPickingPointAndPlane? pointAndPlane);
+  [Sync]
+  GetADFs() => (array<VRADF> adfs);
+  EnableADF(string uuid);
+  DisableADF();
 
   RequestPresent(bool secureOrigin) => (bool success);
   ExitPresent();

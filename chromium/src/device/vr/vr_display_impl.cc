@@ -81,6 +81,23 @@ void VRDisplayImpl::GetSeeThroughCamera(const GetSeeThroughCameraCallback& callb
   callback.Run(device_->GetSeeThroughCamera());
 }
 
+void VRDisplayImpl::GetADFs(const GetADFsCallback& callback) {
+  if (!device_->IsAccessAllowed(this)) {
+    callback.Run(std::vector<mojom::VRADFPtr>());
+    return;
+  }
+
+  callback.Run(device_->GetADFs());
+}
+
+void VRDisplayImpl::EnableADF(const std::string& uuid) {
+  device_->EnableADF(uuid);
+}
+
+void VRDisplayImpl::DisableADF() {
+  device_->DisableADF();
+}
+
 void VRDisplayImpl::RequestPresent(bool secure_origin,
                                    const RequestPresentCallback& callback) {
   if (!device_->IsAccessAllowed(this)) {

@@ -31,6 +31,9 @@ class GvrDevice : public VRDevice {
   mojom::VRPointCloudPtr GetPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip) override;
   mojom::VRSeeThroughCameraPtr GetSeeThroughCamera() override;
   mojom::VRPickingPointAndPlanePtr GetPickingPointAndPlaneInPointCloud(float x, float y) override;
+  std::vector<mojom::VRADFPtr> GetADFs() override;
+  void EnableADF(const std::string& uuid) override;
+  void DisableADF() override;
 
   void RequestPresent(const base::Callback<void(bool)>& callback) override;
   void SetSecureOrigin(bool secure_origin) override;

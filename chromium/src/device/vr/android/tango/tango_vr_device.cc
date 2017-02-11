@@ -14,6 +14,7 @@
 
 using base::android::AttachCurrentThread;
 using tango_chromium::TangoHandler;
+using tango_chromium::ADF;
 
 namespace device {
 
@@ -39,6 +40,7 @@ mojom::VRDisplayInfoPtr TangoVRDevice::GetVRDevice() {
   device->capabilities->canPresent = false;
   device->capabilities->hasPointCloud = true;
   device->capabilities->hasSeeThroughCamera = true;
+  device->capabilities->hasADFSupport = true;
 
   device->leftEye = mojom::VREyeParameters::New();
   device->rightEye = mojom::VREyeParameters::New();
@@ -156,6 +158,35 @@ mojom::VRPickingPointAndPlanePtr TangoVRDevice::GetPickingPointAndPlaneInPointCl
     return nullptr;
   }
   return pickingPointAndPlanePtr;
+}
+
+std::vector<mojom::VRADFPtr> TangoVRDevice::GetADFs()
+{
+  std::vector<mojom::VRADFPtr> mojomADFs;
+  std::vector<ADF> adfs;
+  if (TangoHandler::getInstance()->getADFs(adfs))
+  {
+    std::vector<ADF>::size_type size = adfs.size();
+    mojomADFs.resize(size);
+    for (std::vector<ADF>::size_type i = 0; i < size; i++)
+    {
+      mojomADFs[i] = mojom::VRADF::New();
+      mojomADFs[i]->uuid = adfs[i].getUUID();
+      mojomADFs[i]->name = adfs[i].getName();
+      mojomADFs[i]->creationTime = adfs[i].getCreationTime();
+    }
+  }
+  return mojomADFs;
+}
+
+void TangoVRDevice::EnableADF(const std::string& uuid)
+{
+  TangoHandler::getInstance()->enableADF(uuid);
+}
+
+void TangoVRDevice::DisableADF()
+{
+  TangoHandler::getInstance()->disableADF();
 }
 
 void TangoVRDevice::RequestPresent(const base::Callback<void(bool)>& callback) {

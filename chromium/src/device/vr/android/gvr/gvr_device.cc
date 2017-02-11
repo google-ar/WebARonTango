@@ -44,6 +44,7 @@ mojom::VRDisplayInfoPtr GvrDevice::GetVRDevice() {
   device->capabilities->canPresent = true;
   device->capabilities->hasPointCloud = false;
   device->capabilities->hasSeeThroughCamera = false;
+  device->capabilities->hasADFSupport = false;  
 
   device->leftEye = mojom::VREyeParameters::New();
   device->rightEye = mojom::VREyeParameters::New();
@@ -241,6 +242,20 @@ mojom::VRSeeThroughCameraPtr GvrDevice::GetSeeThroughCamera()
 mojom::VRPickingPointAndPlanePtr GvrDevice::GetPickingPointAndPlaneInPointCloud(float x, float y)
 {
   return nullptr;
+}
+
+std::vector<mojom::VRADFPtr> GvrDevice::GetADFs()
+{
+  std::vector<mojom::VRADFPtr> adfs;
+  return adfs;
+}
+
+void GvrDevice::EnableADF(const std::string& uuid)
+{
+}
+
+void GvrDevice::DisableADF()
+{
 }
 
 void GvrDevice::RequestPresent(const base::Callback<void(bool)>& callback) {
