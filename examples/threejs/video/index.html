@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+
+    <!-- Error handling -->
+    <script>
+        window.addEventListener('error', function(event) {
+            var errorMessage = event.message;
+            var url = event.filename;
+            var lineNumber = event.lineno;
+            var columnNumber = event.colno;
+            alert("ERROR: " + errorMessage + " at " + url + " : " + lineNumber + " : " + columnNumber);
+        });
+    </script>
+
+		<title>WebAR (Tango) Video Camera ThreeJS Example</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #000000;
+				margin: 0px;
+				overflow: hidden;
+			}
+
+			#info {
+				color: #fff;
+				position: absolute;
+				bottom: 10px;
+				width: 100%;
+				text-align: center;
+				z-index: 100;
+				display:block;
+
+			}
+
+			a { color: skyblue }
+		</style>
+	</head>
+	<body>
+
+		<div id="info">
+			<a href="http://threejs.org" target="_blank">three.js</a> -
+			WebAR (Tango) Video Camera ThreeJS Example <a href="https://github.com/judax" target="_blank">Iker Jamardo</a>
+		</div>
+
+		<script src="../../libs/third_party/three.js"></script>
+		<script src="../../libs/third_party/Detector.js"></script>
+		<script src="../../libs/third_party/stats.min.js"></script>
+
+		<script src="../../libs/THREE.WebAR.js"></script>
+
+		<script>
+
+			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+
+			var stats;
+
+			var cameraOrtho, sceneCamera, renderer, cameraMesh;
+
+			var vrDisplay;
+
+	        if (navigator.getVRDisplays) {
+	            navigator.getVRDisplays().then(function(vrDisplays) {
+	                if (vrDisplays && vrDisplays.length > 0) {
+	                    for (var i = 0; i < vrDisplays.length; i++) {
+	                        vrDisplay = vrDisplays[i];
+	                        if (vrDisplay.displayName === "Tango VR Device") {
+								init(vrDisplay);
+								updateAndRender();	
+								break;								
+	                        }
+	                    }
+	                }
+	            });
+	        }
+	        else {
+	            alert("No navigator.getVRDisplays");
+	            init();
+	            updateAndRender();
+	        }
+
+			function init(vrDisplay) {
+
+				sceneCamera = new THREE.Scene();
+				cameraOrtho = new THREE.OrthographicCamera( -1, 1, 1, -1, 0, 1000 );
+				cameraMesh = THREE.WebAR.createVRSeeThroughCameraMesh(vrDisplay);
+				sceneCamera.add(cameraMesh);
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.autoClear = false;
+				document.body.appendChild( renderer.domElement );
+
+				stats = new Stats();
+				document.body.appendChild( stats.dom );
+
+				window.addEventListener( 'resize', onWindowResize, false );
+			}
+
+			function onWindowResize() {
+				renderer.setSize( window.innerWidth, window.innerHeight );
+			}
+
+			function updateAndRender() {
+
+				stats.update();
+
+				// Required so the correct UVs are used at all times (changes happen when there is an orientation change or window resize)
+				THREE.WebAR.updateCameraMeshOrientation(vrDisplay, cameraMesh);
+
+				// Render the see through camera scene
+				renderer.clear();
+				renderer.render( sceneCamera, cameraOrtho );
+
+				requestAnimationFrame( updateAndRender );
+			}
+
+		</script>
+	</body>
+</html>
