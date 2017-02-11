@@ -26,13 +26,15 @@ var THREE = THREE || require("three");
 */
 THREE.WebAR = {};
 
+THREE.WebAR.MAX_FLOAT32_VALUE = 3.4028e38;
+
 /**
 * A class that allows to manage the point cloud acquisition and representation in ThreeJS. A buffer geometry is generated to represent the point cloud. The point cloud is provided using a VRDisplay instance that shows the capability to do so. The point cloud is actually exposed using a TypedArray. The array includes 3 values per point in the cloud. There are 2 ways of exposing this array:
 * 1.- Using a new TypedArray for every frame/update. The advantage is that the TypedArray is always of the correct size depending on the number of points detected. The disadvantage is that there is a performance hit from the creation and copying of the array (and future garbage collection).
-* 2.- Using the same reference to a single TypedArray. The advantage is that the performance is as good as it can get with no creation/destruction and copy penalties. The disadvantage is that the size of the array is the biggest possible point cloud provided by the underlying hardware. The non used values are filled with Infinity.
+* 2.- Using the same reference to a single TypedArray. The advantage is that the performance is as good as it can get with no creation/destruction and copy penalties. The disadvantage is that the size of the array is the biggest possible point cloud provided by the underlying hardware. The non used values are filled with THREE.WebAR.MAX_FLOAT32_VALUE.
 * @constructor
 * @param {window.VRDisplay} vrDisplay The reference to the VRDisplay instance that is capable of providing the point cloud.
-* @param {boolean} usePointCloudPointsDirectly A flag to specify if a new TypedArray will be used in each frame with the exact number of points in the cloud or reuse a single reference to a TypedArray with the maximum number of points provided by the underlying hardware (non correct values are filled with Inifinity).
+* @param {boolean} usePointCloudPointsDirectly A flag to specify if a new TypedArray will be used in each frame with the exact number of points in the cloud or reuse a single reference to a TypedArray with the maximum number of points provided by the underlying hardware (non correct values are filled with THREE.WebAR.MAX_FLOAT32_VALUE).
 *
 * NOTE: The buffer geometry that can be retrieved from instances of this class can be used along with THREE.Point and THREE.PointMaterial to render the point cloud using points. This class represents the vertices colors with the color white.
 */
@@ -55,9 +57,9 @@ THREE.WebAR.VRPointCloud = function(vrDisplay, usePointCloudPointsDirectly) {
 
 	for ( var i = 0; i < colors.length; i += 3 ) {
 		if (vrDisplay) {
-			positions[ i ]     = Infinity;
-			positions[ i + 1 ] = Infinity;
-			positions[ i + 2 ] = Infinity;
+			positions[ i ]     = THREE.WebAR.MAX_FLOAT32_VALUE;
+			positions[ i + 1 ] = THREE.WebAR.MAX_FLOAT32_VALUE;
+			positions[ i + 2 ] = THREE.WebAR.MAX_FLOAT32_VALUE;
 		}
 		color.setRGB( 1, 1, 1 );
 		colors[ i ]     = color.r;
@@ -107,7 +109,7 @@ THREE.WebAR.VRPointCloud.prototype.update = function(updateBufferGeometry, point
 			}
 			var lastPointCloudValueCount = this._numberOfPointsInLastPointCloud * 3;
 			for (var i = pointCloudValueCount; i < lastPointCloudValueCount; i++) {
-				this._positions.array[i] = Infinity;
+				this._positions.array[i] = THREE.WebAR.MAX_FLOAT32_VALUE;
 			}
 			this._numberOfPointsInLastPointCloud = numberOfPoints;
 			this._positions.needsUpdate = true;
@@ -212,7 +214,7 @@ THREE.WebAR.createVRSeeThroughCameraMesh = function(vrDisplay, fallbackVideoPath
 	}
 	else {
 		var video = document.createElement("video");
-		video.src = typeof(fallbackVideoPath) === "string" ? fallbackVideoPath : "../resources/videos/sintel.webm";
+		video.src = typeof(fallbackVideoPath) === "string" ? fallbackVideoPath : "../../resources/videos/sintel.webm";
 		video.play();
 
 		// All the possible texture coordinates for the 4 possible orientations.
@@ -319,15 +321,9 @@ THREE.WebAR.updateCameraMeshOrientation = function(vrDisplay, cameraMesh) {
 * @return {THREE.Camera} A camera instance to be used to correctly render a scene on top of the camera video feed.
 */
 THREE.WebAR.createVRSeeThroughCamera = function(vrDisplay, near, far) {
-	var camera;
+	var camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, near, far );
 	if (vrDisplay) {
-        camera = new THREE.Camera();
-        camera.near = near;
-        camera.far = far;
         THREE.WebAR.resizeVRSeeThroughCamera(vrDisplay, camera);
-	}
-	else {
-		camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, near, far );
 	}
 	return camera;
 };
@@ -358,6 +354,7 @@ THREE.WebAR.updateCameraOrientation = function(vrDisplay, camera) {
 * @param {THREE.Camera} camera The ThreeJS camera instance to update its projection matrix depending on the current device orientation and see through camera properties.
 */
 THREE.WebAR.resizeVRSeeThroughCamera = function(vrDisplay, camera) {
+	camera.aspect = window.innerWidth / window.innerHeight;
 	if (vrDisplay) {
 		var windowWidthBiggerThanHeight = window.innerWidth > window.innerHeight;
 		var seeThroughCamera = vrDisplay.getSeeThroughCamera();
@@ -378,10 +375,17 @@ THREE.WebAR.resizeVRSeeThroughCamera = function(vrDisplay, camera) {
         // Color camera's coordinates has Y pointing downwards so we negate this term.
         var yoffset = -(cy - (height / 2.0)) * yscale;
 
-        camera.projectionMatrix.makeFrustum(xscale * -width / 2.0 - xoffset, xscale * width / 2.0 - xoffset,yscale * -height / 2.0 - yoffset, yscale * height / 2.0 - yoffset, camera.near, camera.far);
+		var left = xscale * -width / 2.0 - xoffset;
+		var right = xscale * width / 2.0 - xoffset;
+		var bottom = yscale * -height / 2.0 - yoffset;
+        var top = yscale * height / 2.0 - yoffset;
+
+        camera.projectionMatrix.makeFrustum(left, right, bottom, top, camera.near, camera.far);
+
+        // Recalculate the fov as threejs is not doing it.
+        camera.fov = THREE.Math.radToDeg(Math.atan((top * camera.zoom) / camera.near)) * 2.0;
 	}
 	else {
-		camera.aspect = window.innerWidth / window.innerHeight;
 		camera.updateProjectionMatrix();
 	}
 }
