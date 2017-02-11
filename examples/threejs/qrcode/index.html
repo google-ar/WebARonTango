@@ -46,13 +46,15 @@
 			WebAR (Tango) QRCode ThreeJS Example <a href="https://github.com/judax" target="_blank">Iker Jamardo</a>
 		</div>
 
-		<script src="../libs/three.js"></script>
-		<script src="../libs/Detector.js"></script>
-		<script src="../libs/stats.min.js"></script>
-		<script src="../libs/VRControls.js"></script>
-		<script src="../libs/THREE.WebAR.js"></script>
-		<script src="../libs/dat.gui.min.js"></script>
-		<script src="../libs/qrcode.js"></script>
+
+		<script src="../../libs/third_party/three.js"></script>
+		<script src="../../libs/third_party/Detector.js"></script>
+		<script src="../../libs/third_party/stats.min.js"></script>
+		<script src="../../libs/third_party/VRControls.js"></script>
+		<script src="../../libs/third_party/dat.gui.min.js"></script>
+		<script src="../../libs/third_party/qrcode.js"></script>
+
+		<script src="../../libs/THREE.WebAR.js"></script>
 
 		<script>
 			// function GUI() {
@@ -90,25 +92,25 @@
 
 			var qrcodeNormal = new THREE.Vector3();
 
-	        if (navigator.getVRDisplays) {
-	            navigator.getVRDisplays().then(function(vrDisplays) {
-	                if (vrDisplays && vrDisplays.length > 0) {
-	                    for (var i = 0; i < vrDisplays.length; i++) {
-	                        vrDisplay = vrDisplays[i];
-	                        if (vrDisplay.displayName === "Tango VR Device") {
+			if (navigator.getVRDisplays) {
+				navigator.getVRDisplays().then(function(vrDisplays) {
+					if (vrDisplays && vrDisplays.length > 0) {
+						for (var i = 0; i < vrDisplays.length; i++) {
+							vrDisplay = vrDisplays[i];
+							if (vrDisplay.displayName === "Tango VR Device") {
 								init(vrDisplay);
 								updateAndRender();									
-	                            break;
-	                        }
-	                    }
-	                }
-	            });
-	        }
-	        else {
-	            alert("No navigator.getVRDisplays");
-	            init();
-	            updateAndRender();
-	        }
+								break;
+							}
+						}
+					}
+				});
+			}
+			else {
+				alert("No navigator.getVRDisplays");
+				init();
+				updateAndRender();
+			}
 
 			function init(vrDisplay) {
 				container = document.createElement( 'div' );
@@ -150,7 +152,7 @@
 				qrcodeMesh.position.set(0, 0, -1);
 				scene.add( qrcodeMesh );
 				var textureLoader = new THREE.TextureLoader();
-				var pictureTexture = textureLoader.load("../resources/images/picture.jpg");
+				var pictureTexture = textureLoader.load("../../resources/images/picture.jpg");
 				var pictureMaterial = new THREE.MeshLambertMaterial( {
 					map: pictureTexture,
 					color: 0xFFFFFF,
@@ -159,6 +161,7 @@
 				var pictureGeometry = new THREE.PlaneBufferGeometry( 0.12, 0.0875 );
 				var pictureMesh = new THREE.Mesh(pictureGeometry, pictureMaterial);
 				pictureMesh.position.set(0.245, 0, 0);
+				pictureMesh.visible = false;
 				qrcodeMesh.add(pictureMesh);
 
 				// Create the renderer
@@ -178,6 +181,7 @@
 				// Control the qrcode alignment or not using a click event.
 				window.addEventListener('click', function() {
 					qrcodeLocked = !qrcodeLocked;
+					pictureMesh.visible = qrcodeLocked;
 				});
 
 				var lastX;
@@ -227,15 +231,15 @@
 
 				// If the vrDisplay is correct and the qrcode is not locked, update its position with a raycast on the point cloud to check the point and plane of collision.
 				if (vrDisplay && !qrcodeLocked) {
-		            var pointAndPlane = vrDisplay.getPickingPointAndPlaneInPointCloud(0.5, 0.5);
-		            if (pointAndPlane && pointAndPlane.correctValues) {
-			            THREE.WebAR.positionAndRotateObject3DWithPickingPointAndPlaneInPointCloud(pointAndPlane, qrcodeMesh, 0.0);
-		            }
-		            else {
-		            	qrcodeMesh.position.set(0, 0, -1);
-		            	qrcodeMesh.rotation.set(0, 0, 0);
-		            }
-		        }
+					var pointAndPlane = vrDisplay.getPickingPointAndPlaneInPointCloud(0.5, 0.5);
+					if (pointAndPlane) {
+						THREE.WebAR.positionAndRotateObject3DWithPickingPointAndPlaneInPointCloud(pointAndPlane, qrcodeMesh, 0.0);
+					}
+					else {
+						qrcodeMesh.position.set(0, 0, -1);
+						qrcodeMesh.rotation.set(0, 0, 0);
+					}
+				}
 
 				// Render the perspective scene
 				renderer.clearDepth();
