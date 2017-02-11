@@ -23,6 +23,19 @@
         margin: 0px;
         overflow: hidden;
     }
+
+    #info {
+        color: #fff;
+        position: absolute;
+        bottom: 10px;
+        width: 100%;
+        text-align: center;
+        z-index: 100;
+        display:block;
+
+    }
+
+    a { color: skyblue }
 </style>
 
 <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
@@ -415,12 +428,12 @@
     function raf() {
         stats.update();
 
-        // videoQuad.update(gl);
+        videoQuad.update(gl);
 
         gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-        // videoQuad.render(gl);
+        videoQuad.render(gl);
 
         requestAnimationFrame(raf);
     }
@@ -432,6 +445,11 @@
 
 
 <body onload="webGLStart();">
+
+    <div id="info">
+        WebAR (Tango) Video Camera WebGL Example <a href="https://github.com/judax" target="_blank">Iker Jamardo</a>
+    </div>
+
     <script>
         function webGLStart() {
             var canvas = document.createElement("canvas");
