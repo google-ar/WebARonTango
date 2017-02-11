@@ -26,6 +26,8 @@
 
 #include "TangoHandler.h"
 
+#include <sstream>
+
 namespace {
 
 constexpr int kTangoCoreMinimumVersion = 9377;
@@ -226,6 +228,68 @@ int combineOrientations(int activityOrientation, int sensorOrientation)
   return (ret % 4);
 }
 
+bool getADFMetadataValue(const std::string& uuid, const std::string& key, std::string& value) 
+{
+  size_t size = 0;
+  TangoAreaDescriptionMetadata metadata;
+
+  // Get the metadata object from the Tango Service.
+  int ret = TangoService_getAreaDescriptionMetadata(uuid.c_str(), &metadata);
+  if (ret != TANGO_SUCCESS) 
+  {
+    LOGE("getADFMetadataValue: Failed to get ADF metadata with error code: %d", ret);
+    return false;
+  }
+
+  char* output;
+  // Query specific key-value from the metadata object.
+  ret = TangoAreaDescriptionMetadata_get(metadata, key.c_str(), &size, &output);
+  if (ret != TANGO_SUCCESS) 
+  {
+    LOGE("getADFMetadataValue: Failed to get ADF metadata value for key '%s' with error code: %d", key.c_str(), ret);
+    return false;
+  }
+  if (key == "date_ms_since_epoch")
+  {
+  	uint64_t date = *(uint64_t*)output;
+  	std::stringstream converter;
+  	converter << date;
+  	value = converter.str();
+  }
+  else
+  {
+	  value = output;
+  }
+
+  // We are done with the metadata, so free the used memory.
+	ret = TangoAreaDescriptionMetadata_free(metadata);
+
+  return true;
+}
+
+bool addADF(const std::string& uuid, std::vector<tango_chromium::ADF>& adfs)
+{
+	std::string name;
+	if (!getADFMetadataValue(uuid, "name", name))
+	{
+		return false;
+	}
+	std::string creationTimeString;
+	if (!getADFMetadataValue(uuid, "date_ms_since_epoch", creationTimeString))
+	{
+		return false;
+	}
+	unsigned long long creationTime = 0;
+	std::stringstream converter(creationTimeString);
+	if (!(converter >> creationTime))
+	{
+		LOGE("getADF: Failed to convert the creation time string '%s' to the creation time number.", creationTimeString.c_str());
+		return false;
+	}
+	adfs.push_back(tango_chromium::ADF(uuid, name, creationTime));
+	return true;
+}
+
 } // End anonymous namespace
 
 namespace tango_chromium {
@@ -312,12 +376,17 @@ void TangoHandler::onCreate(JNIEnv* env, jobject activity, int activityOrientati
 
 void TangoHandler::onTangoServiceConnected(JNIEnv* env, jobject binder) 
 {
-	TangoErrorType result;
-
 	if (TangoService_setBinder(env, binder) != TANGO_SUCCESS) {
 		LOGE("TangoHandler::onTangoServiceConnected, TangoService_setBinder error");
 		std::exit (EXIT_SUCCESS);
 	}
+
+	connect("");
+}
+
+void TangoHandler::connect(const std::string& uuid)
+{
+	TangoErrorType result;
 
 	// TANGO_CONFIG_DEFAULT is enabling Motion Tracking and disabling Depth
 	// Perception.
@@ -403,7 +472,7 @@ void TangoHandler::onTangoServiceConnected(JNIEnv* env, jobject binder)
 	result = TangoService_connectOnTextureAvailable(TANGO_CAMERA_COLOR, this, ::onTextureAvailable);
 	if (result != TANGO_SUCCESS) 
 	{
-		LOGE("TangoHandler::onTangoServiceConnected, failed to connect texture callback with error code: %d", result);
+		LOGE("TangoHandler::connect, failed to connect texture callback with error code: %d", result);
 		std::exit(EXIT_SUCCESS);
 	}
 
@@ -414,9 +483,21 @@ void TangoHandler::onTangoServiceConnected(JNIEnv* env, jobject binder)
 	// }
 #endif
 
+	// If there is a uuid, then activate it
+	if (uuid != "")
+	{
+    result = TangoConfig_setString(tangoConfig, "config_load_area_description_UUID", uuid.c_str());
+    if (result != TANGO_SUCCESS) 
+    {
+      LOGE("TangoHandler::connect: setup the UUID(%s) failed with error code: %d", uuid.c_str(), result);
+    }
+	}
+	lastEnabledADFUUID = uuid;
+
+	// Connect the tango service.
 	if (TangoService_connect(this, tangoConfig) != TANGO_SUCCESS) 
 	{
-		LOGE("TangoHandler::OnTangoServiceConnected, TangoService_connect error.");
+		LOGE("TangoHandler::connect, TangoService_connect error.");
 		std::exit (EXIT_SUCCESS);
 	}
 
@@ -425,7 +506,7 @@ void TangoHandler::onTangoServiceConnected(JNIEnv* env, jobject binder)
 	// camera frame.
 	result = TangoService_getCameraIntrinsics(TANGO_CAMERA_COLOR, &tangoCameraIntrinsics);
 	if (result != TANGO_SUCCESS) {
-		LOGE("PlaneFittingApplication: Failed to get the intrinsics for the color camera.");
+		LOGE("TangoHandler::connect: Failed to get the intrinsics for the color camera.");
 		std::exit(EXIT_SUCCESS);
 	}
 
@@ -440,7 +521,7 @@ void TangoHandler::onTangoServiceConnected(JNIEnv* env, jobject binder)
 	connected = true;
 }
 
-void TangoHandler::onPause() 
+void TangoHandler::disconnect() 
 {
 #ifdef TANGO_USE_POINT_CLOUD
 	TangoSupport_freePointCloudManager(pointCloudManager);
@@ -468,6 +549,11 @@ void TangoHandler::onPause()
 	connected = false;
 }
 
+void TangoHandler::onPause() 
+{
+	disconnect();
+}
+
 void TangoHandler::onDeviceRotationChanged(int activityOrientation, int sensorOrientation)
 {
 	this->activityOrientation = activityOrientation;
@@ -482,6 +568,7 @@ bool TangoHandler::isConnected() const
 
 bool TangoHandler::getPose(TangoPoseData* tangoPoseData) 
 {
+
 	bool result = connected;
 	if (connected)
 	{
@@ -502,13 +589,32 @@ bool TangoHandler::getPose(TangoPoseData* tangoPoseData)
 
 		// LOGI("JUDAX: TangoHandler::getPose timestamp = %lf", timestamp);
 
+// {TANGO_COORDINATE_FRAME_AREA_DESCRIPTION,
+//         TANGO_COORDINATE_FRAME_DEVICE}
+// then fallback to:
+// {TANGO_COORDINATE_FRAME_START_OF_SERVICE,
+//         TANGO_COORDINATE_FRAME_DEVICE}
+
+
 		result = TangoSupport_getPoseAtTime(
-			timestamp, TANGO_COORDINATE_FRAME,
+			timestamp, TANGO_COORDINATE_FRAME_AREA_DESCRIPTION,
 			TANGO_COORDINATE_FRAME_CAMERA_COLOR, TANGO_SUPPORT_ENGINE_OPENGL,
 			ROTATION_0, tangoPoseData) == TANGO_SUCCESS;
 		if (!result) 
 		{
 			LOGE("TangoHandler::getPose: Failed to get the pose.");
+		}
+		else if (tangoPoseData->status_code != TANGO_POSE_VALID)
+		{
+			LOGE("TangoHandler::getPose: Getting the Area Description pose did not work. Falling back to device pose estimation.");
+			result = TangoSupport_getPoseAtTime(
+				timestamp, TANGO_COORDINATE_FRAME,
+				TANGO_COORDINATE_FRAME_CAMERA_COLOR, TANGO_SUPPORT_ENGINE_OPENGL,
+				ROTATION_0, tangoPoseData) == TANGO_SUCCESS;
+			if (!result) 
+			{
+				LOGE("TangoHandler::getPose: Failed to get the pose.");
+			}
 		}
 
 #ifdef TANGO_GET_POSE_ALONG_WITH_TEXTURE_UPDATE
@@ -926,6 +1032,69 @@ void TangoHandler::onCameraFrameAvailable(const TangoImageBuffer* buffer)
 int TangoHandler::getSensorOrientation() const
 {
 	return sensorOrientation;
+}
+
+bool TangoHandler::getADFs(std::vector<ADF>& adfs) const
+{
+  TangoConfig tango_config_ = TangoService_getConfig(TANGO_CONFIG_DEFAULT);
+  if (tango_config_ == nullptr) {
+    LOGE("TangoHandler::getADFs failed to get default config form");
+    return false;
+  }
+
+  char* uuids = nullptr;
+  int ret = TangoService_getAreaDescriptionUUIDList(&uuids);
+  if (ret != TANGO_SUCCESS) {
+    LOGE("TangoHandler::getADFs failed to get the area description with error code: %d", ret);
+    return false;
+  }
+
+	adfs.clear();
+  std::string uuid;
+  bool thereIsADF = false; // This flag allows us to know if there is an ADF to be added (the uuid has been filled up).
+  for (unsigned int i = 0; uuids[i] != 0; i++)
+  {
+  	if (uuids[i] == ',')
+  	{
+  		if (thereIsADF && !addADF(uuid, adfs))
+  		{
+  			LOGE("TangoHandler::getADFs failed to create the ADF for uuid '%s'", uuid.c_str());
+  			// For now, if one ADF fails, continue retrieving the others.
+  		}
+  		uuid = "";
+  		thereIsADF = false;
+  	}
+  	else 
+  	{
+  		thereIsADF = true;
+  		uuid += uuids[i];
+  	}
+  }
+  // Add the last ADF
+	if (thereIsADF && !addADF(uuid, adfs))
+	{
+		LOGE("TangoHandler::getADFs failed to create the ADF for uuid '%s'", uuid.c_str());
+		// For now, if one ADF fails, continue retrieving the others.
+	}
+  return true;
+}
+
+void TangoHandler::enableADF(const std::string& uuid)
+{
+	if (lastEnabledADFUUID != uuid)
+	{
+		disconnect();
+		connect(uuid);
+	}
+}
+
+void TangoHandler::disableADF()
+{
+	if (lastEnabledADFUUID != "")
+	{
+		disconnect();
+		connect("");
+	}
 }
 
 bool TangoHandler::hasLastTangoImageBufferTimestampChangedLately()

@@ -27,6 +27,9 @@
 #include <jni.h>
 #include <android/log.h>
 
+#include <string>
+#include <vector>
+
 #define LOG_TAG "Tango Chromium"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
@@ -39,6 +42,7 @@
 #define TANGO_USE_POWER_OF_TWO
 // #define TANGO_USE_DRIFT_CORRECTION
 // #define TANGO_GET_POSE_ALONG_WITH_TEXTURE_UPDATE
+#define TANGO_USE_AREA_DESCRIPTION
 
 #ifdef TANGO_USE_DRIFT_CORRECTION
 #define TANGO_COORDINATE_FRAME TANGO_COORDINATE_FRAME_AREA_DESCRIPTION
@@ -47,6 +51,33 @@
 #endif
 
 namespace tango_chromium {
+
+class ADF {
+public:
+	ADF(const std::string& uuid, const std::string& name, unsigned long long creationTime): uuid(uuid), name(name), creationTime(creationTime)
+	{
+	}
+
+	inline const std::string& getUUID() const
+	{
+		return uuid;
+	}
+
+	inline const std::string& getName() const
+	{
+		return name;
+	}
+	
+	inline unsigned long long getCreationTime() const
+	{
+		return creationTime;
+	}
+private:
+	std::string uuid;
+	std::string name;
+	unsigned long long creationTime;
+};
+
 // TangoHandler provides functionality to communicate with the Tango Service.
 class TangoHandler {
 public:
@@ -55,8 +86,8 @@ public:
 
 	TangoHandler();
 
-	TangoHandler(const TangoHandler& other) = delete;
-	TangoHandler& operator=(const TangoHandler& other) = delete;
+	// TangoHandler(const TangoHandler& other) = delete;
+	// TangoHandler& operator=(const TangoHandler& other) = delete;
 
 	~TangoHandler();
 
@@ -89,7 +120,13 @@ public:
 
 	int getSensorOrientation() const;
 
+	bool getADFs(std::vector<ADF>& adfs) const;
+	void enableADF(const std::string& uuid);
+	void disableADF();
+
 private:
+	void connect(const std::string& uuid);
+	void disconnect();
 	bool hasLastTangoImageBufferTimestampChangedLately();
 
 	static TangoHandler* instance;
@@ -112,10 +149,10 @@ private:
 	bool latestTangoPointCloudRetrieved;
 
 	pthread_mutex_t cameraImageMutex;
-    pthread_cond_t cameraImageCondition;
-    uint8_t* cameraImageYUV;
-    uint8_t* cameraImageYUVTemp;
-    uint32_t cameraImageYUVSize;
+	pthread_cond_t cameraImageCondition;
+	uint8_t* cameraImageYUV;
+	uint8_t* cameraImageYUVTemp;
+	uint32_t cameraImageYUVSize;
 	uint32_t cameraImageYUVOffset;
 	uint8_t* cameraImageRGB;
 	uint32_t cameraImageRGBSize;
@@ -130,6 +167,8 @@ private:
 	int activityOrientation;
 	int sensorOrientation;
 	TangoSupportDisplayRotation combinedOrientation;
+
+	std::string lastEnabledADFUUID;
 };
 }  // namespace tango_4_chromium
 
