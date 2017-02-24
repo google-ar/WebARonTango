@@ -105,12 +105,14 @@ mkdir ../Backup_WebAR/$BRANCH_NAME/bin
 if [ $? -ne 0 ]; then exit 1; fi
 cp out/$BRANCH_NAME/apks/AndroidWebView.apk ../Backup_WebAR/$BRANCH_NAME/bin/ChromiumAR.apk
 if [ $? -ne 0 ]; then exit 1; fi
+cp out/$BRANCH_NAME/gen/components/resources/about_credits.html ../Backup_WebAR/$BRANCH_NAME/bin/LICENSE
+if [ $? -ne 0 ]; then exit 1; fi
 # THREE.WebAR.js
 mkdir ../Backup_WebAR/$BRANCH_NAME/THREE.WebAR
 if [ $? -ne 0 ]; then exit 1; fi
 cp ~/Coding/judax.github.io/webar/examples/libs/THREE.WebAR.js ../Backup_WebAR/$BRANCH_NAME/THREE.WebAR
 if [ $? -ne 0 ]; then exit 1; fi
-# Build script, notes, backup script, examples, ... 
+# Build script, notes, backup script, examples, license, ... 
 cp build_install_run.sh ../Backup_WebAR/$BRANCH_NAME/chromium/src/
 if [ $? -ne 0 ]; then exit 1; fi
 # cp Notes*.txt ../Backup_WebAR/$BRANCH_NAME/chromium/src/
@@ -119,6 +121,8 @@ if [ $? -ne 0 ]; then exit 1; fi
 cp -r ~/Coding/judax.github.io/webar/examples/* ../Backup_WebAR/$BRANCH_NAME/examples
 if [ $? -ne 0 ]; then exit 1; fi
 cp ./backupwebar.sh ../Backup_WebAR/$BRANCH_NAME/chromium/src
+if [ $? -ne 0 ]; then exit 1; fi
+cp ./LICENSE ../Backup_WebAR/$BRANCH_NAME/chromium/src
 if [ $? -ne 0 ]; then exit 1; fi
 
 # Copy from Backup_WebAR to the final repo, WebAR
