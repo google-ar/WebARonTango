@@ -1,3 +1,19 @@
+<!--
+/*
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+-->
 <!DOCTYPE html>
 <html lang="en">
 	<head>
@@ -50,9 +66,9 @@
 	</head>
 	<body>
 
-	<div id="youtube" style="width:560px; height:500px; display:none; visibility:hidden;" onclick="alert('ja!');">
-		<iframe width="560" height="315" src="https://www.youtube.com/embed/Qe10ExwzCqk?rel=0&autoplay=1" frameborder="0"></iframe>
-		<!-- <iframe width="100%" height="80%" src="https://vr.google.com/daydream/"></iframe> -->
+	<div id="youtube" style="width:560px; height:500px;">
+		<div id="youtubeiframe"></div>
+		<!-- <iframe width="560" height="315" src="https://www.youtube.com/embed/Qe10ExwzCqk?rel=0" frameborder="0"></iframe> -->
 		<div id="distanceText" style="width:100%; height:185px;"></div>
 	</div>
 
@@ -71,6 +87,29 @@
 		<script src="../../libs/THREE.WebAR.js"></script>
 
 		<script>
+			var tag = document.createElement('script');
+			tag.src = "https://www.youtube.com/iframe_api";
+			var firstScriptTag = document.getElementsByTagName('script')[0];
+			firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+			var player;
+			var videoIsReady = false;
+			function onYouTubeIframeAPIReady() {
+				player = new YT.Player('youtubeiframe', {
+					height: '315',
+					width: '500',
+					videoId: 'Qe10ExwzCqk',
+					events: {
+						'onReady': function(event) {
+							videoIsReady = true;
+							event.target.playVideo();
+						}
+					}
+				});
+			}
+		</script>
+
+		<script>
+
 			function GUI() {
 				this.showPointCloud = showPointCloud;
 				this.showSeeThroughCamera = true;
@@ -86,7 +125,7 @@
 
 			var pointCloud, showPointCloud = false;
 			var vrDisplay;
-			var model;
+			var model, distanceTextDiv;
 
 			var pos = new THREE.Vector3();
 
@@ -136,12 +175,11 @@
 				// Create the 3D sceneCSS
 				sceneCSS = new THREE.Scene();
 
+	            distanceTextDiv = document.getElementById("distanceText");
 				var youtubeDiv = document.getElementById("youtube");
-				youtubeDiv.style.display = "block";
-				youtubeDiv.style.visibility = "visible";
 				model = new THREE.CSS3DObject(youtubeDiv);
 				model.scale.set(0.001, 0.001, 0.001);
-				model.position.set(0, 0, -0.3);
+				model.position.set(0, 0, 0.3);
 				// model.position.set(Infinity, Infinity, Infinity);
 				sceneCSS.add(model);
 
@@ -151,14 +189,12 @@
 				rendererWebGL.setSize( window.innerWidth, window.innerHeight );
 				rendererWebGL.autoClear = false;
 				rendererWebGL.domElement.style.position = 'absolute';
-				// rendererWebGL.domElement.style.zIndex = 0;
 				rendererWebGL.domElement.style.top = 0;
 
 				// Create the rendererCSS
 				rendererCSS = new THREE.CSS3DRenderer();
 				rendererCSS.setSize( window.innerWidth, window.innerHeight );
 				rendererCSS.domElement.style.position = 'absolute';
-				// rendererCSS.domElement.style.zIndex = 1;
 				rendererCSS.domElement.style.top = 0;
 
 				// Add the renderer's domElements to the page.
@@ -167,12 +203,13 @@
 
 				// The cameraPersp is shared by both scenes/renderers and it is controlled by the VRControls
 				// cameraPersp = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.00001, 1000);
-				cameraPersp = THREE.WebAR.createVRSeeThroughCamera(vrDisplay, 0.00001, 1000);
+				cameraPersp = THREE.WebAR.createVRSeeThroughCamera(vrDisplay, 0.00001, 10000);
+				// cameraPersp.scale.set(1000, 1000, 1000);
 				vrControls = new THREE.VRControls(cameraPersp);
 
 				// Create a way to measure performance
 				stats = new Stats();
-				rendererCSS.domElement.appendChild( stats.dom );
+				// rendererCSS.domElement.appendChild( stats.dom );
 
 				// Control the resizing of the window to correctly display the sceneWebGL.
 				window.addEventListener( 'resize', onWindowResize, false );
@@ -206,11 +243,20 @@
 			            	// alert(pointAndPlane.point);
 							// model.position.set(pointAndPlane.point[0], pointAndPlane.point[1], pointAndPlane.point[2]);
 				            THREE.WebAR.positionAndRotateObject3DWithPickingPointAndPlaneInPointCloud(pointAndPlane, model, 0.0);
+
+				            // Hack! To work in the div space (pixels)
+				            // model.position.multiplyScalar(1000);
 			            }
 			            else {
-			            	alert("Could not retrieve the correct point and plane.");
+			            	// alert("Could not retrieve the correct point and plane.");
 			            }
 			        }
+			    });
+
+			    rendererCSS.domElement.addEventListener("dblclick", function() {
+			    	if (videoIsReady) {
+						player.playVideo();
+			    	}
 			    });
 
 				// Initialize the dat.GUI.
@@ -255,6 +301,10 @@
 
 				// Update the perspective sceneWebGL
 				vrControls.update();
+
+	            // Hack! To work in the div space (pixels)
+				// cameraPersp.position.multiplyScalar(1500);
+
 				// IMPORTANT: this call makes sure that the camera, that has taken the pose from the previous VRControls.update call, is correctly transformed depending on the device orientation.
 				THREE.WebAR.updateCameraOrientation(vrDisplay, cameraPersp);
 				// Update the point cloud
@@ -267,9 +317,8 @@
 				// Update the perspective sceneCSS
 				// Calculate the distance fron the camera to the model and show it.
 	            pos.subVectors(model.position, cameraPersp.position);
-	            var distance = pos.length().toFixed(2);
-	            var message = "" + distance + " meters";
-	            var distanceTextDiv = document.getElementById("distanceText");
+	            var distance = (pos.length() * 100).toFixed(2);
+	            var message = "" + distance + " cms";
 	            distanceTextDiv.innerHTML = message;
 
 				// Render the perspective sceneCSS
