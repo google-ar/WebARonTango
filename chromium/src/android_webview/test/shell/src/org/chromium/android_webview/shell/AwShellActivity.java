@@ -84,6 +84,7 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
     private static final String LAST_USED_URL_PREFERENCE_NAME = "url";
     private static final int CAMERA_PERMISSION_ID = 1;
     private static final int ADF_PERMISSION_ID = 2;
+    private static final int READ_EXTERNAL_STORAGE_PERMISSION_ID = 3;
     private static final int CAMERA_ID = 0;
     private Point mScreenSize = new Point();
     private AwBrowserContext mBrowserContext;
@@ -191,10 +192,31 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.CAMERA},
                         CAMERA_PERMISSION_ID);
+            }
+        }
+    }    
 
-                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
-                // app-defined int constant. The callback method gets the
-                // result of the request.
+    private void requestExternalStorageReadPermission() 
+    {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) 
+        {
+            // Should we show an explanation?
+            // if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE)) 
+            // {
+
+            //     // Show an expanation to the user *asynchronously* -- don't block
+            //     // this thread waiting for the user's response! After the user
+            //     // sees the explanation, try again to request the permission.
+
+            // } 
+            // else 
+            {
+
+                // No explanation needed, we can request the permission.
+
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                        READ_EXTERNAL_STORAGE_PERMISSION_ID);
             }
         }
     }    
@@ -227,6 +249,7 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
 
         requestCameraPermission();
         requestADFPermission();
+        requestExternalStorageReadPermission();
 
         WindowManager windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         Display display = windowManager.getDefaultDisplay();
@@ -447,6 +470,8 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
         awSettings.setDisplayZoomControls(false);
         awSettings.setUseWideViewPort(true);
         awSettings.setLoadWithOverviewMode(true);
+        awSettings.setAllowFileAccessFromFileURLs(true);
+        awSettings.setAllowUniversalAccessFromFileURLs(true);
         awSettings.setLayoutAlgorithm(android.webkit.WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING);
 
         testContainerView.initialize(new AwContents(mBrowserContext, testContainerView,
