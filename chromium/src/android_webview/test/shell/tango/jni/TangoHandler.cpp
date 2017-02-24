@@ -596,17 +596,24 @@ bool TangoHandler::getPose(TangoPoseData* tangoPoseData)
 //         TANGO_COORDINATE_FRAME_DEVICE}
 
 
-		result = TangoSupport_getPoseAtTime(
-			timestamp, TANGO_COORDINATE_FRAME_AREA_DESCRIPTION,
-			TANGO_COORDINATE_FRAME_CAMERA_COLOR, TANGO_SUPPORT_ENGINE_OPENGL,
-			ROTATION_0, tangoPoseData) == TANGO_SUCCESS;
-		if (!result) 
+		if (lastEnabledADFUUID != "")
 		{
-			LOGE("TangoHandler::getPose: Failed to get the pose.");
+			result = TangoSupport_getPoseAtTime(
+				timestamp, TANGO_COORDINATE_FRAME_AREA_DESCRIPTION,
+				TANGO_COORDINATE_FRAME_CAMERA_COLOR, TANGO_SUPPORT_ENGINE_OPENGL,
+				ROTATION_0, tangoPoseData) == TANGO_SUCCESS;
+			if (!result) 
+			{
+				LOGE("TangoHandler::getPose: Failed to get the pose for area description.");
+			}
+			else if (tangoPoseData->status_code != TANGO_POSE_VALID) 
+			{
+				LOGE("TangoHandler::getPose: Getting the Area Description pose did not work. Falling back to device pose estimation.");
+			}
 		}
-		else if (tangoPoseData->status_code != TANGO_POSE_VALID)
+
+		if (lastEnabledADFUUID == "" || tangoPoseData->status_code != TANGO_POSE_VALID)
 		{
-			LOGE("TangoHandler::getPose: Getting the Area Description pose did not work. Falling back to device pose estimation.");
 			result = TangoSupport_getPoseAtTime(
 				timestamp, TANGO_COORDINATE_FRAME,
 				TANGO_COORDINATE_FRAME_CAMERA_COLOR, TANGO_SUPPORT_ENGINE_OPENGL,
