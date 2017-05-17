@@ -56,8 +56,9 @@
 
 /**
 * @method VRDisplay#getPointCloud
-* @description Returns an instance of {@link VRPointCloud} that represents the point cloud acquired by the underlying hardware at the moment of the call.
+* @description Updates an instance of the {@link VRPointCloud} structure that represents the point cloud acquired by the underlying hardware at the moment of the call. This process is similar to how the WebVR 1.1 spec requires to update a VRFrameData instance in order to get a new pose.
 * @see VRDisplayCapabilities
+* @param {VRPointCloud} pointCloud - The {@link VRPointCloud} instance to be updated in this call.
 * @param {boolean} justUpdatePointCloud - A flag to indicate if the whole point cloud should be retrieved or just updated internally. Updating the point cloud without retrieving the points may be useful if the point cloud won't be used in JS (for rendering it, for exmaple) but picking will be used. This parameter should be true to only update the point cloud returning 0 points and false to both update and return all the points detected up until the moment of the call.
 * @param {number} pointsToSkip - An integer value to indicate how many points to skip when all the points are returned (justUpdatePointCloud = false). This parameter allows to return a less dense point cloud by skipping 1, 2, 3, ... points. A value of 0 will return all the points. A value of 1 will skip every other point returning half the number of points (1/2), a value of 2 will skip 2 of every other points returning one third of the number of points (1/3), etc. In essence, this value will specify the number of point to return skipping some points. numberOfPointsToReturn = numberOfDetectedPoints / (pointsToSkip + 1). 
 * @returns {VRPointCloud} - An instance of a {@link VRPointCloud} with the points/vertices that the VRDisplay has detected or null if the underlying VRDisplay does not support point cloud provisioning.
@@ -111,6 +112,7 @@
 * @class
 * @description A class that represents the point cloud acquired by the underlying VRDisplay when a call to getPointCloud is made. A point cloud is just a set of triplets (x, y, z) that represent each 3D position of each vertex/point in the point cloud. In order to make this structure as fast as possible, the Float32Array is always of the maximum vertex count possible depending on the underlywing VRDisplay. Of course, the exact number of points that have been correctly acquired is also provided in the VRPointCloud instance.
 * NOTE: In order to improve performance, a single Float32Array instance is allocated with the maximum capacity of points that the underlying SDK could provide. This is why the numberOfPoints property is also passed along with the points property. It is up to the developer to correctly use/copy the values.
+* To be able to use this structure, just create an instance of it and update it using the getPointCloud method described in the VRDisplay structure.
 */
 
 /**
