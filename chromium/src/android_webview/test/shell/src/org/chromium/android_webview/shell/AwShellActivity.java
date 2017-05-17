@@ -41,7 +41,6 @@ import android.widget.TextView.OnEditorActionListener;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityCompat.OnRequestPermissionsResultCallback;
-import android.graphics.Point;
 import android.hardware.Camera;
 
 import org.chromium.android_webview.AwBrowserContext;
@@ -56,6 +55,7 @@ import org.chromium.android_webview.JsResultReceiver;
 import org.chromium.android_webview.JsPromptResultReceiver;
 import org.chromium.android_webview.AwWebResourceResponse;
 import org.chromium.android_webview.AwContentsClient.AwWebResourceRequest;
+import org.chromium.android_webview.permission.AwPermissionRequest;
 import org.chromium.base.BaseSwitches;
 import org.chromium.base.CommandLine;
 import org.chromium.base.ContextUtils;
@@ -74,6 +74,18 @@ import java.util.Locale;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
+import java.util.ArrayList;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONArray;
+
+import android.speech.SpeechRecognizer;
+import android.speech.RecognizerIntent;
+import android.speech.RecognitionListener;
+
+import android.webkit.JavascriptInterface;
+
 /**
  * This is a lightweight activity for tests that only require WebView functionality.
  */
@@ -85,8 +97,10 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
     private static final int CAMERA_PERMISSION_ID = 1;
     private static final int ADF_PERMISSION_ID = 2;
     private static final int READ_EXTERNAL_STORAGE_PERMISSION_ID = 3;
+    private static final int RECORD_AUDIO_PERMISSION_ID = 4;
+    private static final int LOCATION_PERMISSION_ID = 5;
+    private static final int MODIFY_AUDIO_SETTINGS_PERMISSION_ID = 6;
     private static final int CAMERA_ID = 0;
-    private Point mScreenSize = new Point();
     private AwBrowserContext mBrowserContext;
     private AwDevToolsServer mDevToolsServer;
     private AwTestContainerView mAwTestContainerView;
@@ -96,6 +110,190 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
     private ImageButton mPrevButton;
     private ImageButton mNextButton;
     private ImageButton mQRCodeButton;
+
+    private class SpeechRecognition implements RecognitionListener
+    {
+        public static final String JS_INTERFACE_INSTANCE_NAME = "webarSpeechRecognitionInstance";
+        private SpeechRecognizer speechRecognizer = null;
+        private Intent speechRecognizerIntent = null;
+        private Runnable startRunnable = new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                speechRecognizer.startListening(speechRecognizerIntent);
+            }
+        };
+        private Runnable stopRunnable = new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                speechRecognizer.cancel();
+            }
+        };
+
+
+        public SpeechRecognition()
+        {
+            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(AwShellActivity.this);
+            speechRecognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+            speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+            speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, AwShellActivity.this.getPackageName());
+            speechRecognizer.setRecognitionListener(this);
+        }
+
+        void destroy() 
+        {
+            speechRecognizer.destroy();
+        }
+
+        @Override
+        public void onBeginningOfSpeech()
+        {               
+            // System.out.println("SpeechRecognitionListener.onBeginningOfSpeech");
+            dispatchEventToJSInterfaceInstance("speechstart", "{}");
+        }
+
+        @Override
+        public void onBufferReceived(byte[] buffer)
+        {
+            // System.out.println("SpeechRecognitionListener.onBufferReceived");
+        }
+
+        @Override
+        public void onEndOfSpeech()
+        {
+            // System.out.println("SpeechRecognitionListener.onEndOfSpeech");
+            dispatchEventToJSInterfaceInstance("speechend", "{}");
+         }
+
+        @Override
+        public void onError(int error)
+        {
+            // System.out.println("SpeechRecognitionListener.onError: " + error);
+            String errorString = "Unknown error.";
+            switch(error)
+            {
+                case SpeechRecognizer.ERROR_AUDIO:
+                    errorString = "Audio recording error.";
+                    break;
+                case SpeechRecognizer.ERROR_CLIENT:
+                    errorString = "Other client side errors.";
+                    break;
+                case SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS:
+                    errorString = "Insufficient permissions";
+                    break;
+                case SpeechRecognizer.ERROR_NETWORK:
+                    errorString = "Other network related errors.";
+                    break;
+                case SpeechRecognizer.ERROR_NETWORK_TIMEOUT:
+                    errorString = "Network operation timed out.";
+                    break;
+                case SpeechRecognizer.ERROR_NO_MATCH:
+                    errorString = "No recognition result matched.";
+                    break;
+                case SpeechRecognizer.ERROR_RECOGNIZER_BUSY:
+                    errorString = "RecognitionService busy.";
+                    break;
+                case SpeechRecognizer.ERROR_SERVER:
+                    errorString = "Server sends error status.";
+                    break;
+                case SpeechRecognizer.ERROR_SPEECH_TIMEOUT:
+                    errorString = "No speech input or timeout.";
+                    break;
+            }
+            dispatchEventToJSInterfaceInstance("error", "{ error: '" + errorString + "'}");
+        }
+
+        @Override
+        public void onEvent(int eventType, Bundle params)
+        {
+            // System.out.println("SpeechRecognitionListener.onEvent");
+        }
+
+        @Override
+        public void onPartialResults(Bundle partialResults)
+        {
+            // System.out.println("SpeechRecognitionListener.onPartialResults");
+        }
+
+        @Override
+        public void onReadyForSpeech(Bundle params)
+        {
+            // System.out.println("SpeechRecognitionListener.onReadyForSpeech");
+            dispatchEventToJSInterfaceInstance("start", 
+                "{}");
+        }
+
+        @Override
+        public void onResults(Bundle results)
+        {
+            // System.out.println("SpeechRecognitionListener.onResults");
+            ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+            float[] confidences = results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
+            if (!matches.isEmpty())
+            {
+                try
+                {
+                    JSONObject resultJSONObject = new JSONObject();
+                    JSONArray resultsJSONArray = new JSONArray();
+                    for (int i = 0; i < matches.size(); i++)
+                    {
+                        JSONObject matchJSONObject = new JSONObject();
+                        matchJSONObject.put("isFinal", true);
+                        matchJSONObject.put("length", 1);
+                        JSONObject transcriptJSONObject = new JSONObject();
+                        transcriptJSONObject.put("transcript", matches.get(i));
+                        transcriptJSONObject.put("confidence", confidences[i]);
+                        matchJSONObject.put("0", transcriptJSONObject);
+                        resultsJSONArray.put(matchJSONObject);
+                    }
+                    resultJSONObject.put("results", resultsJSONArray);
+                    String jsonString = resultJSONObject.toString();
+
+                    // String jsonString = "{ results: [";
+                    // for (int i = 0; i < matches.size(); i++)
+                    // {
+                    //     jsonString += "{ isFinal: true, length: 1, 0: { transcript: '" + matches.get(i) + "', confidence: " + confidences[i] + " } }" + (i < matches.size() - 1 ? ", " : "");
+                    // }
+                    // jsonString += "] }";
+
+                    dispatchEventToJSInterfaceInstance("result", jsonString);
+                    dispatchEventToJSInterfaceInstance("end", jsonString);
+                }
+                catch(JSONException e)
+                {
+                    dispatchEventToJSInterfaceInstance("error", "{ error: 'JSON exception while creating the speech recognition results.'}");
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        @Override
+        public void onRmsChanged(float rmsdB)
+        {
+            // System.out.println("SpeechRecognitionListener.onRmsChanged");
+        }
+
+        @JavascriptInterface
+        public void start()
+        {
+            runOnUiThread(startRunnable);
+        }
+
+        @JavascriptInterface
+        public void stop()
+        {
+            runOnUiThread(stopRunnable);
+        }
+
+        private void dispatchEventToJSInterfaceInstance(String eventType, String eventJSONString)
+        {
+            String jsCode = "window." + JS_INTERFACE_INSTANCE_NAME + ".callEventListeners('" + eventType + "', " + eventJSONString +");";
+            mAwTestContainerView.getAwContents().evaluateJavaScript(jsCode, null);
+        }
+    }
 
     private static AlertDialog createAlertDialog(Context context, String title,
             String message, DialogInterface.OnClickListener onClickListener,
@@ -221,6 +419,77 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
         }
     }    
 
+    private void requestRecordAudioPermission() 
+    {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) 
+        {
+            // Should we show an explanation?
+            // if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.RECORD_AUDIO)) 
+            // {
+
+            //     // Show an expanation to the user *asynchronously* -- don't block
+            //     // this thread waiting for the user's response! After the user
+            //     // sees the explanation, try again to request the permission.
+
+            // } 
+            // else 
+            {
+
+                // No explanation needed, we can request the permission.
+
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.RECORD_AUDIO},
+                        RECORD_AUDIO_PERMISSION_ID);
+            }
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.MODIFY_AUDIO_SETTINGS) != PackageManager.PERMISSION_GRANTED) 
+        {
+            // Should we show an explanation?
+            // if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.MODIFY_AUDIO_SETTINGS)) 
+            // {
+
+            //     // Show an expanation to the user *asynchronously* -- don't block
+            //     // this thread waiting for the user's response! After the user
+            //     // sees the explanation, try again to request the permission.
+
+            // } 
+            // else 
+            {
+
+                // No explanation needed, we can request the permission.
+
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.MODIFY_AUDIO_SETTINGS},
+                        MODIFY_AUDIO_SETTINGS_PERMISSION_ID);
+            }
+        }
+    }    
+
+    private void requestLocationPermission() 
+    {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) 
+        {
+            // Should we show an explanation?
+            // if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_COARSE_LOCATION)) 
+            // {
+
+            //     // Show an expanation to the user *asynchronously* -- don't block
+            //     // this thread waiting for the user's response! After the user
+            //     // sees the explanation, try again to request the permission.
+
+            // } 
+            // else 
+            {
+
+                // No explanation needed, we can request the permission.
+
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                        LOCATION_PERMISSION_ID);
+            }
+        }
+    }    
+
     private void requestADFPermission()
     {
         final String EXTRA_KEY_PERMISSIONTYPE = "PERMISSIONTYPE";
@@ -248,17 +517,18 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
         super.onCreate(savedInstanceState);
 
         requestCameraPermission();
-        requestADFPermission();
+        // requestADFPermission();
         requestExternalStorageReadPermission();
+        requestRecordAudioPermission();
+        requestLocationPermission();
 
         WindowManager windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         Display display = windowManager.getDefaultDisplay();
-        display.getSize(mScreenSize);
         Camera.CameraInfo info = new Camera.CameraInfo();
         Camera.getCameraInfo(CAMERA_ID, info);
         TangoJniNative.onCreate(this, display.getRotation(), info.orientation);
 
-        CommandLine.init(new String[] { "chrome", "--ignore-gpu-blacklist", "--enable-webvr" });
+        CommandLine.init(new String[] { "chrome", "--ignore-gpu-blacklist", "--enable-webvr", "--enable-blink-features=ScriptedSpeech" });
 
         AwShellResourceProvider.registerResources(this);
 
@@ -289,6 +559,8 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
         initializeNavigationButtons();
 
         mAwTestContainerView.getAwContents().clearCache(true);        
+
+        mAwTestContainerView.getAwContents().addJavascriptInterface(new SpeechRecognition(), SpeechRecognition.JS_INTERFACE_INSTANCE_NAME);
 
         String startupUrl = getUrlFromIntent(getIntent());
         if (TextUtils.isEmpty(startupUrl)) {
@@ -419,6 +691,7 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
 
             @Override
             public void onShowCustomView(View view, WebChromeClient.CustomViewCallback callback) {
+                System.out.println("WebAR: onShowCustomView");
                 getWindow().setFlags(
                         WindowManager.LayoutParams.FLAG_FULLSCREEN,
                         WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -450,7 +723,26 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
             @Override
             public void onGeolocationPermissionsShowPrompt(String origin,
                     GeolocationPermissions.Callback callback) {
+                System.out.println("WebAR: onGeolocationPermissionsShowPrompt");
+                // callback.invoke(origin, true, true);
                 callback.invoke(origin, false, false);
+            }
+
+            @Override
+            public void onGeolocationPermissionsHidePrompt() {
+                System.out.println("WebAR: onGeolocationPermissionsHidePrompt");
+            }
+
+            @Override
+            public void onPermissionRequest(AwPermissionRequest awPermissionRequest) {
+                System.out.println("WebAR: onPermissionRequest");
+                // awPermissionRequest.deny();
+                awPermissionRequest.grant();
+            }
+
+            @Override
+            public void onPermissionRequestCanceled(AwPermissionRequest awPermissionRequest) {
+                System.out.println("WebAR: onPermissionRequestCanceled");
             }
         };
 
@@ -466,7 +758,7 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
         // Required for WebGL conformance tests.
         awSettings.setMediaPlaybackRequiresUserGesture(false);
         // Allow zoom and fit contents to screen
-        awSettings.setBuiltInZoomControls(true);
+        awSettings.setBuiltInZoomControls(false);
         awSettings.setDisplayZoomControls(false);
         awSettings.setUseWideViewPort(true);
         awSettings.setLoadWithOverviewMode(true);
@@ -590,7 +882,6 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
 
         WindowManager windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         Display display = windowManager.getDefaultDisplay();
-        display.getSize(mScreenSize);
         Camera.CameraInfo info = new Camera.CameraInfo();
         Camera.getCameraInfo(CAMERA_ID, info);
 

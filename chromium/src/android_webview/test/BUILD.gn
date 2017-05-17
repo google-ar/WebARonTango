@@ -93,10 +93,10 @@ android_assets("android_webview_apk_assets") {
     "shell/assets/visual_state_waits_for_js_test.html",
   ]
   renaming_sources = [
-#    "shell/assets/MWC/index.html",
+#    "shell/assets/tango/pointcloud/index.html"
   ]
   renaming_destinations = [
-#    "MWC/index.html",
+#    "tango/pointcloud/index.html"
   ]
 }
 

@@ -87,23 +87,21 @@ mojom::VRPosePtr TangoVRDevice::GetPose() {
 
   TangoPoseData tangoPoseData;
 
-  bool connected = TangoHandler::getInstance()->getPose(&tangoPoseData);
-
-  TRACE_EVENT0("input", "TangoVRDevice::GetPose");
-  
-  mojom::VRPosePtr pose = mojom::VRPose::New();
-
-  pose->timestamp = base::Time::Now().ToJsTime();
-
-  if (connected)
+  mojom::VRPosePtr pose = nullptr;
+  if (TangoHandler::getInstance()->isConnected() && TangoHandler::getInstance()->getPose(&tangoPoseData))
   {
+    pose = mojom::VRPose::New();
+
+    pose->timestamp = base::Time::Now().ToJsTime();
+
     pose->orientation.emplace(4);
+    pose->position.emplace(3);
+
     pose->orientation.value()[0] = tangoPoseData.orientation[0]/*decomposed_transform.quaternion[0]*/;
     pose->orientation.value()[1] = tangoPoseData.orientation[1]/*decomposed_transform.quaternion[1]*/;
     pose->orientation.value()[2] = tangoPoseData.orientation[2]/*decomposed_transform.quaternion[2]*/;
     pose->orientation.value()[3] = tangoPoseData.orientation[3]/*decomposed_transform.quaternion[3]*/;
 
-    pose->position.emplace(3);
     pose->position.value()[0] = tangoPoseData.translation[0]/*decomposed_transform.translate[0]*/;
     pose->position.value()[1] = tangoPoseData.translation[1]/*decomposed_transform.translate[1]*/;
     pose->position.value()[2] = tangoPoseData.translation[2]/*decomposed_transform.translate[2]*/;
@@ -124,12 +122,24 @@ unsigned TangoVRDevice::GetMaxNumberOfPointsInPointCloud()
 mojom::VRPointCloudPtr TangoVRDevice::GetPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip)
 {
   TangoHandler* tangoHandler = TangoHandler::getInstance();
-  mojom::VRPointCloudPtr pointCloudPtr;
-  pointCloudPtr = mojom::VRPointCloud::New();
-  pointCloudPtr->points.emplace(tangoHandler->getMaxNumberOfPointsInPointCloud() * 3);
-  if (!tangoHandler->getPointCloud(&(pointCloudPtr->numberOfPoints), &(pointCloudPtr->points.value()[0]), justUpdatePointCloud, pointsToSkip))
+  mojom::VRPointCloudPtr pointCloudPtr = nullptr;
+  if (tangoHandler->isConnected())
   {
-    return nullptr;
+    if (!justUpdatePointCloud)
+    {
+      pointCloudPtr = mojom::VRPointCloud::New();
+      pointCloudPtr->points.resize(tangoHandler->getMaxNumberOfPointsInPointCloud() * 3);
+      if (!tangoHandler->getPointCloud(&(pointCloudPtr->numberOfPoints), &(pointCloudPtr->points[0]), justUpdatePointCloud, pointsToSkip))
+      {
+        pointCloudPtr = nullptr;
+      }
+    }
+    else 
+    {
+      // If the point cloud should only be updated, why create a whole array?
+      uint32_t numberOfPoints;
+      tangoHandler->getPointCloud(&numberOfPoints, 0, justUpdatePointCloud, pointsToSkip);
+    }
   }
   return pointCloudPtr;
 }
@@ -137,25 +147,31 @@ mojom::VRPointCloudPtr TangoVRDevice::GetPointCloud(bool justUpdatePointCloud, u
 mojom::VRSeeThroughCameraPtr TangoVRDevice::GetSeeThroughCamera()
 {
   TangoHandler* tangoHandler = TangoHandler::getInstance();
-  mojom::VRSeeThroughCameraPtr seeThroughCameraPtr;
-  seeThroughCameraPtr = mojom::VRSeeThroughCamera::New();
-  tangoHandler->getCameraImageSize(&(seeThroughCameraPtr->width), &(seeThroughCameraPtr->height));
-  tangoHandler->getCameraImageTextureSize(&(seeThroughCameraPtr->textureWidth), &(seeThroughCameraPtr->textureHeight));
-  tangoHandler->getCameraFocalLength(&(seeThroughCameraPtr->focalLengthX), &(seeThroughCameraPtr->focalLengthY));
-  tangoHandler->getCameraPoint(&(seeThroughCameraPtr->pointX), &(seeThroughCameraPtr->pointY));
-  seeThroughCameraPtr->orientation = tangoHandler->getSensorOrientation();
+  mojom::VRSeeThroughCameraPtr seeThroughCameraPtr = nullptr;
+  if (tangoHandler->isConnected())
+  {
+    seeThroughCameraPtr = mojom::VRSeeThroughCamera::New();
+    tangoHandler->getCameraImageSize(&(seeThroughCameraPtr->width), &(seeThroughCameraPtr->height));
+    tangoHandler->getCameraImageTextureSize(&(seeThroughCameraPtr->textureWidth), &(seeThroughCameraPtr->textureHeight));
+    tangoHandler->getCameraFocalLength(&(seeThroughCameraPtr->focalLengthX), &(seeThroughCameraPtr->focalLengthY));
+    tangoHandler->getCameraPoint(&(seeThroughCameraPtr->pointX), &(seeThroughCameraPtr->pointY));
+    seeThroughCameraPtr->orientation = tangoHandler->getSensorOrientation();
+  }
   return seeThroughCameraPtr;
 }
 
 mojom::VRPickingPointAndPlanePtr TangoVRDevice::GetPickingPointAndPlaneInPointCloud(float x, float y)
 {
-  mojom::VRPickingPointAndPlanePtr pickingPointAndPlanePtr;
-  pickingPointAndPlanePtr = mojom::VRPickingPointAndPlane::New();
-  pickingPointAndPlanePtr->point = std::vector<double>(3);
-  pickingPointAndPlanePtr->plane = std::vector<double>(4);
-  if (!TangoHandler::getInstance()->getPickingPointAndPlaneInPointCloud(x, y, &(pickingPointAndPlanePtr->point[0]), &(pickingPointAndPlanePtr->plane[0])))
+  mojom::VRPickingPointAndPlanePtr pickingPointAndPlanePtr = nullptr;
+  if (TangoHandler::getInstance()->isConnected())
   {
-    return nullptr;
+    pickingPointAndPlanePtr = mojom::VRPickingPointAndPlane::New();
+    pickingPointAndPlanePtr->point = std::vector<double>(3);
+    pickingPointAndPlanePtr->plane = std::vector<double>(4);
+    if (!TangoHandler::getInstance()->getPickingPointAndPlaneInPointCloud(x, y, &(pickingPointAndPlanePtr->point[0]), &(pickingPointAndPlanePtr->plane[0])))
+    {
+      pickingPointAndPlanePtr = nullptr;
+    }
   }
   return pickingPointAndPlanePtr;
 }
@@ -163,17 +179,20 @@ mojom::VRPickingPointAndPlanePtr TangoVRDevice::GetPickingPointAndPlaneInPointCl
 std::vector<mojom::VRADFPtr> TangoVRDevice::GetADFs()
 {
   std::vector<mojom::VRADFPtr> mojomADFs;
-  std::vector<ADF> adfs;
-  if (TangoHandler::getInstance()->getADFs(adfs))
+  if (TangoHandler::getInstance()->isConnected())
   {
-    std::vector<ADF>::size_type size = adfs.size();
-    mojomADFs.resize(size);
-    for (std::vector<ADF>::size_type i = 0; i < size; i++)
+    std::vector<ADF> adfs;
+    if (TangoHandler::getInstance()->getADFs(adfs))
     {
-      mojomADFs[i] = mojom::VRADF::New();
-      mojomADFs[i]->uuid = adfs[i].getUUID();
-      mojomADFs[i]->name = adfs[i].getName();
-      mojomADFs[i]->creationTime = adfs[i].getCreationTime();
+      std::vector<ADF>::size_type size = adfs.size();
+      mojomADFs.resize(size);
+      for (std::vector<ADF>::size_type i = 0; i < size; i++)
+      {
+        mojomADFs[i] = mojom::VRADF::New();
+        mojomADFs[i]->uuid = adfs[i].getUUID();
+        mojomADFs[i]->name = adfs[i].getName();
+        mojomADFs[i]->creationTime = adfs[i].getCreationTime();
+      }
     }
   }
   return mojomADFs;

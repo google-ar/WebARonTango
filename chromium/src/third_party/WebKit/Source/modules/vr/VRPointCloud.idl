@@ -3,7 +3,8 @@
 // found in the LICENSE file.
 
 [
-	RuntimeEnabled=WebVR
+	RuntimeEnabled=WebVR,
+  Constructor,
 ] interface VRPointCloud {
   readonly attribute unsigned long numberOfPoints;
   readonly attribute Float32Array points;

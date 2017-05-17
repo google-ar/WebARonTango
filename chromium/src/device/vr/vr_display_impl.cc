@@ -58,8 +58,8 @@ void VRDisplayImpl::GetPointCloud(bool justUpdatePointCloud, unsigned pointsToSk
     callback.Run(nullptr);
     return;
   }
-
-  callback.Run(device_->GetPointCloud(justUpdatePointCloud, pointsToSkip));
+  
+  callback.Run(device_->GetPointCloud(justUpdatePointCloud, pointsToSkip));  
 }
 
 void VRDisplayImpl::GetPickingPointAndPlaneInPointCloud(float x, float y, const GetPickingPointAndPlaneInPointCloudCallback& callback)

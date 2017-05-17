@@ -68,7 +68,7 @@ class VRDisplay final : public EventTargetWithInlineData,
   void resetPose();
 
   unsigned getMaxNumberOfPointsInPointCloud();
-  VRPointCloud* getPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip);
+  void getPointCloud(VRPointCloud* pointCloud, bool justUpdatePointCloud, unsigned pointsToSkip);
   VRPickingPointAndPlane* getPickingPointAndPlaneInPointCloud(float x, float y);
   VRSeeThroughCamera* getSeeThroughCamera();
   HeapVector<Member<VRADF>> getADFs();
@@ -159,7 +159,6 @@ class VRDisplay final : public EventTargetWithInlineData,
   Member<VREyeParameters> m_eyeParametersRight;
   device::mojom::blink::VRPosePtr m_framePose;
 
-  Member<VRPointCloud> m_pointCloud;
   Member<VRPickingPointAndPlane> m_pickingPointAndPlane;
   Member<VRSeeThroughCamera> m_seeThroughCamera;
   Member<DOMFloat32Array> m_poseMatrix;

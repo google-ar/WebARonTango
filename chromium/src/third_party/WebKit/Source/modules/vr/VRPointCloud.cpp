@@ -34,21 +34,23 @@ DOMFloat32Array* VRPointCloud::points() const
     return m_points;
 }
 
-void VRPointCloud::setPointCloud(device::mojom::blink::VRPointCloudPtr& pointCloudPtr)
+void VRPointCloud::setPointCloud(unsigned maxNumberOfPoints, device::mojom::blink::VRPointCloudPtr& pointCloudPtr)
 {
-	if (pointCloudPtr.is_null()) return;
-
-	// Create the points array the first time a valid point cloud is passed.
-	// The point cloud will always provide an array with the maximum number of possible points so our array will always be ready
-	// to store all the possible points. But as the actual detected number of points of the point cloud could be less, all the other
-	// values will be filled with the maximum possible float value.
-	if (!m_points) {
-		m_points = DOMFloat32Array::create(pointCloudPtr->points.value().size());
-		std::fill_n(m_points->data(), pointCloudPtr->points.value().size(), std::numeric_limits<float>::max());
-	}	
-	m_numberOfPoints = pointCloudPtr->numberOfPoints;
-	if (m_numberOfPoints > 0) {
-		memcpy(m_points->data(), &(pointCloudPtr->points.value().front()), m_numberOfPoints * 3 * sizeof(float));
+	if (!m_points)
+	{
+		m_points = DOMFloat32Array::create(maxNumberOfPoints * 3);
+		std::fill_n(m_points->data(), m_numberOfPoints, std::numeric_limits<float>::max());
+	}
+	if (pointCloudPtr.is_null())
+	{
+		m_numberOfPoints = 0;
+	}
+	else
+	{
+		m_numberOfPoints = pointCloudPtr->numberOfPoints;
+		if (m_numberOfPoints > 0) {
+			memcpy(m_points->data(), &(pointCloudPtr->points.front()), m_numberOfPoints * 3 * sizeof(float));
+		}
 	}
 	if (m_numberOfPoints < m_lastNumberOfPoints)
 	{
@@ -56,7 +58,6 @@ void VRPointCloud::setPointCloud(device::mojom::blink::VRPointCloudPtr& pointClo
 	}
 	m_lastNumberOfPoints = m_numberOfPoints;
 }
-
 
 DEFINE_TRACE(VRPointCloud)
 {

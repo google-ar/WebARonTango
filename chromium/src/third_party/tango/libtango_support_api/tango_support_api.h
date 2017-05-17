@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TANGO_SUPPORT_API_H_
-#define TANGO_SUPPORT_API_H_
+#ifndef TANGO_SUPPORT_API_HEADER_TANGO_SUPPORT_API_H_
+#define TANGO_SUPPORT_API_HEADER_TANGO_SUPPORT_API_H_
 
 #include <tango_client_api.h>
 
@@ -32,6 +32,30 @@ extern "C" {
 /// @defgroup MiscUtilities Miscellaneous Utility Functions
 /// @brief Functions that do not fit into any other group.
 /// @{
+
+/// Display orientation. This is a relative orientation between
+/// default (natural) screen orientation and current screen orientation.
+/// The orientation is calculated based on a clockwise rotation.
+///
+/// The index number mirrors Android display rotation constant. This
+/// allows the developer to directly pass in the index value returned from
+/// Android.
+typedef enum {
+  /// Not apply any rotation.
+  ROTATION_IGNORED = -1,
+
+  /// 0 degree rotation (natural orientation)
+  ROTATION_0 = 0,
+
+  /// 90 degree rotation.
+  ROTATION_90 = 1,
+
+  /// 180 degree rotation.
+  ROTATION_180 = 2,
+
+  /// 270 degree rotation.
+  ROTATION_270 = 3
+} TangoSupportRotation;
 
 /// @brief Get the version code of the installed TangoCore package.
 /// @param jni_env A pointer to the JNI Context of the native activity. This
@@ -57,12 +81,13 @@ typedef TangoErrorType (*TangoSupport_GetPoseAtTimeFn)(
 typedef TangoErrorType (*TangoSupport_GetCameraIntrinsicsFn)(
     TangoCameraId camera_id, TangoCameraIntrinsics* intrinsics);
 
-/// @brief Initialize the support library with any function pointers or values
-///   that are required for functionality provided by the library. This version
-///   requires providing each of the necessary initialization parameters and
-///   only needs to be used if specialized parameters are necessary. Generally
-///   either this version or @c TangoSupport_initializeLibrary should be called
-///   during application initialization, but not both.
+/// @brief Initialize the support library with function pointers required by
+///   the library. Either this version or @c TangoSupport_initializeLibrary
+///   should be called during application initialization, but not both. This
+///   version requires each of the initialization parameters and should only be
+///   used if specialized parameters are necessary.
+///   NOTE: This function must be called after the Android service has been
+///   bound.
 ///
 /// @param getPoseAtTime The function to call to retrieve device pose
 ///   information. In practice this is TangoService_getPoseAtTime, except
@@ -74,14 +99,49 @@ void TangoSupport_initialize(
     TangoSupport_GetPoseAtTimeFn getPoseAtTime,
     TangoSupport_GetCameraIntrinsicsFn getCameraIntrinsics);
 
-/// @brief Initialize the support library with any function pointers or values
-///   that are required for functionality provided by the library. Generally
-///   either this version or @c TangoSupport_initialize should be called
-///   during application initialization, but not both.
+/// @brief Initialize the support library with function pointers required by
+///   the library. Either this version or @c TangoSupport_initialize should be
+///   called during application initialization, but not both. Use this version
+///   unless specialized parameters are required.
+///   NOTE: This function must be called after the Android service has been
+///   bound.
 inline void TangoSupport_initializeLibrary() {
   TangoSupport_initialize(TangoService_getPoseAtTime,
                           TangoService_getCameraIntrinsics);
 }
+
+void TangoSupport_clearCameraIntrinsicsCache();
+
+/// @brief Get the video overlay UV coordinates based on the display rotation.
+///   Given the UV coordinates belonging to a display rotation that
+///   matches the camera rotation, this function will return the UV coordinates
+///   for any display rotation.
+/// @param uv_coordinates The UV coordinates corresponding to a display
+///   rotation that matches the camera rotation. Cannot be NULL.
+/// @param display_rotation The index of the display rotation between
+///   display's default (natural) orientation and current orientation.
+/// @param output_uv_coordinates The UV coordinates for this
+///   rotation.
+/// @return @c TANGO_SUCCESS on success,  @c TANGO_ERROR if the support library
+///   was not previously initialized, or @c TANGO_INVALID on invalid input.
+TangoErrorType TangoSupport_getVideoOverlayUVBasedOnDisplayRotation(
+    const float uv_coordinates[8], TangoSupportRotation display_rotation,
+    float output_uv_coordinates[8]);
+
+/// @brief Get the camera intrinsics based on the display rotation. This
+///   function will query the camera intrinsics and rotate them according to
+///   the display rotation.
+/// @param camera_id The camera ID to retrieve the calibration intrinsics for.
+/// @param display_rotation The index of the display rotation between
+///   display's default (natural) orientation and current orientation.
+/// @param intrinsics A TangoCameraIntrinsics struct that must be allocated
+///   before calling, and is filled with camera intrinsics for the rotated
+///   camera @p camera_id upon successful return.
+/// @return @c TANGO_SUCCESS on success,  @c TANGO_ERROR if the support library
+///   was not previously initialized, or @c TANGO_INVALID on invalid input.
+TangoErrorType TangoSupport_getCameraIntrinsicsBasedOnDisplayRotation(
+    TangoCameraId camera_id, TangoSupportRotation display_rotation,
+    TangoCameraIntrinsics* intrinsics);
 
 /// @}
 
@@ -156,7 +216,7 @@ TangoErrorType TangoSupport_updateImageBuffer(
 
 /// @brief Check if updated color image data is available. If so, swap new data
 ///   to the front buffer and set image_buffer to point to the front buffer.
-///   This should be called from a single computation or render thread. Set
+///   Multiple calls to this function must be made from the same thread. Set
 ///   new_data to true when image_buffer points to new data.
 ///
 /// @param manager A handle to the image buffer manager.
@@ -172,7 +232,7 @@ TangoErrorType TangoSupport_getLatestImageBufferAndNewDataFlag(
 
 /// @brief Check if updated color image data is available. If so, swap new data
 ///   to the front buffer and set image_buffer to point to the front buffer.
-//    This should be called from a single computation or render thread.
+///   Multiple calls to this function must be made from the same thread.
 ///
 /// @param manager A handle to the image buffer manager.
 /// @param image_buffer After the call contains a pointer to the most recent
@@ -181,142 +241,6 @@ TangoErrorType TangoSupport_getLatestImageBufferAndNewDataFlag(
 ///   @c TANGO_INVALID otherwise.
 TangoErrorType TangoSupport_getLatestImageBuffer(
     TangoSupportImageBufferManager* manager, TangoImageBuffer** image_buffer);
-
-/// @}
-
-/// @defgroup DepthSupport Depth Interface Support Functions
-/// @brief Functions for managing depth data.
-/// @{
-
-/// @brief Initializes an empty point cloud with a buffer large enough to store
-///   the specific maximum point cloud size. The logical number of vertices
-///   (xyz_count) is initialized to zero.
-///
-/// @param max_point_cloud_size The maximum number of vertices in the point
-///   cloud. This value should typically be retrieved from TangoConfig
-///   max_point_cloud_elements.
-/// @param point_cloud A pointer to the point cloud to be initialized. Cannot be
-///   NULL.
-/// @return @c TANGO_SUCCESS on successful allocation, or @c TANGO_INVALID if
-///   @p point_cloud is NULL.
-TangoErrorType TangoSupport_createPointCloud(uint32_t max_point_cloud_size,
-                                             TangoPointCloud* point_cloud);
-
-/// @brief Deletes a point cloud.
-///
-/// @param point_cloud A pointer to the point cloud to be deleted. Cannot be
-///   NULL.
-/// @return @c TANGO_SUCCESS if memory was freed successfully, or
-///   @c TANGO_INVALID if @p point_cloud was NULL.
-TangoErrorType TangoSupport_freePointCloud(TangoPointCloud* point_cloud);
-
-/// @brief Performs a deep copy between two point clouds. The point clouds must
-///   have been initialized with the same maximum size.
-///
-/// @param input_point_cloud The point cloud to be copied. Cannot be NULL.
-/// @param output_point_cloud The output point cloud. Cannot be NULL.
-/// @return @c TANGO_SUCCESS if copy was successful, @c TANGO_INVALID if
-///   @p input_point_cloud or @p output_point_cloud is NULL.
-TangoErrorType TangoSupport_copyPointCloud(
-    const TangoPointCloud* input_point_cloud,
-    TangoPointCloud* output_point_cloud);
-
-/// @brief Fits a plane to a point cloud near a user-specified location. This
-///   occurs in two passes. First, all points are projected to the image plane
-///   and only points near the user selection are kept. Then a plane is fit to
-///   the subset using RANSAC. After the RANSAC fit, all inliers from the
-///   original input point cloud are used to refine the plane model. The output
-///   is in the coordinate system of the input point cloud.
-///
-/// @param point_cloud The input point cloud. Cannot be NULL and must have at
-///   least three points.
-/// @param color_camera_T_point_cloud The pose of the point cloud relative to
-///   the color camera used to obtain uv_coordinates.
-/// @param uv_coordinates The UV coordinates for the user selection. This is
-///   expected to be between (0.0, 0.0) and (1.0, 1.0) and can be computed from
-///   pixel coordinates by dividing by the width or height. Cannot be NULL.
-/// @param intersection_point The intersection of the fitted plane with the user
-///   selected camera-ray, in point cloud coordinates, accounting for distortion
-///   by undistorting the input uv coordinate. Cannot be NULL.
-/// @param plane_model The four parameters a, b, c, d for the general plane
-///   equation ax + by + cz + d = 0 of the plane fit. The first three
-///   components are a unit vector. The output is in the coordinate system of
-///   the point cloud. Cannot be NULL.
-/// @return @c TANGO_SUCCESS on success, @c TANGO_INVALID on invalid input, and
-///   @c TANGO_ERROR on failure.
-TangoErrorType TangoSupport_fitPlaneModelNearPoint(
-    const TangoPointCloud* point_cloud,
-    const TangoPoseData* color_camera_T_point_cloud,
-    const float uv_coordinates[2], double intersection_point[3],
-    double plane_model[4]);
-
-/// The TangoSupportPointCloudManager maintains a set of point clouds to
-/// manage transferring a TangoPointCloud from the callback thread to a render
-/// or computation thread. This holds three buffers internally (back, swap,
-/// front). The back buffer is used as the destination for data copied from
-/// the callback thread. When the copy is complete the back buffer is swapped
-/// with the swap buffer while holding a lock. If there is newer data in
-/// the swap buffer than the current front buffer then calling SwapBuffer holds
-/// the lock and swaps the swap buffer with the front buffer.
-struct TangoSupportPointCloudManager;
-
-/// @brief Create an object for maintaining a set of point clouds for a
-///   specified size.
-///
-/// @param max_points Maximum number of points in TangoPointCloud. Get value
-///   from config.
-/// @param manager A handle to the manager object.
-/// @return @c TANGO_SUCCESS on successful creation, @c TANGO_INVALID if
-///   @p max_points <= 0.
-TangoErrorType TangoSupport_createPointCloudManager(
-    size_t max_points, TangoSupportPointCloudManager** manager);
-
-/// @brief Delete the point cloud manager object.
-///
-/// @param manager A handle to the manager to delete.
-/// @return A TangoErrorType value of @c TANGO_SUCCESS on free.
-TangoErrorType TangoSupport_freePointCloudManager(
-    TangoSupportPointCloudManager* manager);
-
-/// @brief Updates the back buffer of the manager. Can be safely called from
-///   the callback thread. Update is skipped if point cloud is empty.
-///
-/// @param manager A handle to the point cloud manager.
-/// @param point_cloud New point cloud data from the camera callback thread.
-/// @return A TangoErrorType value of @c TANGO_INVALID if manager
-///   or point_cloud are NULL. Returns @c TANGO_SUCCESS if update
-///   is successful.
-TangoErrorType TangoSupport_updatePointCloud(
-    TangoSupportPointCloudManager* manager, const TangoPointCloud* point_cloud);
-
-/// @brief Check if updated point cloud data is available. If so, swap new data
-///   to the front buffer and set latest_point_cloud to point to the front
-///   buffer. This should be called from a single computation or render thread.
-///
-/// @param manager A handle to the point cloud manager.
-/// @param point_cloud After the call contains a pointer to the most recent
-///   depth camera buffer.
-/// @return @c TANGO_SUCCESS on successful assignment, @c TANGO_INVALID if
-///   @p manager is NULL.
-TangoErrorType TangoSupport_getLatestPointCloud(
-    TangoSupportPointCloudManager* manager,
-    TangoPointCloud** latest_point_cloud);
-
-/// @brief Check if updated point cloud data is available. If so, swap new data
-///   to the front buffer and set latest_point_cloud to point to the front
-///   buffer. This should be called from a single computation or render thread.
-///   Set @p new_data to true if latest_point_cloud points to new point cloud.
-///
-/// @param manager A handle to the point cloud manager.
-/// @param point_cloud After the call contains a pointer to the most recent
-///   depth camera buffer.
-/// @param new_data True if latest_point_cloud points to new data. False
-///   otherwise.
-/// @return @c TANGO_SUCCESS on successful assignment, @c TANGO_INVALID if
-///   @p manager is NULL.
-TangoErrorType TangoSupport_getLatestPointCloudAndNewDataFlag(
-    TangoSupportPointCloudManager* manager,
-    TangoPointCloud** latest_point_cloud, bool* new_data);
 
 /// @}
 
@@ -335,24 +259,28 @@ typedef enum {
   TANGO_SUPPORT_COORDINATE_CONVENTION_TANGO,
 } TangoCoordinateConventionType;
 
-// Enumeration of support engines. Every engine conversion
-// corresponds to an axis swap from the Tango-native frame
+/// Enumeration of support engines. Every engine conversion
+/// corresponds to an axis swap from the Tango-native frame
 typedef enum {
-  // Tango native frame, has a different convention
-  // for forward, right, and up
-  // for each reference frame
+  /// Tango native frame, has a different convention
+  /// for forward, right, and up
+  /// for each reference frame.
+  /// Right-handed coordinate system.
   TANGO_SUPPORT_ENGINE_TANGO,
 
-  // OpenGL frame, -Z forward, X right, Y up
+  /// OpenGL frame, -Z forward, X right, Y up.
+  /// Right-handed coordinate system.
   TANGO_SUPPORT_ENGINE_OPENGL,
 
-  // Unity frame, +Z forward, X, right, Y up
+  /// Unity frame, +Z forward, X, right, Y up.
+  /// Left-handed coordinate system.
   TANGO_SUPPORT_ENGINE_UNITY,
 
-  // UnrealEngine frame, X forward, Y right, Z up
+  /// UnrealEngine frame, X forward, Y right, Z up.
+  /// Left-handed coordinate system.
   TANGO_SUPPORT_ENGINE_UNREAL,
 
-  // etc.
+  /// etc.
 } TangoSupportEngineType;
 
 /// @brief Struct to hold transformation float matrix and its metadata.
@@ -379,29 +307,8 @@ typedef struct TangoDoubleMatrixTransformData {
   TangoPoseStatusType status_code;
 } TangoDoubleMatrixTransformData;
 
-// Display orientation. This is a relative orientation between
-// default (natural) screen orientation and current screen orientation.
-// The orientation is calculated based on a clockwise rotation.
-//
-// The index number mirrors Android display rotation constant. This
-// allows the developer to directly pass in the index value returned from
-// Android.
-typedef enum {
-  // 0 degree rotation (natural orientation)
-  ROTATION_0,
-
-  // 90 degree rotation.
-  ROTATION_90,
-
-  // 90 degree rotation.
-  ROTATION_180,
-
-  // 270 degree rotation.
-  ROTATION_270
-} TangoSupportDisplayRotation;
-
-/// @brief Calculates the relative pose from the target frame at time
-///   target_timestamp to the base frame at time base_timestamp.
+/// @brief Calculates the relative pose of the target frame at time
+///   target_timestamp with respect to the base frame at time base_timestamp.
 ///
 /// @param base_timestamp The timestamp for base frame position. Must be
 ///   non-negative. If set to 0.0, the most recent pose estimate is used.
@@ -423,27 +330,55 @@ TangoErrorType TangoSupport_calculateRelativePose(
     TangoPoseData* base_frame_T_target_frame);
 
 /// @brief Get a pose at a given timestamp from the base to the target frame
-///   using the specified engine's coordinate system conventions.
+///   using the specified target and base engine's coordinate system
+///   conventions. The base and target engine must either both be right-handed
+///   systems or both be left-handed systems.
+///
+/// When using engine OpenGL, Unity or Unreal, this function applies the
+/// corresponding rotation to base and target frames based on the display
+/// rotation. When using engine Tango no rotation is applied to that frame.
 ///
 /// @param timestamp Time specified in seconds. This behaves the same as the
 ///   @p timestamp parameter in @c TangoService_getPoseAtTime.
 /// @param base_frame The base frame of reference to use in the query.
 /// @param target_frame The target frame of reference to use in the query.
-/// @param engine The coordinate system conventions to use for the @p pose data.
-///   Can be OpenGL, Unity, or Tango.
-/// @param display_rotation_type The index of the display rotation between
+/// @param base_engine The coordinate system convention of the @p base_frame.
+///   Can be OpenGL, Unity, Unreal or Tango but the handed-ness (either
+///   left-handed or right-handed) must match the handed-ness of the
+///   @p target_engine.
+/// @param target_engine The coordinate system convention of the @p
+///   target_frame. Can be OpenGL, Unity, Unreal or Tango but the handed-ness
+///   (either left-handed or right-handed) must match the handed-ness of the
+///   @p base_engine.
+/// @param display_rotation The index of the display rotation between
 ///   display's default (natural) orientation and current orientation.
 /// @param pose The pose of target with respect to base frame of reference,
 ///   accounting for the specified engine and display rotation.
 /// @return @c TANGO_SUCCESS on success, @c TANGO_INVALID on invalid input,
-///   and @c TANGO_ERROR on failure.
-TangoErrorType TangoSupport_getPoseAtTime(
-    double timestamp, TangoCoordinateFrameType base_frame,
-    TangoCoordinateFrameType target_frame, TangoSupportEngineType engine,
-    TangoSupportDisplayRotation display_rotation_type, TangoPoseData* pose);
+///   including mismatched handed-ness of the @p base_engine and @p
+///   target_engine, and @c TANGO_ERROR on failure.
+///
+/// @details The engine types should be set to TANGO_SUPPORT_ENGINE_OPENGL when
+///   the target (color camera or device) is used to control a virtual camera
+///   for rendering purposes. Typically this is done by using the matrix derived
+///   from the result pose as the view matrix of the virtual camera. The target
+///   frame engine type should be set to TANGO_SUPPORT_ENGINE_TANGO when
+///   computing a transformation for parameters used for calling other Tango
+///   support routines.
+TangoErrorType TangoSupport_getPoseAtTime(double timestamp,
+                                          TangoCoordinateFrameType base_frame,
+                                          TangoCoordinateFrameType target_frame,
+                                          TangoSupportEngineType base_engine,
+                                          TangoSupportEngineType target_engine,
+                                          TangoSupportRotation display_rotation,
+                                          TangoPoseData* pose);
 
 /// @brief Calculate the tranformation matrix between specified frames and
 ///   engine types. The output matrix uses floats and is in column-major order.
+///
+/// When using engine OpenGL, Unity or Unreal, this function applies the
+/// corresponding rotation to base and target frames based on the display
+/// rotation. When using engine Tango no rotation is applied to that frame.
 ///
 /// @param timestamp The timestamp of the transformation matrix of interest.
 /// @param base_frame The frame of reference the matrix converts to.
@@ -452,20 +387,23 @@ TangoErrorType TangoSupport_getPoseAtTime(
 ///   converts to.
 /// @param target_engine Specifies the original orientation convention the
 ///   matrix converts from.
-/// @param display_rotation_type Specifies how the display screen is
-///   oriented. NOT YET UTILIZED.
+/// @param display_rotation The index of the display rotation between
+///   display's default (natural) orientation and current orientation.
 /// @param matrix_transform The final matrix output with metadata.
 /// @return @c TANGO_INVALID on invalid input. @c TANGO_ERROR if the
 ///   pose calculation returns error. @c TANGO_SUCCESS otherwise.
 TangoErrorType TangoSupport_getMatrixTransformAtTime(
     double timestamp, TangoCoordinateFrameType base_frame,
     TangoCoordinateFrameType target_frame, TangoSupportEngineType base_engine,
-    TangoSupportEngineType target_engine,
-    TangoSupportDisplayRotation display_rotation_type,
+    TangoSupportEngineType target_engine, TangoSupportRotation display_rotation,
     TangoMatrixTransformData* matrix_transform);
 
 /// @brief Calculate the tranformation matrix between specified frames and
 ///   engine types. The output matrix uses doubles and is in column-major order.
+///
+/// When using engine OpenGL, Unity or Unreal, this function applies the
+/// corresponding rotation to base and target frames based on the display
+/// rotation. When using engine Tango no rotation is applied to that frame.
 ///
 /// @param timestamp The timestamp of the transformation matrix of interest.
 /// @param base_frame The frame of reference the matrix converts to.
@@ -474,16 +412,15 @@ TangoErrorType TangoSupport_getMatrixTransformAtTime(
 ///   converts to.
 /// @param target_engine Specifies the original orientation convention the
 ///   matrix converts from.
-/// @param display_rotation_type Specifies how the display screen is
-///   oriented. NOT YET UTILIZED.
+/// @param display_rotation The index of the display rotation between
+///   display's default (natural) orientation and current orientation.
 /// @param matrix_transform The final matrix output with metadata.
 /// @return @c TANGO_INVALID on invalid input. @c TANGO_ERROR if the
 ///   pose calculation returns error. @c TANGO_SUCCESS otherwise.
 TangoErrorType TangoSupport_getDoubleMatrixTransformAtTime(
     double timestamp, TangoCoordinateFrameType base_frame,
     TangoCoordinateFrameType target_frame, TangoSupportEngineType base_engine,
-    TangoSupportEngineType target_engine,
-    TangoSupportDisplayRotation display_rotation_type,
+    TangoSupportEngineType target_engine, TangoSupportRotation display_rotation,
     TangoDoubleMatrixTransformData* matrix_transform);
 
 /// @brief Multiplies a point by a matrix. No projective divide is done, the W
@@ -569,6 +506,233 @@ TangoErrorType TangoSupport_transformPointCloud(
     const float matrix_transform[16], const TangoPointCloud* point_cloud,
     TangoPointCloud* out);
 
+/// @brief Transforms the point cloud into the same coordinate system as that of
+///   the given pose, ignoring the value of pose->status_code.
+///
+/// @param point_cloud The point cloud to transform.
+/// @param pose The pose with which to transform point_cloud.
+/// @param transformed_point_cloud Replaced with the the transformed point
+///   cloud. The caller is expected to manage the memory appropriately by
+///   preallocating and disposing of the storage space for the point data.
+/// @return @c TANGO_SUCCESS on successful transform, @c TANGO_INVALID if the
+///   parameters were null.
+TangoErrorType TangoSupport_transformPointCloudWithPose(
+    const TangoPointCloud* point_cloud, const TangoPoseData* pose,
+    TangoPointCloud* transformed_point_cloud);
+
+/// @}
+
+/// @defgroup DepthSupport Depth Interface Support Functions
+/// @brief Functions for managing depth data.
+/// @{
+
+/// @brief Fits a plane to a point cloud near a user-specified location. This
+///   occurs in two passes. First, all points are projected to the image plane
+///   and only points near the user selection are kept. Then a plane is fit to
+///   the subset using RANSAC. After the RANSAC fit, all inliers from a larger
+///   subset of the original input point cloud are used to refine the plane
+///   model. The output is in the base frame of the input translations and
+///   rotations. This output frame is usually an application's world frame.
+///
+/// @param point_cloud The input point cloud. Cannot be NULL and must have at
+///   least three points.
+/// @param point_cloud_translation The translation component of the
+///   transformation from the point cloud to the output frame. Cannot be NULL.
+/// @param point_cloud_orientation The orientation component (as a quaternion)
+///   of the transformation from the point cloud to the output frame.
+///   Cannot be NULL.
+/// @param color_camera_uv_coordinates The UV coordinates for the user
+///   selection. This is expected to be between (0.0, 0.0) and (1.0, 1.0) and
+///   can be computed from pixel coordinates by dividing by the width or
+///   height. Cannot be NULL.
+/// @param display_rotation The index of the display rotation between
+///   display's default (natural) orientation and current orientation.
+/// @param color_camera_translation The translation component of the
+///   transformation from the color camera to the output frame. Cannot be NULL.
+/// @param color_camera_orientation The orientation component (as a quaternion)
+///   of the transformation from the color camera to the output frame.
+///   Cannot be NULL.
+/// @param intersection_point The intersection of the fitted plane with the user
+///   selected camera-ray, in output frame coordinates, accounting for
+///   distortion by undistorting the input uv coordinate. Cannot be NULL.
+/// @param plane_model The four parameters a, b, c, d for the general plane
+///   equation ax + by + cz + d = 0 of the plane fit. The first three
+///   components are a unit vector. The output is in the coordinate system of
+///   the requested output frame. Cannot be NULL.
+/// @return @c TANGO_SUCCESS on success, @c TANGO_INVALID on invalid input, and
+///   @c TANGO_ERROR on failure (no plane found).
+TangoErrorType TangoSupport_fitPlaneModelNearPoint(
+    const TangoPointCloud* point_cloud, const double point_cloud_translation[3],
+    const double point_cloud_orientation[4],
+    const float color_camera_uv_coordinates[2],
+    TangoSupportRotation display_rotation,
+    const double color_camera_translation[3],
+    const double color_camera_orientation[4], double intersection_point[3],
+    double plane_model[4]);
+
+/// @brief A structure to define a plane (ax + by + cz + d = 0), including the
+/// intersection point of the plane with the user selected camera-ray and
+/// inlier information for the plane for points near the user selected
+/// camera-ray.
+struct TangoSupportPlane {
+  double intersection_point[3];
+  double plane_equation[4];
+  int inlier_count;
+  double inlier_ratio;
+};
+
+/// @brief Similar to TangoSupport_fitPlaneModelNearPoint, but after finding
+///   a plane at the user selection, points fitting the fit plane are
+///   removed from the input points to the RANSAC step and the process is
+///   repeated until a fit plane is not found. The output planes are in the
+///   base frame of the input translations and rotations. This output frame is
+///   usually an application's world frame. Unlike the single plane version,
+///   the planes need to be freed by calling TangoSupport_freePlaneList.
+///
+/// @param point_cloud The input point cloud. Cannot be NULL and must have at
+///   least three points.
+/// @param point_cloud_translation The translation component of the
+///   transformation from the point cloud to the output frame. Cannot be NULL.
+/// @param point_cloud_orientation The orientation component (as a quaternion)
+///   of the transformation from the point cloud to the output frame.
+///   Cannot be NULL.
+/// @param color_camera_uv_coordinates The UV coordinates for the user
+///   selection. This is expected to be between (0.0, 0.0) and (1.0, 1.0) and
+///   can be computed from pixel coordinates by dividing by the width or
+///   height. Cannot be NULL.
+/// @param display_rotation The index of the display rotation between
+///   display's default (natural) orientation and current orientation.
+/// @param color_camera_translation The translation component of the
+///   transformation from the color camera to the output frame. Cannot be NULL.
+/// @param color_camera_orientation The orientation component (as a quaternion)
+///   of the transformation from the color camera to the output frame.
+///   Cannot be NULL.
+/// @param planes An array of planes fitting the point cloud data near the user
+///   selected camera-ray. The plane objects are in the coordinate system of
+///   the requested output frame. The array should be deleted by calling
+///   TangoSupport_freePlaneList. Cannot be NULL.
+/// @param number_of_planes The number of planes in @p planes. Cannot be NULL.
+/// @return @c TANGO_SUCCESS on success, @c TANGO_INVALID on invalid input, and
+///   @c TANGO_ERROR on failure (no planes found).
+TangoErrorType TangoSupport_fitMultiplePlaneModelsNearPoint(
+    const TangoPointCloud* point_cloud, const double point_cloud_translation[3],
+    const double point_cloud_orientation[4],
+    const float color_camera_uv_coordinates[2],
+    TangoSupportRotation display_rotation,
+    const double color_camera_translation[3],
+    const double color_camera_orientation[4], TangoSupportPlane** planes,
+    int* number_of_planes);
+
+/// @brief Free memory allocated in call to
+/// TangoSupport_fitMultiplePlaneModelsNearPoint.
+///
+/// @param planes Plane list to free.
+void TangoSupport_freePlaneList(TangoSupportPlane** planes);
+
+/// The TangoSupportPointCloudManager maintains a set of point clouds to
+/// manage transferring a TangoPointCloud from the callback thread to a render
+/// or computation thread. This holds three buffers internally (back, swap,
+/// front). The back buffer is used as the destination for data copied from
+/// the callback thread. When the copy is complete the back buffer is swapped
+/// with the swap buffer while holding a lock. If there is newer data in
+/// the swap buffer than the current front buffer then calling SwapBuffer holds
+/// the lock and swaps the swap buffer with the front buffer.
+struct TangoSupportPointCloudManager;
+
+/// @brief Create an object for maintaining a set of point clouds for a
+///   specified size.
+///
+/// @param max_points Maximum number of points in TangoPointCloud. Get value
+///   from config.
+/// @param manager A handle to the manager object.
+/// @return @c TANGO_SUCCESS on successful creation, @c TANGO_INVALID if
+///   @p max_points <= 0.
+TangoErrorType TangoSupport_createPointCloudManager(
+    size_t max_points, TangoSupportPointCloudManager** manager);
+
+/// @brief Delete the point cloud manager object.
+///
+/// @param manager A handle to the manager to delete.
+/// @return A TangoErrorType value of @c TANGO_SUCCESS on free.
+TangoErrorType TangoSupport_freePointCloudManager(
+    TangoSupportPointCloudManager* manager);
+
+/// @brief Updates the back buffer of the manager. Can be safely called from
+///   the callback thread. Update is skipped if point cloud is empty.
+///
+/// @param manager A handle to the point cloud manager.
+/// @param point_cloud New point cloud data from the camera callback thread.
+/// @return A TangoErrorType value of @c TANGO_INVALID if manager
+///   or point_cloud are NULL. Returns @c TANGO_SUCCESS if update
+///   is successful.
+TangoErrorType TangoSupport_updatePointCloud(
+    TangoSupportPointCloudManager* manager, const TangoPointCloud* point_cloud);
+
+/// @brief Check if updated point cloud data is available. If so, swap new data
+///   to the front buffer and set latest_point_cloud to point to the front
+///   buffer. Multiple calls to this function must be made from the same thread.
+///
+/// @param manager A handle to the point cloud manager.
+/// @param point_cloud After the call contains a pointer to the most recent
+///   depth camera buffer.
+/// @return @c TANGO_SUCCESS on successful assignment, @c TANGO_INVALID if
+///   @p manager is NULL.
+TangoErrorType TangoSupport_getLatestPointCloud(
+    TangoSupportPointCloudManager* manager,
+    TangoPointCloud** latest_point_cloud);
+
+/// @brief Returns the latest point cloud that has a pose. There is no target
+///  frame parameter because only FRAME_CAMERA_DEPTH has meaningful semantics
+///  for point clouds. Assumes the same base_engine and target_engine will be
+///  passed in each time.
+///
+/// @param manager A handle to the point cloud manager.
+/// @param base_frame The base frame of reference to use in the query.
+/// @param base_engine The coordinate system convention of the @p base_frame.
+///   Can be OpenGL, Unity, Unreal or Tango but the handed-ness (either
+///   left-handed or right-handed) must match the handed-ness of the
+///   @p target_engine.
+/// @param target_engine The coordinate system convention of the @p
+///   target_frame. Can be OpenGL, Unity, Unreal or Tango but the handed-ness
+///   (either left-handed or right-handed) must match the handed-ness of the
+///   @p base_engine.
+/// @param display_rotation The index of the display rotation between
+///   display's default (natural) orientation and current orientation.
+/// @param point_cloud After the call contains a pointer to the most recent
+///   point cloud with a pose, accounting for the specified engine and display
+//    rotation.
+/// @param pose The pose of target with respect to base frame of reference,
+///   accounting for the specified engine and display rotation.
+/// @param latest_point_cloud Replaced with the latest point cloud that has a
+///   pose, or nullptr on failure. This point cloud is not transformed at all.
+/// @param pose Repalced with the pose associated with latest_point_cloud, or
+//    nullptr on failure. This pose has been transformed in the same way as
+//    getPoseAtTime.
+/// @return @c TANGO_SUCCESS on success, @c TANGO_INVALID on invalid input,
+///   including mismatched handed-ness of the @p base_engine and @p
+///   target_engine, and @c TANGO_ERROR on failure.
+TangoErrorType TangoSupport_getLatestPointCloudWithPose(
+    TangoSupportPointCloudManager* manager, TangoCoordinateFrameType base_frame,
+    TangoSupportEngineType base_engine, TangoSupportEngineType target_engine,
+    TangoSupportRotation display_rotation, TangoPointCloud** latest_point_cloud,
+    TangoPoseData* pose);
+
+/// @brief Check if updated point cloud data is available. If so, swap new data
+///   to the front buffer and set latest_point_cloud to point to the front
+///   buffer. Multiple calls to this function must be made from the same thread.
+///   Set @p new_data to true if latest_point_cloud points to new point cloud.
+///
+/// @param manager A handle to the point cloud manager.
+/// @param point_cloud After the call contains a pointer to the most recent
+///   depth camera buffer.
+/// @param new_data True if latest_point_cloud points to new data. False
+///   otherwise.
+/// @return @c TANGO_SUCCESS on successful assignment, @c TANGO_INVALID if
+///   @p manager is NULL.
+TangoErrorType TangoSupport_getLatestPointCloudAndNewDataFlag(
+    TangoSupportPointCloudManager* manager,
+    TangoPointCloud** latest_point_cloud, bool* new_data);
+
 /// @}
 
 /// @defgroup ProjectionSupport Projection and Unprojection Functions
@@ -614,29 +778,46 @@ TangoErrorType TangoSupport_DistortedPixelToCameraRay(
 /// @brief Functions for interpolating depth.
 /// @{
 
-/// @brief Calculates the depth in the color camera space at a user-specified
-///   location using nearest-neighbor interpolation.
+/// @brief Calculates the depth at a user-specified location using
+///   nearest-neighbor interpolation. The output is in the base frame of the
+///   input translations and rotations. This output frame is usually an
+///   application's world frame.
 ///
 /// @param point_cloud The point cloud. Cannot be NULL and must have at least
 ///   one point.
-/// @param color_camera_T_point_cloud The pose of the point cloud relative to
-///   the color camera used to obtain uv_coordinates.
-/// @param uv_coordinates The UV coordinates for the user selection. This is
-///   expected to be between (0.0, 0.0) and (1.0, 1.0) and can be computed from
-///   pixel coordinates by dividing by the width or height. Cannot be NULL.
-/// @param color_camera_point The point (x, y, z), where (x, y) is the
-///   back-projection of the UV coordinates to the color camera space and z is
-///   the z coordinate of the point in the point cloud nearest to the user
-///   selection after projection onto the image plane. If there is not a point
-///   cloud point close to the user selection after projection onto the image
-///   plane, then the point will be set to (0.0, 0.0, 0.0) and @c TANGO_ERROR
-///   will be returned.
+/// @param point_cloud_translation The translation component of the
+///   transformation from the point cloud to the output frame. Cannot be NULL.
+/// @param point_cloud_orientation The orientation component (as a quaternion)
+///   of the transformation from the point cloud to the output frame.
+///   Cannot be NULL.
+/// @param color_camera_uv_coordinates The UV coordinates for the user
+///   selection. This is expected to be between (0.0, 0.0) and (1.0, 1.0) and
+///   can be computed from pixel coordinates by dividing by the width or
+///   height. Cannot be NULL.
+/// @param display_rotation The index of the display rotation between
+///   display's default (natural) orientation and current orientation.
+/// @param color_camera_translation The translation component of the
+///   transformation from the color camera to the output frame. Cannot be NULL.
+/// @param color_camera_orientation The orientation component (as a quaternion)
+///   of the transformation from the color camera to the output frame.
+///   Cannot be NULL.
+/// @param output_point The point (x, y, z), which is the transformation of the
+///   point (x', y', z') in the color camera space to the desired output frame.
+///   (x', y') is the back-projection of the UV coordinates to the color camera
+///   space and z' is the z coordinate of the point in the point cloud nearest
+///   to the user selection after projection onto the image plane. If there is
+///   no point in the point cloud close to the user selection after projection
+///   onto the image plane, then the point will be set to (0.0, 0.0, 0.0) and
+///   @c TANGO_ERROR will be returned.
 /// @return @c TANGO_SUCCESS on success, @c TANGO_ERROR if a valid point is not
 ///   found, or @c TANGO_INVALID on invalid input.
 TangoErrorType TangoSupport_getDepthAtPointNearestNeighbor(
-    const TangoPointCloud* point_cloud,
-    const TangoPoseData* color_camera_T_point_cloud,
-    const float uv_coordinates[2], float color_camera_point[3]);
+    const TangoPointCloud* point_cloud, const double point_cloud_translation[3],
+    const double point_cloud_orientation[4],
+    const float color_camera_uv_coordinates[2],
+    TangoSupportRotation display_rotation,
+    const double color_camera_translation[3],
+    const double color_camera_orientation[4], float output_point[3]);
 
 /// @brief The TangoSupportDepthInterpolator contains references to camera
 ///   intrinsics and cached data structures needed to upsample depth data to
@@ -658,34 +839,51 @@ TangoErrorType TangoSupport_createDepthInterpolator(
 TangoErrorType TangoSupport_freeDepthInterpolator(
     TangoSupportDepthInterpolator* interpolator);
 
-/// @brief Calculates the depth in the color camera space at a user-specified
-///   location using bilateral filtering weighted by both spatial distance from
-///   the user coordinate and by intensity similarity.
+/// @brief Calculates the depth at a user-specified location using bilateral
+///   filtering weighted by both spatial distance from the user coordinate and
+///   by intensity similarity. The output is in the base frame of the input
+///   translations and rotations. This output frame is usually an application's
+///   world frame.
 ///
 /// @param interpolator A handle to the interpolator object. The intrinsics of
 ///   this interpolator object must match those of the image_buffer.
 /// @param point_cloud The point cloud. Cannot be NULL and must have at least
 ///   one point.
-/// @param image_buffer The RGB image buffer. This must have intrinsics matching
-///   those used to create the interpolator object. Cannot be NULL.
-/// @param color_camera_T_point_cloud The pose of the point cloud relative to
-///   the color camera used to obtain uv_coordinates.
-/// @param uv_coordinates The UV coordinates for the user selection. This is
-///   expected to be between (0.0, 0.0) and (1.0, 1.0) and can be computed from
-///   pixel coordinates by dividing by the width or height. Cannot be NULL.
-/// @param color_camera_point The point (x, y, z), where (x, y) is the
-///   back-projection of the UV coordinates to the color camera space and z is
-///   the bilateral interpolation of the z coordinate of the point. If there is
-///   not a point cloud point close to the user selection after projection onto
-///   the image plane, then the point will be set to (0.0, 0.0, 0.0) and
-///   @c TANGO_ERROR will be returned.
+/// @param point_cloud_translation The translation component of the
+///   transformation from the point cloud to the output frame. Cannot be NULL.
+/// @param point_cloud_orientation The orientation component (as a quaternion)
+///   of the transformation from the point cloud to the output frame.
+///   Cannot be NULL.
+/// @param image_buffer The RGB image buffer. This must have intrinsics
+///   matching those used to create the interpolator object. Cannot be NULL.
+/// @param color_camera_uv_coordinates The UV coordinates for the user
+///   selection. This is expected to be between (0.0, 0.0) and (1.0, 1.0) and
+///   can be computed from pixel coordinates by dividing by the width or
+///   height. Cannot be NULL.
+/// @param display_rotation The index of the display rotation between
+///   display's default (natural) orientation and current orientation.
+/// @param color_camera_translation The translation component of the
+///   transformation from the color camera to the output frame. Cannot be NULL.
+/// @param color_camera_orientation The orientation component (as a quaternion)
+///   of the transformation from the color camera to the output frame.
+///   Cannot be NULL.
+/// @param output_point The point (x, y, z), which is the transformation of the
+///   point (x', y', z') in the color camera space to the desired output frame.
+///   (x', y') is the back-projection of the UV coordinates to the color camera
+///   space and z' is the bilateral interpolation of the z coordinate of the
+///   point. If the bilateral interpolation fails then the point will be set to
+///   (0.0, 0.0, 0.0) and @c TANGO_ERROR will be returned.
 /// @return @c TANGO_SUCCESS on success, @c TANGO_ERROR if a valid point is not
 ///   found, or @c TANGO_INVALID on invalid input.
 TangoErrorType TangoSupport_getDepthAtPointBilateral(
     const TangoSupportDepthInterpolator* interpolator,
-    const TangoPointCloud* point_cloud, const TangoImageBuffer* image_buffer,
-    const TangoPoseData* color_camera_T_point_cloud,
-    const float uv_coordinates[2], float color_camera_point[3]);
+    const TangoPointCloud* point_cloud, const double point_cloud_translation[3],
+    const double point_cloud_orientation[4],
+    const TangoImageBuffer* image_buffer,
+    const float color_camera_uv_coordinates[2],
+    TangoSupportRotation display_rotation,
+    const double color_camera_translation[3],
+    const double color_camera_orientation[4], float output_point[3]);
 
 /// @brief A structure to hold depth values for image upsampling. The units of
 ///   the depth are the same as for @c TangoPointCloud.
@@ -802,24 +1000,46 @@ struct TangoSupportEdge {
 
 /// @brief Find the list of edges "close" to the user-specified location and
 ///   that are on the plane estimated from the input location. The edges are
-///   detected in the color camera image and specified in the depth frame.
+///   detected in the color camera image and are output in the base frame
+///   of the input translations and rotations. This output frame is usually an
+///   application's world frame.
 ///
 /// @param point_cloud The point cloud. Cannot be NULL and must have sufficient
 ///   points to estimate the plane at the location of the input.
-/// @param image_buffer The RGB image buffer. Cannot be NULL.
-/// @param uv_coordinates The UV coordinates for the user selection. This is
-///   expected to be between (0.0, 0.0) and (1.0, 1.0) and can be computed from
-///   pixel coordinates by dividing by the width or height. Cannot be NULL.
+/// @param point_cloud_translation The translation component of the
+///   transformation from the point cloud to the output frame. Cannot be NULL.
+/// @param point_cloud_orientation The orientation component (as a quaternion)
+///   of the transformation from the point cloud to the output frame.
+///   Cannot be NULL.
+/// @param image_buffer The RGB image buffer. Although accuracy will be
+///   reduced, a down-sampled image can be used to improve performance.
+///   Cannot be NULL.
+/// @param color_camera_uv_coordinates The UV coordinates for the user
+///   selection. This is expected to be between (0.0, 0.0) and (1.0, 1.0) and
+///   can be computed from pixel coordinates by dividing by the width or
+///   height. Cannot be NULL.
+/// @param display_rotation The index of the display rotation between
+///   display's default (natural) orientation and current orientation.
+/// @param color_camera_translation The translation component of the
+///   transformation from the color camera to the output frame. Cannot be NULL.
+/// @param color_camera_orientation The orientation component (as a quaternion)
+///   of the transformation from the color camera to the output frame.
+///   Cannot be NULL.
 /// @param edges An array of 3D edges close to the input point and specified in
-///   the depth frame. The edges will lie on the plane estimated at the location
-///   of the input point. The array should be deleted by calling
+///   the requested output frame. The edges will lie on the plane estimated at
+///   the location of the input point. The array should be deleted by calling
 ///   TangoSupport_freeEdgeList. Cannot be NULL.
 /// @param number_of_edges The number of edges in @p edges. Cannot be NULL.
 /// @return @c TANGO_SUCCESS on success, @c TANGO_INVALID on invalid input, and
 ///   @c TANGO_ERROR on failure.
 TangoErrorType TangoSupport_findEdgesNearPoint(
-    const TangoPointCloud* point_cloud, const TangoImageBuffer* image_buffer,
-    const float uv_coordinates[2], TangoSupportEdge** edges,
+    const TangoPointCloud* point_cloud, const double point_cloud_translation[3],
+    const double point_cloud_orientation[4],
+    const TangoImageBuffer* image_buffer,
+    const float color_camera_uv_coordinates[2],
+    TangoSupportRotation display_rotation,
+    const double color_camera_translation[3],
+    const double color_camera_orientation[4], TangoSupportEdge** edges,
     int* number_of_edges);
 
 /// @brief Free memory allocated in call to TangoSupport_findEdgesNearPoint.
@@ -979,8 +1199,107 @@ TangoErrorType TangoSupport_detectCorners(const float point_of_interest[3],
 TangoErrorType TangoSupport_freeCornerList(TangoSupportCornerList* corner_list);
 
 /// @}
+/// @defgroup MarkerDetectionSupport Marker Detection Support Functions
+/// @brief Functions for detecting markers.
+/// @{
+/// @brief A type to define all combinations of markers supported.
+typedef enum {
+  TANGO_MARKER_ARTAG = 0x01,
+  TANGO_MARKER_QRCODE = 0x02,
+} TangoSupportMarkerType;
+
+/// @brief A structure to define parameters for passing marker detection
+/// parameters.
+typedef struct TangoSupportMarkerParam {
+  /// Type of marker to be detected.
+  TangoSupportMarkerType type;
+
+  /// The physical size of the marker in meters.
+  double marker_size;
+} TangoSupportMarkerParam;
+
+/// @brief A structure to define contents of a marker, which can be any of the
+/// marker types supported.
+typedef struct TangoSupportMarker {
+  /// The type of the marker.
+  TangoSupportMarkerType type;
+
+  /// The timestamp of the image from which the marker was detected.
+  double timestamp;
+
+  /// The content of the marker. For AR tags, this is the string format of the
+  /// tag id. For QR codes, this is the string content of the code.
+  char* content;
+
+  /// The size of content, in bytes.
+  int content_size;
+
+  /// Marker corners in input image pixel coordinates.
+  /// For all marker types, the first corner is the lower left corner, the
+  /// second corner is the lower right corner, the third corner is the upper
+  /// right corner, and the last corner is the upper left corner.
+  ///
+  /// P3 -- P2
+  /// |     |
+  /// P0 -- P1
+  ///
+  float corners_2d[4][2];
+
+  /// Marker corners in the output frame, which is defined by the translation
+  /// and orientation pair passed to TangoSupport_detectMarkers() function. The
+  /// location of the corner is the same as in corners_2d field.
+  float corners_3d[4][3];
+
+  /// Marker pose - orientation is a Hamilton quaternion specified as
+  /// (x, y, z, w). Both translation and orientation are defined in the output
+  /// frame, which is defined by the translation and orientation pair passed to
+  /// TangoSupport_detectMarkers() function.
+  /// The marker pose defines a marker local frame, in which:
+  ///  X = to the right on the tag
+  ///  Y = to the up on the tag
+  ///  Z = pointing out of the tag towards the user.
+  double translation[3];
+  double orientation[4];
+} TangoSupportMarker;
+
+/// @brief A structure that stores a list of markers. After calling
+///   TangoSupport_detectMarkers() with a TangoSupportMarkerList object, the
+///   object needs to be released by calling TangoSupport_freeMarkersList()
+///   function.
+typedef struct TangoSupportMarkerList {
+  TangoSupportMarker* markers;
+  int marker_count;
+} TangoSupportMarkerList;
+
+/// @brief Detect one or more markers in the input image.
+/// @param image_buffer The image buffer. Cannot be NULL.
+/// @param camera_id The identification of the camera that captured the
+////  image_buffer.
+/// @param translation The translation component of the transformation from the
+///   the input camera space to the output frame. Cannot be NULL.
+/// @param orientation The orientation component (as a quaternion)
+///   of the transformation from the the input camera space to the output frame.
+///   Cannot be NULL.
+/// @param param The parameters for marker detection. Cannot be NULL.
+/// @param list The output marker list. The caller needs to release the
+///   memory by calling TangoSupport_freeMarkerList() function.
+/// @return @c TANGO_SUCCESS on success, @c TANGO_INVALID on invalid input, and
+///   @c TANGO_ERROR on failure.
+TangoErrorType TangoSupport_detectMarkers(const TangoImageBuffer* image,
+                                          const TangoCameraId camera_id,
+                                          const double translation[3],
+                                          const double orientation[4],
+                                          const TangoSupportMarkerParam* param,
+                                          TangoSupportMarkerList* list);
+
+/// @brief Free memory allocated in TangoSupport_detectMarkers().
+///
+/// @param list Marker list to free.
+void TangoSupport_freeMarkerList(TangoSupportMarkerList* list);
+
+/// @}
 #ifdef __cplusplus
 }
 #endif
 
-#endif  // TANGO_SUPPORT_API_H_
+#endif  // TANGO_SUPPORT_API_HEADER_TANGO_SUPPORT_API_H_

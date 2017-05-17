@@ -16,12 +16,14 @@ namespace blink {
 class VRPointCloud final : public GarbageCollected<VRPointCloud>, public ScriptWrappable {
     DEFINE_WRAPPERTYPEINFO();
 public:
+    static VRPointCloud* create() { return new VRPointCloud(); }
+
     VRPointCloud();
 
     unsigned int numberOfPoints() const;
     DOMFloat32Array* points() const;
 
-    void setPointCloud(device::mojom::blink::VRPointCloudPtr& pointCloudPtr);
+    void setPointCloud(unsigned maxNumberOfPoints, device::mojom::blink::VRPointCloudPtr& pointCloudPtr);
 
     DECLARE_VIRTUAL_TRACE()
 

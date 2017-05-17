@@ -1,6 +1,6 @@
-This file includes the licenses for the libraries in this folder.
-
 ===============================================================================
+This file includes the license for the following library files in this folder.
+
 CSS3DRenderer.js,
 ColladaLoader.js
 Detector.js,
@@ -10,6 +10,7 @@ VREffect.js,
 WebVR.js,
 stats.min.js
 three.js
+TeapotBufferGeometry.js
 
 The MIT License
 
