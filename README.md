@@ -234,7 +234,6 @@ Open a terminal window to be able
   remove_webcore_debug_symbols = true
 
   # Other args you may want to set:
-  is_component_build = true
   is_clang = true
   symbol_level = 1  # Faster build with fewer symbols. -g1 rather than -g2
   ```
