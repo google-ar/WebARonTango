@@ -303,7 +303,7 @@ Apache License Version 2.0 (see the `LICENSE' file inside this repo).
 
 * Improve the VRSeeThroughCamera rendering pipeline either making it obscure for the developer or by using regular WebGL textures and shader samplers without having to use the external image texture extension.
 
-* Add more Tango SDK "hidden" features: area description, marker detection, ...
+* Add more Tango SDK "hidden" features: mesh reconstruction, area description, marker detection, ...
 
 * Develop more examples.
   * 6DOF VR example.
