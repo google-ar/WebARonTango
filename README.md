@@ -179,6 +179,10 @@ This repository includes several examples to show the basics of how to use the W
 
 More examples are on the way :).
 
+Here is a sneak peak of a prototype we have build for Wayfair:
+
+<img src="markdown/images/WayfairPrototype.gif"/>
+
 # <a name="how_to_build_your_own_version_of_chromium_with_webar"></a> 1. How to build your own version of Chromium with WebAR
 
 This repository includes only the modifications on the Chromium repository that allows to add Tango/WebAR capabilities. Chromium is a complex project with gigabytes of source code, resources and third party libraries. All the necessary steps to checkout the necessary tools, the Chromium source code and make the necessary modifications will be explained in this document. 
