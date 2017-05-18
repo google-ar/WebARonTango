@@ -179,7 +179,7 @@ This repository includes several examples to show the basics of how to use the W
 
 More examples are on the way :).
 
-Here is a sneak peak of a prototype we have build for Wayfair:
+Here is a sneak peek of a prototype we have built for Wayfair:
 
 <img src="markdown/images/WayfairPrototype.gif"/>
 
