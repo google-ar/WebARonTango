@@ -5,9 +5,9 @@
 * [How to use this repo](#how_to_use_this_repo)
 * [Using the Chromium WebAR prototype and the new APIs](#using_the_chromium_webar_prototype_and_the_new_apis)
   * [How to install and use the Chromium WebAR prototype](#how_to_install_and_use_the_chromium_webar_prototype_on_android)
+  * [Examples](#examples)
   * [Overview of the WebAR APIs](#overview_of_the_webar_apis)
   * [Using the WebAR APIs in ThreeJS](#using_the_webar_apis_in_threejs)
-  * [Examples](#examples)
 * [How to build your own version of Chromium with WebAR](#how_to_build_your_own_version_of_chromium_with_webar)
 * [Supported devices](#supported_devices)
 * [License](#license)
@@ -67,6 +67,34 @@ allows to introduce URLs encoded in QRCodes. I personally do not like introducin
 There are multiple QRCode generators around the web but I highly recommend to use [The QRCode Generator](https://www.the-qrcode-generator.com/).
 
 The last introduced and loaded URL will be stored for future executions of the app. 
+
+## <a name="examples">Examples</a>
+
+This repository includes several examples to show the basics of how to use the WebAR Chromium prototype and the WebAr API on top of the WebVR API. The examples have been divided into raw WebGL and ThreeJS based trying to fill out the needs of developers that want to go deeper level and use WebVR+WebGL directly or the ones that would like to use a higher level engine like ThreeJS.
+
+If you have a Tango ready device and have installed the prototype APK, you can use the QRCodes provided below to directly point to the available examples.
+
+* **Raw WebGL based examples:** Available inside the `examples/webgl` folder.
+  * `video`: It shows the basic functionality of rendering the video feed that is associated to the `VRSeeThroughCamera`. 
+    * URL: [http://judax.github.io/webar/examples/webgl/video/](http://judax.github.io/webar/examples/webgl/video/)
+    * QRCode: <img src="markdown/images/qrcode_example_webgl_video.png"/>
+
+* **ThreeJS based examples:** Available inside the `examples/threejs` folder. These examples use the support `THREE.WebAR.js` library to simplify some boilerplate code while using the WebVR/WebAR API.
+  * `video`: It shows the basic functionality of rendering the video feed that is associated to the `VRSeeThroughCamera`.
+    * URL: [http://judax.github.io/webar/examples/threejs/video/](http://judax.github.io/webar/examples/threejs/video/)
+    * QRCode: <img src="markdown/images/qrcode_example_threejs_video.png"/>
+  * `picking`: It shows how an 3D model can be placed in the real world using the point cloud functionality. It also allows to show the `VRPointCloud`, do 6DOF motion tracking and enable/disable the `VRSeeThroughCamera`. It even allows to perform continuous picking to place a 3D model in the real space in real time.
+    * URL: <a href="http://judax.github.io/webar/examples/threejs/picking/" target="_blank">http://judax.github.io/webar/examples/threejs/picking/</a>
+    * QRCode: <img src="markdown/images/qrcode_example_threejs_picking.png"/>
+  * `occlusion`: similar to the `picking` example but in this case uses the point cloud to enable depth based occlusion so real objects can occlude virtual objects.
+    * URL: [http://judax.github.io/webar/examples/threejs/occlusion/](http://judax.github.io/webar/examples/threejs/occlusion/)
+    * QRCode: <img src="markdown/images/qrcode_example_threejs_occlusion.png"/>
+
+More examples are on the way :).
+
+Here is a sneak peek of a prototype we have built for Wayfair:
+
+<img src="markdown/images/WayfairPrototype.gif"/>
 
 ### <a name="overview_of_the_webar_apis">Overview of the WebAR APIs</a>
 
@@ -154,34 +182,6 @@ There are no additional modifications needed to the ThreeJS engine.
 A support library has been developed inside this repository under the `THREE.WebAR` folder that provides some functionalities to ease the use of the underlying WebAR APIs in ThreeJS by creating the basic types of structures needed like the `THREE.Mesh` instance that represents the video camera quad (along with the corresponding `THREE.VideoTexture` instance and the right fragment shader), the `THREE.Camera` instance that represents the orthogonal camera to correctly render the video camera feed, a `VRPointCloud` structure that handles a point mesh with a `THREE.BufferGeometry` internally to render the point cloud, etc.
 
 All the documentation for the THREE.WebAR.js file is available at: [http://judax.github.io/webar/doc/THREE.WebAR](http://judax.github.io/webar/doc/THREE.WebAR)
-
-## <a name="examples">Examples</a>
-
-**_WORK IN PROGRESS_**
-
-This repository includes several examples to show the basics of how to use the WebAR Chromium prototype and the WebAr API on top of the WebVR API. The examples have been divided into raw WebGL and ThreeJS based trying to fill out the needs of developers that want to go deeper level and use WebVR+WebGL directly or the ones that would like to use a higher level engine like ThreeJS.
-
-* **Raw WebGL based examples:** Available inside the `examples/webgl` folder.
-  * `video`: It shows the basic functionality of rendering the video feed that is associated to the `VRSeeThroughCamera`. 
-    * URL: [http://judax.github.io/webar/examples/webgl/video/](http://judax.github.io/webar/examples/webgl/video/)
-    * QRCode: <img src="markdown/images/qrcode_example_webgl_video.png"/>
-
-* **ThreeJS based examples:** Available inside the `examples/threejs` folder. These examples use the support `THREE.WebAR.js` library to simplify some boilerplate code while using the WebVR/WebAR API.
-  * `video`: It shows the basic functionality of rendering the video feed that is associated to the `VRSeeThroughCamera`.
-    * URL: [http://judax.github.io/webar/examples/threejs/video/](http://judax.github.io/webar/examples/threejs/video/)
-    * QRCode: <img src="markdown/images/qrcode_example_threejs_video.png"/>
-  * `picking`: It shows how an 3D model can be placed in the real world using the point cloud functionality. It also allows to show the `VRPointCloud`, do 6DOF motion tracking and enable/disable the `VRSeeThroughCamera`. It even allows to perform continuous picking to place a 3D model in the real space in real time.
-    * URL: <a href="http://judax.github.io/webar/examples/threejs/picking/" target="_blank">http://judax.github.io/webar/examples/threejs/picking/</a>
-    * QRCode: <img src="markdown/images/qrcode_example_threejs_picking.png"/>
-  * `occlusion`: similar to the `picking` example but in this case uses the point cloud to enable depth based occlusion so real objects can occlude virtual objects.
-    * URL: [http://judax.github.io/webar/examples/threejs/occlusion/](http://judax.github.io/webar/examples/threejs/occlusion/)
-    * QRCode: <img src="markdown/images/qrcode_example_threejs_occlusion.png"/>
-
-More examples are on the way :).
-
-Here is a sneak peek of a prototype we have built for Wayfair:
-
-<img src="markdown/images/WayfairPrototype.gif"/>
 
 # <a name="how_to_build_your_own_version_of_chromium_with_webar"></a> 1. How to build your own version of Chromium with WebAR
 
