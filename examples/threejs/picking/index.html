@@ -148,7 +148,7 @@
         // suited to the actual see through camera parameters.
         cameraPersp = 
           THREE.WebAR.createVRSeeThroughCamera(vrDisplay, 0.01, 100);
-        // Create a cube model of 10 cm size.
+        // Create a model to be placed in the world using picking
         model = new THREE.Mesh(new THREE.ConeBufferGeometry(
           MODEL_SIZE_IN_METERS / 2, MODEL_SIZE_IN_METERS), 
           new THREE.MeshLambertMaterial( {color: 0x888888 } ));
