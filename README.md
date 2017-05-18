@@ -285,8 +285,6 @@ Apache License Version 2.0 (see the `LICENSE' file inside this repo).
 
 # <a name="known_issues">Known issues</a>
 
-**_WORK IN PROGRESS_**
-
 * **The webview flavor of Chromium.** The current implementation of WebAR is built on top of the Chromium WebView flavor. This has some implementation advantages but some performance and use disadvantages. We are working on making the implementation on a full version of Chromium.
 
 * **Black view when pausing/resuming the app.** This is a consequence of having built the implementation on top of the WebView flavor of Chromium. At some point, the Chromium committers have introduced this bug. A proper implementation on full Chromium or a rebase to a different Chromium WebView version might solve this annoying problem.
@@ -298,8 +296,6 @@ Apache License Version 2.0 (see the `LICENSE' file inside this repo).
 * **`Logcat error: TangoEGL: bindTextureImage: error binding external texture image 0xab874310: 0x502`.** A similar consequence to the previous known issue. Tango, while updating the camera image texture is expecting that the texture that is bound is of the correct target `GL_TEXTURE_EXTERNAL_OES` so this GL error is logged.
 
 # <a name="future_work">Future work</a>
-
-**_WORK IN PROGRESS_**
 
 * Adapt the implementation to the WebVR spec proposal version 2.0.
 
