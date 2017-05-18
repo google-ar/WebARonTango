@@ -183,7 +183,7 @@ A support library has been developed inside this repository under the `THREE.Web
 
 All the documentation for the THREE.WebAR.js file is available at: [http://judax.github.io/webar/doc/THREE.WebAR](http://judax.github.io/webar/doc/THREE.WebAR)
 
-# <a name="how_to_build_your_own_version_of_chromium_with_webar"></a> 1. How to build your own version of Chromium with WebAR
+# <a name="how_to_build_your_own_version_of_chromium_with_webar"></a>How to build your own version of Chromium with WebAR
 
 This repository includes only the modifications on the Chromium repository that allows to add Tango/WebAR capabilities. Chromium is a complex project with gigabytes of source code, resources and third party libraries. All the necessary steps to checkout the necessary tools, the Chromium source code and make the necessary modifications will be explained in this document. 
 
