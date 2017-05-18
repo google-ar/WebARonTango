@@ -209,8 +209,8 @@ Let's assume that the machine is installed along with:
 Open a terminal window to be able
 
 1. Install depot_tools: [Tutorial](https://commondatastorage.googleapis.com/chrome-infra-docs/flat/depot_tools/docs/html/depot_tools_tutorial.html#_setting_up). You can also follow these 2 steps:
-  1. `git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git`
-  2. `export PATH=$PATH:/path/to/depot_tools`
+  * `git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git`
+  * `export PATH=$PATH:/path/to/depot_tools`
 2. Create the `chromium` folder: `$ mkdir ~/chromium && cd ~/chromium`
 3. Checkout the Chromium repo: `~/chromium$ fetch --nohooks android`. **NOTE**: This process may take a long time (an hour?)
 4. Verify that the `.gclient` file has `target_os = ['android']` in it: `~/chromium$ cat .gclient`
@@ -283,15 +283,15 @@ Apache License Version 2.0 (see the `LICENSE' file inside this repo).
 
 **_WORK IN PROGRESS_**
 
-* The webview flavor of Chromium
+* **The webview flavor of Chromium.** The current implementation of WebAR is built on top of the Chromium WebView flavor. This has some implementation advantages but some performance and use disadvantages. We are working on making the implementation on a full version of Chromium.
 
-* Granting permissions
+* **Black view when pausing/resuming the app.** This is a consequence of having built the implementation on top of the WebView flavor of Chromium. At some point, the Chromium committers have introduced this bug. A proper implementation on full Chromium or a rebase to a different Chromium WebView version might solve this annoying problem.
 
-* Black view when pausing/resuming the app
+* **Granting permissions.** Currently, all the neccessary permissions are requested as soon as the application starts. This is not how the web works and the permissions should be requested when needed by the underlying APIs.
 
-* Console warning: RENDER WARNING: there is no texture bound to the unit X
+* **Console warning: `RENDER WARNING: there is no texture bound to the unit X`.** Because the VRSeeThroughCamera rendering requires the external image texture extension at the moment, the underlying WebGL implementation has a mismatch of the type of texture that has been bound. An initial solution for this warning message that has been tested (and that worked) is to expose the correct target type for the VRSeeThroughCamera texture: `GL_TEXTURE_EXTERNAL_OES`. The problem with approach is that it requieres serious modifications of both Chromium and specially THREEJS so for now, this warning will be shown in the console :(.
 
-* logcat error: TangoEGL: bindTextureImage: error binding external texture image 0xab874310: 0x502
+* **`Logcat error: TangoEGL: bindTextureImage: error binding external texture image 0xab874310: 0x502`.** A similar consequence to the previous known issue. Tango, while updating the camera image texture is expecting that the texture that is bound is of the correct target `GL_TEXTURE_EXTERNAL_OES` so this GL error is logged.
 
 # <a name="future_work">Future work</a>
 
