@@ -96,6 +96,9 @@ Here is a sneak peek of a prototype we have built for Wayfair:
 
 <img src="markdown/images/WayfairPrototype.gif"/>
 
+* URL: [https://webar-wayfair-prototype.appspot.com/](https://webar-wayfair-prototype.appspot.com/)
+* QRCode: <img src="markdown/images/qrcode_example_wayfair.png"/>
+
 ### <a name="overview_of_the_webar_apis">Overview of the WebAR APIs</a>
 
 This implementation of WebAR is an addition of some features on top of the [WebVR API specification](https://webvr.info/) version 1.1. AR and VR share many common concepts like motion tracking or even a see through camera or a depth sensor, as they can be found in both AR and VR devices (Google Tango, Microsoft Hololens, HTC Vive, ...). If you are not familiar with the [WebVR API](https://webvr.info/), I highly recommend that you review it before continuing as some basic knowledge of it will be assumed in the following paragraphs.
