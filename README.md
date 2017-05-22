@@ -84,15 +84,11 @@ If you have a Tango ready device and have installed the prototype APK, you can u
     * URL: [http://judax.github.io/webar/examples/threejs/video/](http://judax.github.io/webar/examples/threejs/video/)
     * QRCode: <img src="markdown/images/qrcode_example_threejs_video.png"/>
   * `picking`: It shows how an 3D model can be placed in the real world using the point cloud functionality. It also allows to show the `VRPointCloud`, do 6DOF motion tracking and enable/disable the `VRSeeThroughCamera`. It even allows to perform continuous picking to place a 3D model in the real space in real time.
-
-<img src="markdown/images/WebARExamplePicking.gif"/>
-
+    * <img src="markdown/images/WebARExamplePicking.gif"/>
     * URL: <a href="http://judax.github.io/webar/examples/threejs/picking/" target="_blank">http://judax.github.io/webar/examples/threejs/picking/</a>
     * QRCode: <img src="markdown/images/qrcode_example_threejs_picking.png"/>
   * `occlusion`: similar to the `picking` example but in this case uses the point cloud to enable depth based occlusion so real objects can occlude virtual objects.
-
-<img src="markdown/images/WebARExampleOcclusion.gif"/>  
-
+    * <img src="markdown/images/WebARExampleOcclusion.gif"/>
     * URL: [http://judax.github.io/webar/examples/threejs/occlusion/](http://judax.github.io/webar/examples/threejs/occlusion/)
     * QRCode: <img src="markdown/images/qrcode_example_threejs_occlusion.png"/>
 
