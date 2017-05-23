@@ -110,6 +110,7 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
     private ImageButton mPrevButton;
     private ImageButton mNextButton;
     private ImageButton mQRCodeButton;
+    private boolean mInitialized = false;
 
     private class SpeechRecognition implements RecognitionListener
     {
@@ -516,6 +517,19 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        if (!TangoJniNative.initialize()) 
+        {
+            createAlertDialog(this, "Error Initializing Chromium WebAR", "This device is not currently Tango compatible. Sorry, this Chromium WebAR prototype only runs on Tango devices for now.", new DialogInterface.OnClickListener()
+            {
+                @Override
+                public void onClick(DialogInterface dialog, int which)
+                {
+                    finish();
+                }
+            }, 1, "Ok", null, null).show();
+            return;                
+        }
+
         requestCameraPermission();
         // requestADFPermission();
         requestExternalStorageReadPermission();
@@ -570,12 +584,17 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
         mAwTestContainerView.getAwContents().loadUrl(startupUrl);
         AwContents.setShouldDownloadFavicons();
         mUrlTextView.setText(startupUrl);
+
+        mInitialized = true;
     }
 
     @Override
     protected void onResume()
     {
         super.onResume();
+
+        if (!mInitialized) return;
+
         TangoInitializationHelper.bindTangoService(this, mTangoServiceConnection);
     }
 
@@ -583,6 +602,9 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
     protected void onPause()
     {
         super.onPause();
+
+        if (!mInitialized) return;
+
         // Disconnect from Tango Service, release all the resources that the app is holding from Tango Service.
         TangoJniNative.onPause();
         unbindService(mTangoServiceConnection);
@@ -590,9 +612,14 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
 
     @Override
     public void onDestroy() {
+        if (!mInitialized)
+        {
+            super.onDestroy();
+            return;
+        }
 
         TangoJniNative.onDestroy();
-        
+
         if (mDevToolsServer != null) {
             mDevToolsServer.destroy();
             mDevToolsServer = null;

@@ -27,14 +27,18 @@ import android.util.Log;
  * responsible for the communication between the application and Tango Service.
  */
 public class TangoJniNative {
-    static {
+
+    public static boolean initialize()
+    {
         // This project depends on tango_client_api, so we need to make sure we load
         // the correct library first.
         if (TangoInitializationHelper.loadTangoSharedLibrary() ==
                 TangoInitializationHelper.ARCH_ERROR) {
             Log.e("TangoJNINative", "ERROR! Unable to load libtango_client_api.so!");
+            return false;
         }
         System.loadLibrary("tango_chromium");
+        return true;
     }
 
     /**
