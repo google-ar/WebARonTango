@@ -38,7 +38,7 @@ This repository can be used in 2 ways:
 
 ## <a name="how_to_install_and_use_the_prototype">How to install and use the Chromium WebAR prototype</a>
 
-The `bin` folder in this repo holds the precompiled versions of Chromium that support the WebAR API. Check the [Supported devices](#supported_devices) section to learn what devices/platforms are currently supported and have been tested. 
+The `bin` folder in this repo holds the precompiled versions of Chromium that support the WebAR API. Check the [Supported devices](#supported_devices) section to learn what devices/platforms are currently supported and have been tested. If you install and execute the build on a non-tango device, a warning message will be shown and you won't be able to use the application.
 
 ### <a name="how_to_install_and_use_the_chromium_webar_prototype_on_android">How to install and use the Chromium WebAR prototype on Android</a>
 
@@ -280,8 +280,12 @@ The current version of Chromium that supports WebAR has been built on top of Tan
 
 * Lenovo Phab 2 Pro
   * Android version: 6.0.1
-  * Build version: PB2-690Y_S200032_161214
   * Tango Core version: 1.53:2017.04.28-hopak-release-0-gb1545f34:230015395:stable
+  * Tango SDK version: Hopak
+  
+* Tando Development Kit Tablet
+  * Android version: 4.4.2
+  * Tango Core version: 1.53:2017.04.28-hopak-release-0-gb1545f34:190015395:stable
   * Tango SDK version: Hopak
   
 # <a name="license">License</a>
