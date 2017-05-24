@@ -95,16 +95,11 @@ If you have a Tango ready device and have installed the prototype APK, you can u
     * URL: [http://judax.github.io/webar/examples/threejs/occlusion/](http://judax.github.io/webar/examples/threejs/occlusion/)
     * QRCode: 
       * <img src="markdown/images/qrcode_example_threejs_occlusion.png"/>
-
-More examples are on the way :).
-
-Here is a sneak peek of a prototype we have built for Wayfair:
-
-<img src="markdown/images/WebARWayfairPrototype_long.gif"/>
-
-* URL: [https://webar-wayfair-prototype.appspot.com/](https://webar-wayfair-prototype.appspot.com/)
-* QRCode: 
-  * <img src="markdown/images/qrcode_example_wayfair.png"/>
+   * **WayFair Google I/O 2017 prototype:** An online shopping experience prototype. This project is currently not open source but you can test it:
+    * <img src="markdown/images/WebARWayfairPrototype_long.gif"/>
+    * URL: [https://webar-wayfair-prototype.appspot.com/](https://webar-wayfair-prototype.appspot.com/)
+    * QRCode: 
+      * <img src="markdown/images/qrcode_example_wayfair.png"/>
 
 ### <a name="overview_of_the_webar_apis">Overview of the WebAR APIs</a>
 
