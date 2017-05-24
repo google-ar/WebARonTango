@@ -77,20 +77,24 @@ If you have a Tango ready device and have installed the prototype APK, you can u
 * **Raw WebGL based examples:** Available inside the `examples/webgl` folder.
   * `video`: It shows the basic functionality of rendering the video feed that is associated to the `VRSeeThroughCamera`. 
     * URL: [http://judax.github.io/webar/examples/webgl/video/](http://judax.github.io/webar/examples/webgl/video/)
-    * QRCode: <img src="markdown/images/qrcode_example_webgl_video.png"/>
+    * QRCode:
+      * <img src="markdown/images/qrcode_example_webgl_video.png"/>
 
 * **ThreeJS based examples:** Available inside the `examples/threejs` folder. These examples use the support `THREE.WebAR.js` library to simplify some boilerplate code while using the WebVR/WebAR API.
   * `video`: It shows the basic functionality of rendering the video feed that is associated to the `VRSeeThroughCamera`.
     * URL: [http://judax.github.io/webar/examples/threejs/video/](http://judax.github.io/webar/examples/threejs/video/)
-    * QRCode: <img src="markdown/images/qrcode_example_threejs_video.png"/>
+    * QRCode: 
+      * <img src="markdown/images/qrcode_example_threejs_video.png"/>
   * `picking`: It shows how an 3D model can be placed in the real world using the point cloud functionality. It also allows to show the `VRPointCloud`, do 6DOF motion tracking and enable/disable the `VRSeeThroughCamera`. It even allows to perform continuous picking to place a 3D model in the real space in real time.
     * <img src="markdown/images/WebARExamplePicking.gif"/>
     * URL: <a href="http://judax.github.io/webar/examples/threejs/picking/" target="_blank">http://judax.github.io/webar/examples/threejs/picking/</a>
-    * QRCode: <img src="markdown/images/qrcode_example_threejs_picking.png"/>
+    * QRCode: 
+      * <img src="markdown/images/qrcode_example_threejs_picking.png"/>
   * `occlusion`: similar to the `picking` example but in this case uses the point cloud to enable depth based occlusion so real objects can occlude virtual objects.
     * <img src="markdown/images/WebARExampleOcclusion.gif"/>
     * URL: [http://judax.github.io/webar/examples/threejs/occlusion/](http://judax.github.io/webar/examples/threejs/occlusion/)
-    * QRCode: <img src="markdown/images/qrcode_example_threejs_occlusion.png"/>
+    * QRCode: 
+      * <img src="markdown/images/qrcode_example_threejs_occlusion.png"/>
 
 More examples are on the way :).
 
@@ -99,7 +103,8 @@ Here is a sneak peek of a prototype we have built for Wayfair:
 <img src="markdown/images/WebARWayfairPrototype_long.gif"/>
 
 * URL: [https://webar-wayfair-prototype.appspot.com/](https://webar-wayfair-prototype.appspot.com/)
-* QRCode: <img src="markdown/images/qrcode_example_wayfair.png"/>
+* QRCode: 
+  * <img src="markdown/images/qrcode_example_wayfair.png"/>
 
 ### <a name="overview_of_the_webar_apis">Overview of the WebAR APIs</a>
 
@@ -108,6 +113,8 @@ This implementation of WebAR is an addition of some features on top of the [WebV
 All the documentation specific to the new APIs inside WebVR can be found online at: [http://judax.github.io/webar/doc/webarapi](http://judax.github.io/webar/doc/webarapi) that is generated from the file WebARAPI.js found in this repository.
 
 The main point of entry for the WebAR API is still the `VRDisplay` instance as in WebVR. Actually, if an AR device such as Tango wants to be used for 6DOF (6 Degrees Of Freedom) VR experiences (non AR), the WebVR API as is could be used. The `getPose` and `getFrameData` calls will correctly return the position and orientation acquired from the underlying hardware implementation. 
+
+This prototype exposes a new `VRDisplay` instance with the name of `"Tango VR Device"` for now when the `navigator.getVRDisplays` call is made.
 
 But there are some new features that the WebVR spec does not include and that provide additional functionality based on the underlying AR platform. These new characteristics can be identified using the `VRDisplayCapabilities` instance obtained from the `VRDisplay` instance that now exposes 2 new flags to specify if the device:
 
