@@ -96,7 +96,7 @@ More examples are on the way :).
 
 Here is a sneak peek of a prototype we have built for Wayfair:
 
-<img src="markdown/images/WayfairPrototype.gif"/>
+<img src="markdown/images/WebARWayfairPrototype_long.gif"/>
 
 * URL: [https://webar-wayfair-prototype.appspot.com/](https://webar-wayfair-prototype.appspot.com/)
 * QRCode: <img src="markdown/images/qrcode_example_wayfair.png"/>
