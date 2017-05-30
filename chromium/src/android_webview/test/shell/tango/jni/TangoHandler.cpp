@@ -760,8 +760,12 @@ bool TangoHandler::updateCameraImageIntoTexture(uint32_t textureId)
   if (tangoBufferIds.empty()) 
   {
       pthread_mutex_unlock( &tangoBufferIdsMutex );
+
+      // TODO: It makes some sense to add this call but it completely breaks
+      // in the ASUS (Pistachio) device. 
+      TangoErrorType result = TANGO_SUCCESS;
       // If there were no buffer ids locked, just update the texture.
-      TangoErrorType result = TangoService_updateTextureExternalOes(TANGO_CAMERA_COLOR, textureId, &lastTangoImageBufferTimestamp);
+      // TangoErrorType result = TangoService_updateTextureExternalOes(TANGO_CAMERA_COLOR, textureId, &lastTangoImageBufferTimestamp);
       std::time(&lastTangoImagebufferTimestampTime);  
       return result == TANGO_SUCCESS;
   }

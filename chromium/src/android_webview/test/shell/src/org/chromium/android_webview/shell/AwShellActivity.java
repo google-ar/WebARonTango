@@ -791,6 +791,7 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
         awSettings.setLoadWithOverviewMode(true);
         awSettings.setAllowFileAccessFromFileURLs(true);
         awSettings.setAllowUniversalAccessFromFileURLs(true);
+        awSettings.setDomStorageEnabled(true);
         awSettings.setLayoutAlgorithm(android.webkit.WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING);
 
         testContainerView.initialize(new AwContents(mBrowserContext, testContainerView,
