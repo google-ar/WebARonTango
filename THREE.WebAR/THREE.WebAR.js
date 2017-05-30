@@ -437,6 +437,11 @@ THREE.WebAR.rotateObject3D = function(normal1, normal2, object3d) {
   object3d.quaternion.setFromRotationMatrix(THREE.WebAR._rotationMatrix);
 };
 
+/**
+* Transform a given THREE.Object3D instance to be correctly oriented according to a given plane normal.
+* @param {THREE.Vector3|THREE.Vector4|Float32Array} plane A vector that represents the normal of the plane to be used to orient the object3d.
+* @param {THREE.Object3D} object3d The object3d to be transformed so it is oriented according to the given plane.
+*/
 THREE.WebAR.rotateObject3DWithPickingPlane = function(plane, object3d) {
   if (plane instanceof THREE.Vector3 || plane instanceof THREE.Vector4) {
     THREE.WebAR._planeNormal.set(plane.x, plane.y, plane.z);
@@ -469,6 +474,11 @@ THREE.WebAR.rotateObject3DWithPickingPlane = function(plane, object3d) {
   object3d.quaternion.setFromRotationMatrix(THREE.WebAR._rotationMatrix);
 };
 
+/**
+* Transform a given THREE.Object3D instance to be correctly positioned according to a given point position.
+* @param {THREE.Vector3|THREE.Vector4|Float32Array} point A vector that represents the position where the object3d should be positioned.
+* @param {THREE.Object3D} object3d The object3d to be transformed so it is positioned according to the given point.
+*/
 THREE.WebAR.positionObject3DWithPickingPoint = function(point, object3d) {
   if (point instanceof THREE.Vector3 || point instanceof THREE.Vector4) {
     object3d.position.set(point.x, point.y, point.z);
@@ -482,8 +492,8 @@ THREE.WebAR.positionObject3DWithPickingPoint = function(point, object3d) {
 };
 
 /**
-* Transform a given THREE.Object3D instance to be correctly positioned and oriented according to a given VRPickingPointAndPlane and a scale (half the size of the object3d).
-* @param {VRPickingPointandPlane} pointAndPlane - The point and plane retrieved using the VRDisplay.getPickingPointAndPlaneInPointCloud function.
+* Transform a given THREE.Object3D instance to be correctly positioned and oriented according to a given VRPickingPointAndPlane and a scale (half the size of the object3d for example).
+* @param {VRPickingPointandPlane} pointAndPlane The point and plane retrieved using the VRDisplay.getPickingPointAndPlaneInPointCloud function.
 * @param {THREE.Object3D} object3d The object3d to be transformed so it is positioned and oriented according to the given point and plane.
 * @param {number} scale The value the object3d will be positioned in the direction of the normal of the plane to be correctly positioned. Objects usually have their position value referenced as the center of the geometry. In this case, positioning the object in the picking point would lead to have the object3d positioned in the plane, not on top of it. this scale value will allow to correctly position the object in the picking point and in the direction of the normal of the plane. Half the size of the object3d would be a correct value in this case.
 */
@@ -494,6 +504,12 @@ THREE.WebAR.positionAndRotateObject3DWithPickingPointAndPlaneInPointCloud =
   object3d.position.add(THREE.WebAR._planeNormal.multiplyScalar(scale));
 };
 
+/**
+* Transform a given THREE.Object3D instance to be correctly positioned and oriented according to an axis formed by 2 plane normals, a position and a scale (half the size of the object3d for example).
+* @param {VRPickingPointandPlane} pointAndPlane The point and plane retrieved using the VRDisplay.getPickingPointAndPlaneInPointCloud function.
+* @param {THREE.Object3D} object3d The object3d to be transformed so it is positioned and oriented according to the given point and plane.
+* @param {number} scale The value the object3d will be positioned in the direction of the normal of the plane to be correctly positioned. Objects usually have their position value referenced as the center of the geometry. In this case, positioning the object in the picking point would lead to have the object3d positioned in the plane, not on top of it. this scale value will allow to correctly position the object in the picking point and in the direction of the normal of the plane. Half the size of the object3d would be a correct value in this case.
+*/
 THREE.WebAR.positionAndRotateObject3D = 
   function(position, normal1, normal2, object3d, scale) {
   THREE.WebAR.rotateObject3D(normal1, normal2, object3d);
