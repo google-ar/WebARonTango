@@ -192,9 +192,7 @@ All the documentation for the THREE.WebAR.js file is available at: [http://judax
 
 # <a name="how_to_build_your_own_version_of_chromium_with_webar"></a>How to build your own version of Chromium with WebAR
 
-This repository includes only the modifications on the Chromium repository that allows to add Tango/WebAR capabilities. Chromium is a complex project with gigabytes of source code, resources and third party libraries. All the necessary steps to checkout the necessary tools, the Chromium source code and make the necessary modifications will be explained in this document. 
-
-The modifications to enable WebAR in Chromium are included inside the `chromium` folder in this repo.
+**IMPORTANT**: This repository includes only the modifications of the Chromium repository that allows to add Tango/WebAR capabilities (check the `chromium` folder in this repo). Chromium is a complex project with gigabytes of source code, resources and third party libraries. At some point in the steps below you will need to copy some of the content of this repo to the actual chromium repo. **This means you will need to have 2 repos: this one *chromium-webar) and the chromium repo itself and copy some content from the former to the latter as stated in the step number 9 below.**
 
 Building the modified version of Chromium is a 2 step process: 
 
@@ -219,16 +217,16 @@ Let's assume that the machine is installed along with:
 
 Open a terminal window to be able
 
-1. Install depot_tools: [Tutorial](https://commondatastorage.googleapis.com/chrome-infra-docs/flat/depot_tools/docs/html/depot_tools_tutorial.html#_setting_up). You can also follow these 2 steps:
+1. Install depot_tools. You can follow this [tutorial](https://commondatastorage.googleapis.com/chrome-infra-docs/flat/depot_tools/docs/html/depot_tools_tutorial.html#_setting_up) or simply follow these 2 steps:
   * `git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git`
   * `export PATH=$PATH:/path/to/depot_tools`
-2. Create the `chromium` folder: `$ mkdir ~/chromium && cd ~/chromium`
+2. Create a folder to contain `chromium`: `$ mkdir ~/chromium && cd ~/chromium`
 3. Checkout the Chromium repo: `~/chromium$ fetch --nohooks android`. **NOTE**: This process may take a long time (an hour?)
 4. Verify that the `.gclient` file has `target_os = ['android']` in it: `~/chromium$ cat .gclient`
-5. `~/chromium$ cd src` and then `~/chromium/src$ gclient sync`. **NOTE**: This process may take some time too.
-6. Checkout a specific tag to a new branch. The tag used for this build is `57.0.2987.5`. The name of the branch to checkout could be `webar_57.0.2987.5` for example: `~/chromium/src$ git checkout -b webar_57.0.2987.5 57.0.2987.5`. Choose the name of the brnach you like but remember it to create a corresponding out folder later on.
-7. Create a folder for the final product compilation with the same name as the branch: `~/chromium/src$ mkdir -p out/webar_57.0.2987.5`
-8. Create and edit a new file `out/webar_57.0.2987.5/args.gn` with the command `~/chromium/src$ gedit out/webar_57.0.2987.5/args.gn` and copy and paste the following content in it:
+5. Enter the source folder `~/chromium$ cd src` and then `~/chromium/src$ gclient sync --disable-syntax-validation`. **NOTE**: This process may take some time too.
+6. Checkout a specific tag to a new branch. The tag used for this build is `57.0.2987.5`. You can use whatever name you like for the new branch but we recommend `webar_57.0.2987.5` as it states that is webar and the tag is based on: `~/chromium/src$ git checkout -b webar_57.0.2987.5 57.0.2987.5`. Remember the name of the branch (`webar_57.0.2987.5` in our example) as it will be useful in the next step when the output folder is created.
+7. Create a folder where to make the final product compilation using the same name as the branch created in the previous step: `~/chromium/src$ mkdir -p out/webar_57.0.2987.5` in our example.ls
+8. Create and edit a new file `out/webar_57.0.2987.5/args.gn` with the command `~/chromium/src$ gedit out/webar_57.0.2987.5/args.gn` (or any other editor). If you chose to use a different branch/folder name, please, use the name you chose in this step. Copy and paste the following content in the `args.gn` file:
   ```
   target_os = "android"
   target_cpu = "arm" 
@@ -248,13 +246,13 @@ Open a terminal window to be able
   is_clang = true
   symbol_level = 1  # Faster build with fewer symbols. -g1 rather than -g2
   ```
-9. Copy and paste all the content from the `chromium/src` folder of this repository the `~/chromium/src` folder just created some steps before. Override every possible conflict that may arise if you use the file explorer by merging and replacing. Otherwise, you can use the following command line: `cp -r PATH_TO_THIS_FOLDER/* ~/chromium/src`
-10. Prepare to build: `~/chromium/src$ gn args out/webar_57.0.2987.5`. **NOTE**: once the command is executed, the vi editor will show you the content of the `args.gn` file just edited a few steps before. Just exit with `:q!`.
+9. Copy and paste all the content from the `chromium/src` folder inside this repository to the `~/chromium/src` folder just created in the step number 2 above. Override every possible conflict that may arise if you use the file explorer by merging and replacing. You can use the following command line too: `cp -r PATH_TO_THIS_REPOS_SRC_FOLDER/* ~/chromium/src`.
+10. Prepare to build: `~/chromium/src$ gn args out/webar_57.0.2987.5`. **NOTE**: once the command is executed, the vi editor will show you the content of the `args.gn` file just edited a few steps before. Just exit by pressing ESC and typing colon and `q` with an exclamation mark = `:q!`.
 11. Install the build dependencies: `~/chromium/src$ build/install-build-deps-android.sh` 
-12. Synchronize the resources once again: `~/chromium/src$ gclient sync`
+12. Synchronize the resources once again: `~/chromium/src$ gclient sync --disable-syntax-validation`
 13. Setup the environment: `~/chromium/src$ . build/android/envsetup.sh`
 
-I know, many steps to be followed, but once you have completed all of them (remember that some will take a loooong time to finish), you won't need to execute them again (except from `gclient sync` that you may need to execute it occassionally).
+I know, many steps to be followed, but once you have completed all of them (remember that some will take a loooong time to finish), you won't need to execute them again (except from `gclient sync --disable-syntax-validation` that you may need to execute it occassionally if you rebase from one tag to another for example).
 
 ## 2. Build, install and run
 
