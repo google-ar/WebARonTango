@@ -283,7 +283,7 @@ The current version of Chromium that supports WebAR has been built on top of Tan
   * Tango Core version: 1.53:2017.04.28-hopak-release-0-gb1545f34:230015395:stable
   * Tango SDK version: Hopak
   
-* Tando Development Kit Tablet
+* Tango Development Kit Tablet
   * Android version: 4.4.2
   * Tango Core version: 1.53:2017.04.28-hopak-release-0-gb1545f34:190015395:stable
   * Tango SDK version: Hopak
