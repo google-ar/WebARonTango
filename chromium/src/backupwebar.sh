@@ -32,6 +32,8 @@ cp third_party/WebKit/Source/modules/vr/VRDisplayCapabilities.* ../Backup_WebAR/
 if [ $? -ne 0 ]; then exit 1; fi
 cp third_party/WebKit/Source/modules/vr/VRPickingPointAndPlane.* ../Backup_WebAR/$BRANCH_NAME/chromium/src/third_party/WebKit/Source/modules/vr/
 if [ $? -ne 0 ]; then exit 1; fi
+cp third_party/WebKit/Source/modules/vr/VRADF.* ../Backup_WebAR/$BRANCH_NAME/chromium/src/third_party/WebKit/Source/modules/vr/
+if [ $? -ne 0 ]; then exit 1; fi
 cp third_party/WebKit/Source/modules/vr/BUILD.gn ../Backup_WebAR/$BRANCH_NAME/chromium/src/third_party/WebKit/Source/modules/vr/
 if [ $? -ne 0 ]; then exit 1; fi
 cp third_party/WebKit/Source/modules/modules_idl_files.gni ../Backup_WebAR/$BRANCH_NAME/chromium/src/third_party/WebKit/Source/modules
