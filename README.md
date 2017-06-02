@@ -222,9 +222,9 @@ Open a terminal window to be able
   * `export PATH=$PATH:/path/to/depot_tools`
 2. Create a folder to contain `chromium`: `$ mkdir ~/chromium && cd ~/chromium`
 3. Checkout the Chromium repo: `~/chromium$ fetch --nohooks android`. **NOTE**: This process may take a long time (an hour?)
-4. Verify that the `.gclient` file has `target_os = ['android']` in it: `~/chromium$ cat .gclient`
-5. Enter the source folder `~/chromium$ cd src` and then `~/chromium/src$ gclient sync --disable-syntax-validation`. **NOTE**: This process may take some time too.
-6. Checkout a specific tag to a new branch. The tag used for this build is `57.0.2987.5`. You can use whatever name you like for the new branch but we recommend `webar_57.0.2987.5` as it states that is webar and the tag is based on: `~/chromium/src$ git checkout -b webar_57.0.2987.5 57.0.2987.5`. Remember the name of the branch (`webar_57.0.2987.5` in our example) as it will be useful in the next step when the output folder is created.
+4. Enter the `src` folder: `$ cd src`.
+5. Checkout a specific tag to a new branch. The tag used for this build is `57.0.2987.5`. You can use whatever name you like for the new branch but we recommend `webar_57.0.2987.5` as it states that is webar and the tag is based on: `~/chromium/src$ git checkout -b webar_57.0.2987.5 57.0.2987.5`. Remember the name of the branch (`webar_57.0.2987.5` in our example) as it will be useful in the next step when the output folder is created.
+6. Synchronize the dependencies with this command: `~/chromium/src$ gclient sync --disable-syntax-validation`. **NOTE**: This process may take some time too.
 7. Create a folder where to make the final product compilation using the same name as the branch created in the previous step: `~/chromium/src$ mkdir -p out/webar_57.0.2987.5` in our example.ls
 8. Create and edit a new file `out/webar_57.0.2987.5/args.gn` with the command `~/chromium/src$ gedit out/webar_57.0.2987.5/args.gn` (or any other editor). If you chose to use a different branch/folder name, please, use the name you chose in this step. Copy and paste the following content in the `args.gn` file:
   ```
@@ -278,15 +278,20 @@ The final APK will be built in the folder `~/chromium/src/out/webar_57.0.2987.5/
 
 The current version of Chromium that supports WebAR has been built on top of Tango and has been tested on the following devices:
 
-* Lenovo Phab 2 Pro
-  * Android version: 6.0.1
-  * Tango Core version: 1.53:2017.04.28-hopak-release-0-gb1545f34:230015395:stable
-  * Tango SDK version: Hopak
-  
 * Tango Development Kit Tablet
   * Android version: 4.4.2
   * Tango Core version: 1.53:2017.04.28-hopak-release-0-gb1545f34:190015395:stable
   * Tango SDK version: Hopak
+
+* Lenovo Phab 2 Pro
+  * Android version: 6.0.1
+  * Tango Core version: 1.53:2017.04.28-hopak-release-0-gb1545f34:230015395:stable
+  * Tango SDK version: Hopak
+
+* Asus Zenfone AR
+  * Android version:
+  * Tango Core version:
+  * Tango SDK version: Hopak  
   
 # <a name="license">License</a>
 
