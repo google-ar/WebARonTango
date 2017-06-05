@@ -209,11 +209,8 @@ Tango is only available on the Android platform for the moment so in order to be
 
 Let's assume that the machine is installed along with:
 
-* Java JDK and JRE 1.7+
-* Android SDK
-* Android NDK 13b
 * GIT
-* Setup the PATH variable to point to the tools above and be able to use them from the command line.
+* Python
 
 Open a terminal window to be able
 
@@ -241,10 +238,6 @@ Open a terminal window to be able
 
   enable_nacl = false
   remove_webcore_debug_symbols = true
-
-  # Other args you may want to set:
-  is_clang = true
-  symbol_level = 1  # Faster build with fewer symbols. -g1 rather than -g2
   ```
 9. Copy and paste all the content from the `chromium/src` folder inside this repository to the `~/chromium/src` folder just created in the step number 2 above. Override every possible conflict that may arise if you use the file explorer by merging and replacing. You can use the following command line too: `cp -r PATH_TO_THIS_REPOS_SRC_FOLDER/* ~/chromium/src`.
 10. Prepare to build: `~/chromium/src$ gn args out/webar_57.0.2987.5`. **NOTE**: once the command is executed, the vi editor will show you the content of the `args.gn` file just edited a few steps before. Just exit by pressing ESC and typing colon and `q` with an exclamation mark = `:q!`.
@@ -256,7 +249,7 @@ I know, many steps to be followed, but once you have completed all of them (reme
 
 ## 2. Build, install and run
 
-**IMPORTANT:** some changes have been done to the Chromium command buffer. These changes may require to rebuild the command buffer. The Python script to do so does not execute along with the regular building process so the script needs to be executed with the following command at least once (and everytime a new command is created in the command buffer):
+**IMPORTANT:** some changes have been done to the Chromium command buffer to enable the camera feed rendering. These changes may require to rebuild the command buffer. The Python script to do so does not execute along with the regular building process so the script needs to be executed with the following command at least once (and everytime any change is made to the command buffer):
 ```
 ~/chromium/src/python gpu/command_buffer/build_gles2_cmd_buffer.py
 ```
