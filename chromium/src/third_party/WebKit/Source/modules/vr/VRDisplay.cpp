@@ -223,12 +223,12 @@ unsigned VRDisplay::getMaxNumberOfPointsInPointCloud() {
   return result;
 }
 
-void VRDisplay::getPointCloud(VRPointCloud* pointCloud, bool justUpdatePointCloud, unsigned pointsToSkip) {
+void VRDisplay::getPointCloud(VRPointCloud* pointCloud, bool justUpdatePointCloud, unsigned pointsToSkip, bool transformPoints) {
   if (!m_display)
     return;
 
   device::mojom::blink::VRPointCloudPtr mojoPointCloud;
-  m_display->GetPointCloud(justUpdatePointCloud, pointsToSkip, &mojoPointCloud);
+  m_display->GetPointCloud(justUpdatePointCloud, pointsToSkip, transformPoints, &mojoPointCloud);
 
   unsigned maxNumberOfPoints;
   m_display->GetMaxNumberOfPointsInPointCloud(&maxNumberOfPoints);
@@ -867,6 +867,11 @@ bool VRDisplay::hasPendingActivity() const {
   return getExecutionContext() && hasEventListeners();
 }
 
+void VRDisplay::sayHi()
+{
+  VLOG(0) << "Hello from C++!";
+}
+
 DEFINE_TRACE(VRDisplay) {
   EventTargetWithInlineData::trace(visitor);
   ContextLifecycleObserver::trace(visitor);
@@ -879,6 +884,8 @@ DEFINE_TRACE(VRDisplay) {
   visitor->trace(m_renderingContext);
   visitor->trace(m_scriptedAnimationController);
   visitor->trace(m_pendingPresentResolvers);
+  visitor->trace(m_pickingPointAndPlane);
+  visitor->trace(m_seeThroughCamera);
 }
 
 }  // namespace blink

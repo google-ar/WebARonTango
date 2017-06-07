@@ -8,4 +8,6 @@
 ] interface VRPointCloud {
   readonly attribute unsigned long numberOfPoints;
   readonly attribute Float32Array points;
+  readonly attribute Float32Array pointsTransformMatrix;
+  readonly attribute boolean pointsAlreadyTransformed;
 };

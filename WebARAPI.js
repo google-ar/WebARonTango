@@ -61,6 +61,7 @@
 * @param {VRPointCloud} pointCloud - The {@link VRPointCloud} instance to be updated in this call.
 * @param {boolean} justUpdatePointCloud - A flag to indicate if the whole point cloud should be retrieved or just updated internally. Updating the point cloud without retrieving the points may be useful if the point cloud won't be used in JS (for rendering it, for exmaple) but picking will be used. This parameter should be true to only update the point cloud returning 0 points and false to both update and return all the points detected up until the moment of the call.
 * @param {number} pointsToSkip - An integer value to indicate how many points to skip when all the points are returned (justUpdatePointCloud = false). This parameter allows to return a less dense point cloud by skipping 1, 2, 3, ... points. A value of 0 will return all the points. A value of 1 will skip every other point returning half the number of points (1/2), a value of 2 will skip 2 of every other points returning one third of the number of points (1/3), etc. In essence, this value will specify the number of point to return skipping some points. numberOfPointsToReturn = numberOfDetectedPoints / (pointsToSkip + 1). 
+* @param {boolean} transformPoints - A flag to indicate that the resulting points should be transformed in the native side. In the case the points are transformed in the native side, the VRPointCloud structure will return an identity pointsTransformMatrix and a true pointsAlreadyTransformed. On the contrary, if the points are not transformed in the native side, the matrix to correctly transform them will be provided inside the VRPointCloud structure's pointsTransformMatrix and the pointsAlreadyTransformed flag will be false. 
 * @returns {VRPointCloud} - An instance of a {@link VRPointCloud} with the points/vertices that the VRDisplay has detected or null if the underlying VRDisplay does not support point cloud provisioning.
 */
 
@@ -126,6 +127,20 @@
 * @name VRPointCloud#points
 * @type {Float32Array}
 * @description An array of triplets representing each 3D vertices of the point cloud. The size of this array is always of the maximum number of points the underlying platform can provide in order to improvde performance. The real number of points is provided in the numberOfPoints property. The remaining points when the real number of points is less than the maximum possible is filled with the maximum possible float value so they can be discarded.
+* @readonly
+*/
+
+/**
+* @name VRPointCloud#pointsTransformMatrix
+* @type {Float32Array}
+* @description An array that represents a transformation matrix (16 values) to be able to correctly transform the points in the case that when the point cloud update was requested the developer specified that the points should not be transformed in the native side. In the case the points are transformed in the native side this matrix will be an identity matrix.
+* @readonly
+*/
+
+/**
+* @name VRPointCloud#pointsAlreadyTransformed
+* @type {boolesn}
+* @description A flag that indicates if the points in the VRPointCloud have already been transformed in the native side or not. If the points have not been already transformed, the pointsTransformMatrix should be used to transform them in order to get the point cloud to be correctly rendered. If the flag is true, it means the points have already been transformed and thus, the pointsTransformMatrix is not needed (and it is actually an identity matrix).
 * @readonly
 */
 

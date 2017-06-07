@@ -31,7 +31,7 @@ enum VREye {
     [DeprecateAs=VRDeprecatedGetPose] VRPose getPose();
     void resetPose();
     long getMaxNumberOfPointsInPointCloud();
-    void getPointCloud(VRPointCloud pointCloud, boolean justUpdatePointCloud, unsigned long pointsToSkip);
+    void getPointCloud(VRPointCloud pointCloud, boolean justUpdatePointCloud, unsigned long pointsToSkip, boolean transformPoints);
     VRPickingPointAndPlane getPickingPointAndPlaneInPointCloud(float x, float y);
     VRSeeThroughCamera getSeeThroughCamera();
     sequence<VRADF> getADFs();
@@ -61,4 +61,6 @@ enum VREye {
     // canvas as any other operation that uses its source image, and canvases
     // created without preserveDrawingBuffer set to true will be cleared.
     void submitFrame();
+
+    void sayHi();
 };

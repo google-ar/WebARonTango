@@ -49,7 +49,7 @@ THREE.WebAR.VRPointCloud = function(vrDisplay) {
   var positions = null;
   if (vrDisplay) {
     this._pointCloud = new VRPointCloud();
-    vrDisplay.getPointCloud(this._pointCloud, false, 0);
+    vrDisplay.getPointCloud(this._pointCloud, false, 0, false);
     positions = this._pointCloud.points;
   }
   else {
@@ -100,12 +100,13 @@ THREE.WebAR.VRPointCloud.prototype.getBufferGeometry = function() {
 * Update the point cloud. The THREE.BufferGeometry that this class provides will automatically be updated with the point cloud retrieved by the underlying hardware.
 * @param {boolean} updateBufferGeometry A flag to indicate if the underlying THREE.BufferGeometry should also be updated. Updating the THREE.BufferGeometry is very cost innefficient so it is better to only do it if necessary (only if the buffer geometry is going to be rendered for example). If this flag is set to false,  then the underlying point cloud is updated but not buffer geometry that represents it. Updating the point cloud is important to be able to call functions that operate with it, like the getPickingPointAndPlaneInPointCloud function.
 * @param {number} pointsToSkip A positive integer from 0-N that specifies the number of points to skip when returning the point cloud. If the updateBufferGeometry flag is activated (true) then this parameter allows to specify the density of the point cloud. A values of 0 means all the detected points need to be returned. A number of 1 means that 1 every other point needs to be skipped and thus, half of the detected points will be retrieved, and so on. If the parameter is not specified, 0 is considered.
+* @param {boolean} transformPoints A flag to specify if the points should be transformed in the native side or not. If the points are not transformed in the native side, they should be transformed in the JS side (in a vertex shader for example).
 */
-THREE.WebAR.VRPointCloud.prototype.update = function(updateBufferGeometry, pointsToSkip) {
+THREE.WebAR.VRPointCloud.prototype.update = function(updateBufferGeometry, pointsToSkip, transformPoints) {
   if (!this._vrDisplay) return;
   this._vrDisplay.getPointCloud(this._pointCloud, 
     !updateBufferGeometry, typeof(pointsToSkip) === "number" ? 
-      pointsToSkip : 0);
+      pointsToSkip : 0, !!transformPoints);
   if (!updateBufferGeometry) return;
   if (this._pointCloud.numberOfPoints > 0) {
     this._positions.needsUpdate = true;

@@ -119,7 +119,7 @@ unsigned TangoVRDevice::GetMaxNumberOfPointsInPointCloud()
   return TangoHandler::getInstance()->getMaxNumberOfPointsInPointCloud();
 }
 
-mojom::VRPointCloudPtr TangoVRDevice::GetPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip)
+mojom::VRPointCloudPtr TangoVRDevice::GetPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip, bool transformPoints)
 {
   TangoHandler* tangoHandler = TangoHandler::getInstance();
   mojom::VRPointCloudPtr pointCloudPtr = nullptr;
@@ -129,16 +129,18 @@ mojom::VRPointCloudPtr TangoVRDevice::GetPointCloud(bool justUpdatePointCloud, u
     {
       pointCloudPtr = mojom::VRPointCloud::New();
       pointCloudPtr->points.resize(tangoHandler->getMaxNumberOfPointsInPointCloud() * 3);
-      if (!tangoHandler->getPointCloud(&(pointCloudPtr->numberOfPoints), &(pointCloudPtr->points[0]), justUpdatePointCloud, pointsToSkip))
+      pointCloudPtr->pointsTransformMatrix.resize(16);
+      if (!tangoHandler->getPointCloud(&(pointCloudPtr->numberOfPoints), &(pointCloudPtr->points[0]), justUpdatePointCloud, pointsToSkip, transformPoints, &(pointCloudPtr->pointsTransformMatrix[0])))
       {
         pointCloudPtr = nullptr;
       }
+      pointCloudPtr->pointsAlreadyTransformed = transformPoints;
     }
     else 
     {
       // If the point cloud should only be updated, why create a whole array?
       uint32_t numberOfPoints;
-      tangoHandler->getPointCloud(&numberOfPoints, 0, justUpdatePointCloud, pointsToSkip);
+      tangoHandler->getPointCloud(&numberOfPoints, 0, justUpdatePointCloud, pointsToSkip, transformPoints, 0);
     }
   }
   return pointCloudPtr;

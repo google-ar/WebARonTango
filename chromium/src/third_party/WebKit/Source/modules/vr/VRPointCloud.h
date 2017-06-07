@@ -22,6 +22,8 @@ public:
 
     unsigned int numberOfPoints() const;
     DOMFloat32Array* points() const;
+    DOMFloat32Array* pointsTransformMatrix() const;
+    bool pointsAlreadyTransformed() const;
 
     void setPointCloud(unsigned maxNumberOfPoints, device::mojom::blink::VRPointCloudPtr& pointCloudPtr);
 
@@ -31,6 +33,8 @@ private:
     unsigned long m_numberOfPoints;
     unsigned long m_lastNumberOfPoints;
     Member<DOMFloat32Array> m_points;
+    Member<DOMFloat32Array> m_pointsTransformMatrix;
+    bool m_pointsAlreadyTransformed;
 };
 
 } // namespace blink

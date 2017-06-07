@@ -575,7 +575,7 @@ unsigned TangoHandler::getMaxNumberOfPointsInPointCloud() const
   return maxNumberOfPointsInPointCloud;
 }
 
-bool TangoHandler::getPointCloud(uint32_t* numberOfPoints, float* points, bool justUpdatePointCloud, unsigned pointsToSkip)
+bool TangoHandler::getPointCloud(uint32_t* numberOfPoints, float* points, bool justUpdatePointCloud, unsigned pointsToSkip, bool transformPoints, float* pointsTransformMatrix)
 {
   // In case the point cloud retrieval fails, 0 points should be returned.
   *numberOfPoints = 0;
@@ -598,20 +598,34 @@ bool TangoHandler::getPointCloud(uint32_t* numberOfPoints, float* points, bool j
       // It is possible that the transform matrix retrieval fails but the count is already there/correct.
       // TODO: Soon, the transformation of the points should be done in a shader in the application side, so the matrix retrieval could inside this method will be avoided.
       *numberOfPoints = std::ceil(latestTangoPointCloud->num_points / pointsToSkip);
-
+  
       TangoMatrixTransformData depthCameraMatrixTransform;
       TangoSupport_getMatrixTransformAtTime(
         latestTangoPointCloud->timestamp, TANGO_COORDINATE_FRAME,
         TANGO_COORDINATE_FRAME_CAMERA_DEPTH, TANGO_SUPPORT_ENGINE_OPENGL,
         TANGO_SUPPORT_ENGINE_TANGO, static_cast<TangoSupportRotation>(activityOrientation), &depthCameraMatrixTransform);
+
       if (depthCameraMatrixTransform.status_code == TANGO_POSE_VALID) 
       {
         TangoPointCloud tangoPointCloud;
         tangoPointCloud.version = latestTangoPointCloud->version;
         tangoPointCloud.timestamp = latestTangoPointCloud->timestamp;
         tangoPointCloud.num_points = latestTangoPointCloud->num_points;
-        tangoPointCloud.points = new float[latestTangoPointCloud->num_points][4];
-        result = TangoSupport_transformPointCloud(depthCameraMatrixTransform.matrix, latestTangoPointCloud, &tangoPointCloud);
+
+        if (transformPoints)
+        {
+          memcpy(pointsTransformMatrix, depthCameraMatrixTransform.matrix, 16 * sizeof(float));
+          tangoPointCloud.points = new float[latestTangoPointCloud->num_points][4];
+          result = TangoSupport_transformPointCloud(depthCameraMatrixTransform.matrix, latestTangoPointCloud, &tangoPointCloud);
+        }
+        else
+        {
+          // Set the transform matrix to identity
+          memset(pointsTransformMatrix, 0, 16 * sizeof(float));
+          pointsTransformMatrix[0] = pointsTransformMatrix[5] = pointsTransformMatrix[10] = pointsTransformMatrix[15] = 1; 
+          tangoPointCloud.points = latestTangoPointCloud->points;
+          // result is already TANGO_SUCCESS
+        }
         if (result == TANGO_SUCCESS)
         {
           uint32_t offset;
@@ -631,7 +645,10 @@ bool TangoHandler::getPointCloud(uint32_t* numberOfPoints, float* points, bool j
         {
           LOGE("TangoHandler::getPointCloud, transforming the point cloud with the depth camera transform matrix failed.");
         }
-        delete [] tangoPointCloud.points;
+        if (transformPoints)
+        {
+          delete [] tangoPointCloud.points;
+        }  
       }
       else
       {
@@ -643,7 +660,6 @@ bool TangoHandler::getPointCloud(uint32_t* numberOfPoints, float* points, bool j
       LOGE("TangoHandler::getPointCloud, retrieving the latest point cloud failed.");
     }
   }
-
   return connected;
 }
 

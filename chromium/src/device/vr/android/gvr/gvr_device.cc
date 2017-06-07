@@ -229,7 +229,7 @@ unsigned GvrDevice::GetMaxNumberOfPointsInPointCloud()
   return 0;
 }
 
-mojom::VRPointCloudPtr GvrDevice::GetPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip)
+mojom::VRPointCloudPtr GvrDevice::GetPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip, bool transformPoints)
 {
   return nullptr;
 }

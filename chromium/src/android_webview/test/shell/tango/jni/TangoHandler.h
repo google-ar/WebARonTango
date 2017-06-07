@@ -102,7 +102,7 @@ public:
 	bool getPoseMatrix(float* matrix);
 
 	unsigned getMaxNumberOfPointsInPointCloud() const;
-	bool getPointCloud(uint32_t* numberOfPoints, float* points, bool justUpdatePointCloud, unsigned pointsToSkip);
+	bool getPointCloud(uint32_t* numberOfPoints, float* points, bool justUpdatePointCloud, unsigned pointsToSkip, bool transformPointsFromDepthToPose, float* pointsTransformMatrix);
 	bool getPickingPointAndPlaneInPointCloud(float x, float y, double* point, double* plane);
 
 	bool getCameraImageSize(uint32_t* width, uint32_t* height);

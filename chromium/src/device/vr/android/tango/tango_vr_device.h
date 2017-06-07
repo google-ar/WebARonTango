@@ -26,7 +26,7 @@ class TangoVRDevice : public VRDevice {
   mojom::VRPosePtr GetPose() override;
   void ResetPose() override;
   unsigned GetMaxNumberOfPointsInPointCloud() override;
-  mojom::VRPointCloudPtr GetPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip) override;
+  mojom::VRPointCloudPtr GetPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip, bool transformPoints) override;
   mojom::VRSeeThroughCameraPtr GetSeeThroughCamera() override;
   mojom::VRPickingPointAndPlanePtr GetPickingPointAndPlaneInPointCloud(float x, float y) override;
   std::vector<mojom::VRADFPtr> GetADFs() override;

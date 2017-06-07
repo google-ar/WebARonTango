@@ -47,6 +47,8 @@ struct VREyeParameters {
 struct VRPointCloud {
   uint32 numberOfPoints;
   array<float> points;
+  array<float, 16> pointsTransformMatrix;
+  bool pointsAlreadyTransformed;
 };
 
 struct VRPickingPointAndPlane {
@@ -122,7 +124,7 @@ interface VRDisplay {
   [Sync]
   GetMaxNumberOfPointsInPointCloud() => (uint32 maxNumberOfPointsInPointCloud);
   [Sync]
-  GetPointCloud(bool justUpdatePointCloud, uint32 pointsToSkip) => (VRPointCloud? pointCloud);
+  GetPointCloud(bool justUpdatePointCloud, uint32 pointsToSkip, bool transformPoints) => (VRPointCloud? pointCloud);
   [Sync]
   GetSeeThroughCamera() => (VRSeeThroughCamera? seeThroughCamera);
   [Sync]

@@ -20,18 +20,29 @@ namespace {
 
 } // namespace
 
-VRPointCloud::VRPointCloud(): m_numberOfPoints(0), m_lastNumberOfPoints(0)
+VRPointCloud::VRPointCloud(): m_numberOfPoints(0), m_lastNumberOfPoints(0), m_pointsAlreadyTransformed(false)
 {
+	m_pointsTransformMatrix = DOMFloat32Array::create(16);
 }
 
 unsigned int VRPointCloud::numberOfPoints() const
 {
-    return m_numberOfPoints;
+  return m_numberOfPoints;
 }
 
 DOMFloat32Array* VRPointCloud::points() const
 {
-    return m_points;
+  return m_points;
+}
+
+DOMFloat32Array* VRPointCloud::pointsTransformMatrix() const
+{
+  return m_pointsTransformMatrix;
+}
+
+bool VRPointCloud::pointsAlreadyTransformed() const
+{
+	return m_pointsAlreadyTransformed;
 }
 
 void VRPointCloud::setPointCloud(unsigned maxNumberOfPoints, device::mojom::blink::VRPointCloudPtr& pointCloudPtr)
@@ -44,6 +55,8 @@ void VRPointCloud::setPointCloud(unsigned maxNumberOfPoints, device::mojom::blin
 	if (pointCloudPtr.is_null())
 	{
 		m_numberOfPoints = 0;
+		std::fill_n(m_pointsTransformMatrix->data(), 16, 0);
+		m_pointsTransformMatrix->data()[0] = m_pointsTransformMatrix->data()[5] = m_pointsTransformMatrix->data()[10] = m_pointsTransformMatrix->data()[15] = 1;
 	}
 	else
 	{
@@ -51,6 +64,8 @@ void VRPointCloud::setPointCloud(unsigned maxNumberOfPoints, device::mojom::blin
 		if (m_numberOfPoints > 0) {
 			memcpy(m_points->data(), &(pointCloudPtr->points.front()), m_numberOfPoints * 3 * sizeof(float));
 		}
+		memcpy(m_pointsTransformMatrix->data(), &(pointCloudPtr->pointsTransformMatrix.front()), 16 * sizeof(float));
+		m_pointsAlreadyTransformed = pointCloudPtr->pointsAlreadyTransformed;
 	}
 	if (m_numberOfPoints < m_lastNumberOfPoints)
 	{
@@ -61,7 +76,8 @@ void VRPointCloud::setPointCloud(unsigned maxNumberOfPoints, device::mojom::blin
 
 DEFINE_TRACE(VRPointCloud)
 {
-    visitor->trace(m_points);
+  visitor->trace(m_points);
+  visitor->trace(m_pointsTransformMatrix);
 }
 
 } // namespace blink

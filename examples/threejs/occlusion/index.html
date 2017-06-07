@@ -109,6 +109,7 @@
       function GUI() {
         this.showSeeThroughCamera = true;
         this.usePointCloudForDepth = true;
+        this.transformPoints = true;
         return this;
       }
 
@@ -155,6 +156,7 @@
         gui = new GUI();
         datGUI.add(gui, "showSeeThroughCamera").name("Show seethrough camera");
         datGUI.add(gui, "usePointCloudForDepth").name("Use point cloud for depth");
+        datGUI.add(gui, "transformPoints").name("Transform points");
 
         // Initialize everything related to ThreeJS.
         container = document.createElement( 'div' );
@@ -293,7 +295,7 @@
 
         // Update the point cloud. Only if the point cloud will be shown the
         // geometry is also updated.
-        pointCloud.update(gui.usePointCloudForDepth, 0);
+        pointCloud.update(gui.usePointCloudForDepth, 0, gui.transformPoints);
 
         // If continuous picking is enabled, use the center of the screen
         // to continuously pick.

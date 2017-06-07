@@ -53,13 +53,13 @@ void VRDisplayImpl::GetMaxNumberOfPointsInPointCloud(const GetMaxNumberOfPointsI
   callback.Run(device_->GetMaxNumberOfPointsInPointCloud());
 }
 
-void VRDisplayImpl::GetPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip, const GetPointCloudCallback& callback) {
+void VRDisplayImpl::GetPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip, bool transformPoints, const GetPointCloudCallback& callback) {
   if (!device_->IsAccessAllowed(this)) {
     callback.Run(nullptr);
     return;
   }
   
-  callback.Run(device_->GetPointCloud(justUpdatePointCloud, pointsToSkip));  
+  callback.Run(device_->GetPointCloud(justUpdatePointCloud, pointsToSkip, transformPoints));  
 }
 
 void VRDisplayImpl::GetPickingPointAndPlaneInPointCloud(float x, float y, const GetPickingPointAndPlaneInPointCloudCallback& callback)
