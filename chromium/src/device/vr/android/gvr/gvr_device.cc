@@ -159,6 +159,7 @@ mojom::VRPosePtr GvrDevice::GetPose() {
   mojom::VRPosePtr pose = mojom::VRPose::New();
 
   pose->timestamp = base::Time::Now().ToJsTime();
+  pose->localized = false;
 
   // Increment pose frame counter always, even if it's a faked pose.
   pose->poseIndex = ++pose_index_;

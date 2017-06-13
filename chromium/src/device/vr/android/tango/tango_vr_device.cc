@@ -88,7 +88,9 @@ mojom::VRPosePtr TangoVRDevice::GetPose() {
   TangoPoseData tangoPoseData;
 
   mojom::VRPosePtr pose = nullptr;
-  if (TangoHandler::getInstance()->isConnected() && TangoHandler::getInstance()->getPose(&tangoPoseData))
+  bool isLocalized = false;
+
+  if (TangoHandler::getInstance()->isConnected() && TangoHandler::getInstance()->getPose(&tangoPoseData, &isLocalized))
   {
     pose = mojom::VRPose::New();
 
@@ -96,6 +98,7 @@ mojom::VRPosePtr TangoVRDevice::GetPose() {
 
     pose->orientation.emplace(4);
     pose->position.emplace(3);
+    pose->localized = isLocalized;
 
     pose->orientation.value()[0] = tangoPoseData.orientation[0]/*decomposed_transform.quaternion[0]*/;
     pose->orientation.value()[1] = tangoPoseData.orientation[1]/*decomposed_transform.quaternion[1]*/;
