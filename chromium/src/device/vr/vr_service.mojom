@@ -21,6 +21,7 @@ struct VRPose {
   array<float, 3>? linearVelocity;
   array<float, 3>? angularAcceleration;
   array<float, 3>? linearAcceleration;
+  bool localized;
   // The poseIndex is a sequential ID that's incremented on each distinct
   // getPose result, it may wrap around for long sessions.
   uint32 poseIndex;

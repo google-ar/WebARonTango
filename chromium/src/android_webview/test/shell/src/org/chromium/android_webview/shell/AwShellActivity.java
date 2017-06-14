@@ -531,7 +531,7 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
         }
 
         requestCameraPermission();
-        // requestADFPermission();
+        requestADFPermission();
         requestExternalStorageReadPermission();
         requestRecordAudioPermission();
         requestLocationPermission();

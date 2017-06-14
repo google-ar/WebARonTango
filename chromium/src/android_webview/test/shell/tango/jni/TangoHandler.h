@@ -98,7 +98,7 @@ public:
 
 	bool isConnected() const;
 
-	bool getPose(TangoPoseData* tangoPoseData);
+	bool getPose(TangoPoseData* tangoPoseData, bool* isLocalized);
 	bool getPoseMatrix(float* matrix);
 
 	unsigned getMaxNumberOfPointsInPointCloud() const;
@@ -140,6 +140,8 @@ private:
 	TangoSupportPointCloudManager* pointCloudManager;
 	TangoPointCloud* latestTangoPointCloud;
 	bool latestTangoPointCloudRetrieved;
+	TangoMatrixTransformData depthCameraMatrixTransform;
+
 
 	uint32_t cameraImageWidth;
 	uint32_t cameraImageHeight;
