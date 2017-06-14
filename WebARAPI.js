@@ -82,6 +82,24 @@
 */
 
 // ==================================================================================
+// VRPose
+// ==================================================================================
+
+/**
+* @name VRPose
+* @class 
+* @description Added some properties to the VRPose class of the WebVR spec {@link https://w3c.github.io/webvr/spec/1.1/#interface-vrpose}.
+*/
+
+/**
+* @name VRPose#localized
+* @type {boolean}
+* @description A flag that indicates if the VRPose has been localized to a (Tango-specific) ADF, and pose coordinates now use a localized space.
+* @readonly
+*/
+
+
+// ==================================================================================
 // ==================================================================================
 
 /**
