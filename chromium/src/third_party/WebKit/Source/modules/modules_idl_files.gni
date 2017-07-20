@@ -275,6 +275,7 @@ modules_idl_files =
                     "vr/VRPointCloud.idl",
                     "vr/VRPickingPointAndPlane.idl",
                     "vr/VRADF.idl",
+                    "vr/VRMarker.idl",
                     "webaudio/AnalyserNode.idl",
                     "webaudio/AudioBuffer.idl",
                     "webaudio/AudioBufferCallback.idl",

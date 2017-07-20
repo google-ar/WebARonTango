@@ -15,6 +15,7 @@
 using base::android::AttachCurrentThread;
 using tango_chromium::TangoHandler;
 using tango_chromium::ADF;
+using tango_chromium::Marker;
 
 namespace device {
 
@@ -41,6 +42,7 @@ mojom::VRDisplayInfoPtr TangoVRDevice::GetVRDevice() {
   device->capabilities->hasPointCloud = true;
   device->capabilities->hasSeeThroughCamera = true;
   device->capabilities->hasADFSupport = true;
+  device->capabilities->hasMarkerSupport = true;
 
   device->leftEye = mojom::VREyeParameters::New();
   device->rightEye = mojom::VREyeParameters::New();
@@ -88,11 +90,14 @@ mojom::VRPosePtr TangoVRDevice::GetPose() {
   TangoPoseData tangoPoseData;
 
   mojom::VRPosePtr pose = nullptr;
-  if (TangoHandler::getInstance()->isConnected() && TangoHandler::getInstance()->getPose(&tangoPoseData))
+  bool isLocalized = false;
+
+  if (TangoHandler::getInstance()->isConnected() && TangoHandler::getInstance()->getPose(&tangoPoseData, &isLocalized))
   {
     pose = mojom::VRPose::New();
 
     pose->timestamp = base::Time::Now().ToJsTime();
+    pose->localized = isLocalized;
 
     pose->orientation.emplace(4);
     pose->position.emplace(3);
@@ -208,6 +213,52 @@ void TangoVRDevice::EnableADF(const std::string& uuid)
 void TangoVRDevice::DisableADF()
 {
   TangoHandler::getInstance()->disableADF();
+}
+
+std::vector<mojom::VRMarkerPtr> TangoVRDevice::DetectMarkers(unsigned markerType, float markerSize)
+{
+  std::vector<mojom::VRMarkerPtr> mojomMarkers;
+  if (TangoHandler::getInstance()->isConnected())
+  {
+    TangoSupportMarkerType mt;
+    switch(markerType)
+    {
+      case 0x1:
+        mt = TANGO_MARKER_ARTAG;
+        break;
+      case 0x2:
+        mt = TANGO_MARKER_QRCODE;
+        break;
+      default:
+        VLOG(0) << "ERROR: Incorrect marker type value. Currently supported values are VRDipslay.MARKER_TYPE_AR and VRDisplay.MARKER_TYPE_QRCODE.";
+        return mojomMarkers;
+    }
+    std::vector<Marker> markers;
+    if (TangoHandler::getInstance()->detectMarkers(mt, markerSize, markers))
+    {
+      std::vector<Marker>::size_type size = markers.size();
+      mojomMarkers.resize(size);
+      for (std::vector<Marker>::size_type i = 0; i < size; i++)
+      {
+        mojomMarkers[i] = mojom::VRMarker::New();
+        mojomMarkers[i]->type = markers[i].getType();
+        mojomMarkers[i]->id = markers[i].getId();
+        mojomMarkers[i]->content = markers[i].getContent();
+        mojomMarkers[i]->position.resize(3);
+        const double* markerPosition = markers[i].getPosition(); 
+        mojomMarkers[i]->position[0] = markerPosition[0];
+        mojomMarkers[i]->position[1] = markerPosition[1];
+        mojomMarkers[i]->position[2] = markerPosition[2];
+        mojomMarkers[i]->orientation.resize(4);
+        const double* markerOrientation = markers[i].getOrientation(); 
+        mojomMarkers[i]->orientation[0] = markerOrientation[0];
+        mojomMarkers[i]->orientation[1] = markerOrientation[1];
+        mojomMarkers[i]->orientation[2] = markerOrientation[2];
+        mojomMarkers[i]->orientation[3] = markerOrientation[3];
+      }
+    }
+  }
+  return mojomMarkers;
 }
 
 void TangoVRDevice::RequestPresent(const base::Callback<void(bool)>& callback) {

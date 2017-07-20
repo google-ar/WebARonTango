@@ -32,4 +32,5 @@
   readonly attribute boolean hasPointCloud;
   readonly attribute boolean hasSeeThroughCamera;
   readonly attribute boolean hasADFSupport;
+  readonly attribute boolean hasMarkerSupport;
 };

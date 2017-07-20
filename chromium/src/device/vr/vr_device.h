@@ -33,6 +33,7 @@ class DEVICE_VR_EXPORT VRDevice {
   virtual std::vector<mojom::VRADFPtr> GetADFs() = 0;
   virtual void EnableADF(const std::string& uuid) = 0;
   virtual void DisableADF() = 0;
+  virtual std::vector<mojom::VRMarkerPtr> DetectMarkers(unsigned markerType, float markerSize) = 0;
 
   virtual void RequestPresent(const base::Callback<void(bool)>& callback) = 0;
   virtual void SetSecureOrigin(bool secure_origin) = 0;

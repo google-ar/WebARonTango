@@ -27,6 +27,7 @@
 #include "modules/vr/VRPickingPointAndPlane.h"
 #include "modules/vr/VRSeeThroughCamera.h"
 #include "modules/vr/VRADF.h"
+#include "modules/vr/VRMarker.h"
 #include "modules/webgl/WebGLRenderingContextBase.h"
 #include "platform/Histogram.h"
 #include "platform/UserGestureIndicator.h"
@@ -121,6 +122,7 @@ void VRDisplay::update(const device::mojom::blink::VRDisplayInfoPtr& display) {
   m_capabilities->setHasPointCloud(display->capabilities->hasPointCloud);
   m_capabilities->setHasSeeThroughCamera(display->capabilities->hasSeeThroughCamera);
   m_capabilities->setHasADFSupport(display->capabilities->hasADFSupport);
+  m_capabilities->setHasMarkerSupport(display->capabilities->hasMarkerSupport);
 
   // Ignore non presenting delegate
   bool isValid = display->leftEye->renderWidth > 0;
@@ -297,6 +299,25 @@ void VRDisplay::disableADF()
   if (!m_display)
     return;
   m_display->DisableADF();
+}
+
+HeapVector<Member<VRMarker>> VRDisplay::detectMarkers(unsigned markerType, float markerSize)
+{
+  HeapVector<Member<VRMarker>> markers;
+  if (!m_display)
+    return markers;
+  Vector<device::mojom::blink::VRMarkerPtr> mojomMarkers;
+  if (m_display->DetectMarkers(markerType, markerSize, &mojomMarkers) && !mojomMarkers.isEmpty())
+  {
+    markers.resize(mojomMarkers.size());
+    for (size_t i = 0; i < mojomMarkers.size(); i++)
+    {
+      VRMarker* marker = new VRMarker();
+      marker->setMarker(mojomMarkers[i]);
+      markers[i] = marker;
+    }
+  }
+  return markers;
 }
 
 VREyeParameters* VRDisplay::getEyeParameters(const String& whichEye) {
@@ -865,11 +886,6 @@ bool VRDisplay::hasPendingActivity() const {
   // Prevent V8 from garbage collecting the wrapper object if there are
   // event listeners attached to it.
   return getExecutionContext() && hasEventListeners();
-}
-
-void VRDisplay::sayHi()
-{
-  VLOG(0) << "Hello from C++!";
 }
 
 DEFINE_TRACE(VRDisplay) {

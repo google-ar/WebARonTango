@@ -35,6 +35,8 @@ blink_modules_sources("vr") {
     "VRSeeThroughCamera.h",
     "VRADF.cpp",
     "VRADF.h",
+    "VRMarker.cpp",
+    "VRMarker.h"
   ]
 
   deps = [

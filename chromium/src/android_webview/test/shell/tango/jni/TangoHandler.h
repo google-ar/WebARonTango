@@ -20,8 +20,6 @@
 #include "tango_client_api.h"   // NOLINT
 #include "tango_support_api.h"  // NOLINT
 
-#include <pthread.h>
-
 #include <ctime>
 
 #include <jni.h>
@@ -31,6 +29,8 @@
 #include <vector>
 #include <queue>
 
+#include <mutex>
+
 #define LOG_TAG "Tango Chromium"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
@@ -39,20 +39,14 @@
 #define TANGO_USE_POINT_CLOUD
 #define TANGO_USE_POINT_CLOUD_CALLBACK
 #define TANGO_USE_CAMERA
-// #define TANGO_USE_DRIFT_CORRECTION
-// #define TANGO_USE_AREA_DESCRIPTION
-
-#ifdef TANGO_USE_DRIFT_CORRECTION
-#define TANGO_COORDINATE_FRAME TANGO_COORDINATE_FRAME_AREA_DESCRIPTION
-#else
-#define TANGO_COORDINATE_FRAME TANGO_COORDINATE_FRAME_START_OF_SERVICE
-#endif
+#define TANGO_USE_MARKERS
 
 #define MAX_NUMBER_OF_TANGO_BUFFER_IDS 1
 
 namespace tango_chromium {
 
-class ADF {
+class ADF 
+{
 public:
 	ADF(const std::string& uuid, const std::string& name, unsigned long long creationTime): uuid(uuid), name(name), creationTime(creationTime)
 	{
@@ -78,6 +72,47 @@ private:
 	unsigned long long creationTime;
 };
 
+class Marker
+{
+public:
+	Marker(TangoSupportMarkerType type, int id, const std::string& content, const double* position, const double* orientation): type(type), id(id), content(content)
+	{
+		memcpy(this->position, position, sizeof(this->position));
+		memcpy(this->orientation, orientation, sizeof(this->orientation));
+	}
+
+	TangoSupportMarkerType getType() const
+	{
+		return type;
+	}
+
+	int getId() const
+	{
+		return id;
+	}
+
+	std::string getContent() const
+	{
+		return content;
+	}
+
+	const double* getPosition() const
+	{
+		return position;
+	}
+
+	const double* getOrientation() const
+	{
+		return orientation;
+	}
+private:
+	TangoSupportMarkerType type;
+	int id;
+	std::string content;
+	double position[3];
+	double orientation[4];
+};
+
 // TangoHandler provides functionality to communicate with the Tango Service.
 class TangoHandler {
 public:
@@ -98,11 +133,11 @@ public:
 
 	bool isConnected() const;
 
-	bool getPose(TangoPoseData* tangoPoseData);
+	bool getPose(TangoPoseData* tangoPoseData, bool* isLocalized);
 	bool getPoseMatrix(float* matrix);
 
 	unsigned getMaxNumberOfPointsInPointCloud() const;
-	bool getPointCloud(uint32_t* numberOfPoints, float* points, bool justUpdatePointCloud, unsigned pointsToSkip, bool transformPointsFromDepthToPose, float* pointsTransformMatrix);
+	bool getPointCloud(uint32_t* numberOfPoints, float* points, bool justUpdatePointCloud, unsigned pointsToSkip, bool transformPoints, float* pointsTransformMatrix);
 	bool getPickingPointAndPlaneInPointCloud(float x, float y, double* point, double* plane);
 
 	bool getCameraImageSize(uint32_t* width, uint32_t* height);
@@ -115,13 +150,15 @@ public:
 	void onPointCloudAvailable(const TangoPointCloud* pointCloud);
 #endif
 	
-	void onCameraFrameAvailable(const TangoImageBuffer* buffer);
+	void onFrameAvailable(const TangoImageBuffer* imageBuffer);
 
 	int getSensorOrientation() const;
 
 	bool getADFs(std::vector<ADF>& adfs) const;
 	void enableADF(const std::string& uuid);
 	void disableADF();
+
+	bool detectMarkers(TangoSupportMarkerType markerType, float markerSize, std::vector<Marker>& markers);
 
 private:
 	void connect(const std::string& uuid);
@@ -140,6 +177,7 @@ private:
 	TangoSupportPointCloudManager* pointCloudManager;
 	TangoPointCloud* latestTangoPointCloud;
 	bool latestTangoPointCloudRetrieved;
+	TangoMatrixTransformData depthCameraMatrixTransform;
 
 	uint32_t cameraImageWidth;
 	uint32_t cameraImageHeight;
@@ -153,8 +191,23 @@ private:
 
 	std::string lastEnabledADFUUID;
 
-	pthread_mutex_t tangoBufferIdsMutex;
+	std::mutex tangoBufferIdsMutex;
 	std::queue<TangoBufferId> tangoBufferIds;
+
+	JNIEnv* jniEnv;
+	JavaVM* javaVM;
+	jclass mainActivityJClass;
+	jobject mainActivityJObject;
+	jmethodID requestADFPermissionJMethodID;
+
+	double lastMarkerTangoImageBufferTimestamp;
+	std::mutex markerDetectionMutex;
+	std::vector<Marker> detectedMarkers;
+	TangoSupportImageBufferManager* imageBufferManager;
+
+	TangoPoseData poseForMarkerDetection;
+	std::mutex poseForMarkerDetectionMutex;
+	bool poseForMarkerDetectionIsCorrect;
 };
 }  // namespace tango_4_chromium
 

@@ -28,6 +28,7 @@ class VRDisplayCapabilities final
   bool hasPointCloud() const { return m_hasPointCloud; }
   bool hasSeeThroughCamera() const { return m_hasSeeThroughCamera; }
   bool hasADFSupport() const { return m_hasADFSupport; }
+  bool hasMarkerSupport() const { return m_hasMarkerSupport; }
 
   void setHasOrientation(bool value) { m_hasOriention = value; }
   void setHasPosition(bool value) { m_hasPosition = value; }
@@ -38,6 +39,7 @@ class VRDisplayCapabilities final
   void setHasPointCloud(bool value) { m_hasPointCloud = value; }
   void setHasSeeThroughCamera(bool value) { m_hasSeeThroughCamera = value; }
   void setHasADFSupport(bool value) { m_hasADFSupport = value; }
+  void setHasMarkerSupport(bool value) { m_hasMarkerSupport = value; }
 
   DECLARE_VIRTUAL_TRACE()
 
@@ -51,6 +53,7 @@ class VRDisplayCapabilities final
   bool m_hasPointCloud;
   bool m_hasSeeThroughCamera;
   bool m_hasADFSupport;
+  bool m_hasMarkerSupport;
 };
 
 }  // namespace blink

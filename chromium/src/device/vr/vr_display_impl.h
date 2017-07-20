@@ -39,6 +39,7 @@ class VRDisplayImpl : public mojom::VRDisplay {
   void GetADFs(const GetADFsCallback& callback) override;
   void EnableADF(const std::string& uuid) override;
   void DisableADF() override;
+  void DetectMarkers(unsigned markerType, float markerSize, const DetectMarkersCallback& callback) override;
 
   void RequestPresent(bool secure_origin,
                       const RequestPresentCallback& callback) override;

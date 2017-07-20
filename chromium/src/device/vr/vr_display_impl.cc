@@ -98,6 +98,15 @@ void VRDisplayImpl::DisableADF() {
   device_->DisableADF();
 }
 
+void VRDisplayImpl::DetectMarkers(unsigned markerType, float markerSize, const DetectMarkersCallback& callback) {
+  if (!device_->IsAccessAllowed(this)) {
+    callback.Run(std::vector<mojom::VRMarkerPtr>());
+    return;
+  }
+
+  callback.Run(device_->DetectMarkers(markerType, markerSize));
+}
+
 void VRDisplayImpl::RequestPresent(bool secure_origin,
                                    const RequestPresentCallback& callback) {
   if (!device_->IsAccessAllowed(this)) {

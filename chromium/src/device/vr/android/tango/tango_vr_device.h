@@ -32,6 +32,7 @@ class TangoVRDevice : public VRDevice {
   std::vector<mojom::VRADFPtr> GetADFs() override;
   void EnableADF(const std::string& uuid) override;
   void DisableADF() override;
+  std::vector<mojom::VRMarkerPtr> DetectMarkers(unsigned markerType, float markerSize) override;
 
   void RequestPresent(const base::Callback<void(bool)>& callback) override;
   void SetSecureOrigin(bool secure_origin) override;

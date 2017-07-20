@@ -45,6 +45,7 @@ mojom::VRDisplayInfoPtr GvrDevice::GetVRDevice() {
   device->capabilities->hasPointCloud = false;
   device->capabilities->hasSeeThroughCamera = false;
   device->capabilities->hasADFSupport = false;  
+  device->capabilities->hasMarkerSupport = false;
 
   device->leftEye = mojom::VREyeParameters::New();
   device->rightEye = mojom::VREyeParameters::New();
@@ -159,7 +160,8 @@ mojom::VRPosePtr GvrDevice::GetPose() {
   mojom::VRPosePtr pose = mojom::VRPose::New();
 
   pose->timestamp = base::Time::Now().ToJsTime();
-
+  pose->localized = false;
+  
   // Increment pose frame counter always, even if it's a faked pose.
   pose->poseIndex = ++pose_index_;
 
@@ -256,6 +258,12 @@ void GvrDevice::EnableADF(const std::string& uuid)
 
 void GvrDevice::DisableADF()
 {
+}
+
+std::vector<mojom::VRMarkerPtr> GvrDevice::DetectMarkers(unsigned markerType, float markerSize)
+{
+  std::vector<mojom::VRMarkerPtr> markers;
+  return markers;
 }
 
 void GvrDevice::RequestPresent(const base::Callback<void(bool)>& callback) {

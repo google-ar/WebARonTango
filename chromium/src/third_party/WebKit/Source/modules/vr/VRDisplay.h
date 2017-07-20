@@ -21,6 +21,7 @@
 
 namespace gpu {
 namespace gles2 {
+
 class GLES2Interface;
 }
 }
@@ -38,6 +39,7 @@ class VRPointCloud;
 class VRPickingPointAndPlane;
 class VRSeeThroughCamera;
 class VRADF;
+class VRMarker;
 
 class WebGLRenderingContextBase;
 
@@ -74,6 +76,7 @@ class VRDisplay final : public EventTargetWithInlineData,
   HeapVector<Member<VRADF>> getADFs();
   void enableADF(const String&);
   void disableADF();
+  HeapVector<Member<VRMarker>> detectMarkers(unsigned markerType, float markerSize);
 
   double depthNear() const { return m_depthNear; }
   double depthFar() const { return m_depthFar; }
@@ -105,8 +108,6 @@ class VRDisplay final : public EventTargetWithInlineData,
 
   // ScriptWrappable implementation.
   bool hasPendingActivity() const final;
-
-  void sayHi();
 
   DECLARE_VIRTUAL_TRACE();
 

@@ -11,8 +11,12 @@ enum VREye {
 [
     ActiveScriptWrappable,
     DependentLifetime,
-    OriginTrialEnabled=WebVR
+    OriginTrialEnabled=WebVR,
+    DoNotCheckConstants
 ] interface VRDisplay : EventTarget {
+    const long MARKER_TYPE_AR       = 0x01;
+    const long MARKER_TYPE_QRCODE   = 0x02;
+
     // An identifier for this device unique across VRDisplays.
     readonly attribute unsigned long displayId;
 
@@ -37,6 +41,7 @@ enum VREye {
     sequence<VRADF> getADFs();
     void enableADF(DOMString uuid);
     void disableADF();
+    sequence<VRMarker> detectMarkers(long markerType, float markerSize);
 
     attribute double depthNear;
     attribute double depthFar;
@@ -61,6 +66,4 @@ enum VREye {
     // canvas as any other operation that uses its source image, and canvases
     // created without preserveDrawingBuffer set to true will be cleared.
     void submitFrame();
-
-    void sayHi();
 };
