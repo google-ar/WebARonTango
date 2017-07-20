@@ -138,6 +138,10 @@
 
         stats.update();
 
+        if (vrDisplay) {
+          vrDisplay.getPose();
+        }
+
         // Make sure that the camera is correctly displayed depending on the
         // device and camera orientations.
         THREE.WebAR.updateCameraMeshOrientation(vrDisplay, cameraMesh);
