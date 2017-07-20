@@ -37,6 +37,22 @@
 * @readonly
 */
 
+/**
+* @name VRDisplayCapabilities#hasADFSupport
+* @type {boolean}
+* @description A flag that indicates if the VRDisplay is able to support Area Description Files (true) or not (false).
+* @readonly
+* @see VRADF
+*/
+
+/**
+* @name VRDisplayCapabilities#hasMarkerSupport
+* @type {boolean}
+* @description A flag that indicates if the VRDisplay is able to support marker detection (true) or not (false). 
+* @readonly
+* @see VRMarker
+*/
+
 // ==================================================================================
 // VRDisplay
 // ==================================================================================
@@ -81,9 +97,71 @@
 * @returns {VRSeeThroughCamera} - An instance of a {@link VRSeeThroughCamera} to represent a see through camera or null if no camera is supported.
 */
 
-// ==================================================================================
-// ==================================================================================
+/**
+* @method VRDisplay#getADFs
+* @description Returns an list of existing VRADF structures in the device. The ADFs can be created with other apps like the Area Description example in the Tango C Examples {@link https://github.com/googlesamples/tango-examples-c/tree/master/cpp_basic_examples/hello_area_description}
+* @see VRADF
+* @returns {array<VRADF>} - An array of {@link VRSeeThroughCamera} instances corresponding to the ADFs exisiting on the device.
+*/
 
+/**
+* @method VRDisplay#enableADF
+* @description Enable an ADF to be used to localize the pose estimation. Only one ADF can be enabled at the same time, so a previously emabled ADF is disabled when this call is made.
+* @see VRADF
+* @param {string} uuid - The UUID of the ADF to enable.
+*/
+
+/**
+* @method VRDisplay#disableADF
+* @description Disable the last enabled ADF. The pose estimation is based on the start of service from then on once an ADF is disabled.
+* @see VRADF
+*/
+
+/**
+* @name VRSeeThroughCamera#MARKER_TYPE_AR
+* @type {long}
+* @description A constant that represents the AR marker type. The value is equivalent to 0x01.
+* @readonly
+*/
+
+/**
+* @name VRSeeThroughCamera#MARKER_TYPE_QRCODE
+* @type {long}
+* @description A constant that represents the QR Code marker type. The value is equivalente to 0x02.
+* @readonly
+*/
+
+/**
+* @method VRDisplay#detectMarkers
+* @description .
+* @see VRADF
+* @param {long} markerType - A number that represents the type of marker to detect. The supported types are specified as constants inside the {@link VRDisplay} MARKER_TYPE_XXX properties.
+* @param {float} markerSize - The size in meters of the actual physical marker.
+* @returns {array<VRMarker>} - An array of {@link VRMarker} instances corresponding to the detected markers of the specified type.
+*/
+
+// ==================================================================================
+ // ==================================================================================
+ +// VRPose
+ +// ==================================================================================
+ +
+ +/**
+ +* @name VRPose
+ +* @class 
+ +* @description Added some properties to the VRPose class of the WebVR spec {@link https://w3c.github.io/webvr/spec/1.1/#interface-vrpose}.
+ +*/
+ +
+ +/**
+ +* @name VRPose#localized
+ +* @type {boolean}
+ +* @description A flag that indicates if the VRPose has been localized to a (Tango-specific) ADF, and pose coordinates now use a localized space.
+ +* @readonly
+ +*/
+ +
+ +
+ +// ==================================================================================
+  // ==================================================================================   
+  
 /**
 * @name VRPickingPointAndPlane
 * @class
@@ -214,5 +292,84 @@
 * @name VRSeeThroughCamera#orientation
 * @type {long}
 * @description The orientation of the camera.
+* @readonly
+*/
+
+// ==================================================================================
+// VRADF
+// ==================================================================================
+
+/**
+* @name VRADF
+* @class
+* @description A class that represents an Area Description File (ADF). An ADF can be
+generated and stored in the current device using a different application like the 
+area description example in the Tango C-Examples. An AR VRDisplay may request a list of
+all the ADFs 
+*/
+
+/**
+* @name VRADF#uuid
+* @type {string}
+* @description The unique identifier for the ADF. Use it to enable/disable an ADF.
+* @readonly
+*/
+
+/**
+* @name VRADF#name
+* @type {string}
+* @description A human readable name to easily identify and describe the content of the ADF.
+* @readonly
+*/
+
+/**
+* @name VRADF#creationTime
+* @type {long}
+* @description The time stamp in millisenconds when the ADF was created.
+* @readonly
+*/
+
+// ==================================================================================
+// VRMarker
+// ==================================================================================
+
+/**
+* @name VRMarker
+* @class
+* @description A class that represents a marker. If the underlying technology supports markers, the corresponding VRDisplay allows to detect them returning instances of this type when markers are identified. The supported types of markers are specified with constants defined in the {@link VRDisplay} class as MARKER_TYPE_XXX.
+*/
+
+/**
+* @name VRMarker#type
+* @type {long}
+* @description A number that identifies the type of a marker. The {@link VRDisplay} structure has the constants that define the supported marker types.
+* @readonly
+*/
+
+/**
+* @name VRMarker#id
+* @type {long}
+* @description A number that identifies the marker. For non QRCode markers, the id is enbedded in the physicar marker itself and this attribute provides its value. If the marker is a QRCode, there is no id and a content is provided.
+* @readonly
+*/
+
+/**
+* @name VRMarker#content
+* @type {string}
+* @description A string that represents the content of the detected marker. A content is provided inside QRCode type markers and it can represents from plain text to a URL.
+* @readonly
+*/
+
+/**
+* @name VRMarker#position
+* @type {Float32Array}
+* @description An array representing the 3D position of the detected marker.
+* @readonly
+*/
+
+/**
+* @name VRMarker#orientation
+* @type {Float32Array}
+* @description An array representing the quaternion that provides the orientation of the marker in the 3D space.
 * @readonly
 */
