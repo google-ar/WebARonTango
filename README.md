@@ -26,7 +26,7 @@ A major objective of this project is to get a conversation going on the subject 
 
 Defining how a web standard will look like is a complex conversation. All the code and proposals in this project are not meant to be the definitive implementatios of AR capabilities for the web, but some prototypes you can play around with at your own risk and have some starting point to build upon.
 
-# <a name="how_to_use_this_repo">How use this repo</a>
+# <a name="how_to_use_this_repo">How to use this repo</a>
 
 This repository can be used in 2 ways:
 
@@ -95,11 +95,21 @@ If you have a Tango ready device and have installed the prototype APK, you can u
     * URL: [http://judax.github.io/webar/examples/threejs/occlusion/](http://judax.github.io/webar/examples/threejs/occlusion/)
     * QRCode: 
       * <img src="markdown/images/qrcode_example_threejs_occlusion.png"/>
+  * `marker`: an example on how to detect markers.
+    * <img src="markdown/images/WebARExampleMarker.gif"/>
+    * URL: [http://judax.github.io/webar/examples/threejs/marker/](http://judax.github.io/webar/examples/threejs/marker/)
+    * QRCode: 
+      * <img src="markdown/images/qrcode_example_threejs_marker.png"/>
   * **WayFair Google I/O 2017 prototype:** An online shopping experience prototype. This project is currently not open source but you can test it:
     * <img src="markdown/images/WebARWayfairPrototype_long.gif"/>
     * URL: [https://webar-wayfair-prototype.appspot.com/](https://webar-wayfair-prototype.appspot.com/)
     * QRCode: 
     * <img src="markdown/images/qrcode_example_wayfair.png"/>
+
+* **ADF example:** Available inside the `examples/adf` folder it shows a very basic use of the ADF API. It lists the existing ADFs in the device and enables the first one in the list. To be able to create ADFs, please, check the hello world area description APK in the bin folder.
+    * URL: [http://judax.github.io/webar/examples/adf/](http://judax.github.io/webar/examples/adf/)
+    * QRCode:
+      * <img src="markdown/images/qrcode_example_adf.png"/>
 
 ### <a name="overview_of_the_webar_apis">Overview of the WebAR APIs</a>
 
@@ -115,6 +125,8 @@ But there are some new features that the WebVR spec does not include and that pr
 
 * [hasPointCloud](http://judax.github.io/webar/doc/webarapi/VRDisplayCapabilities.html): The `VRDisplay` instance is able to provide a point cloud acquired by a depth sensing device in the underlying platform.
 * [hasSeeThroughCamera](http://judax.github.io/webar/doc/webarapi/VRDisplayCapabilities.html): The `VRDisplay` instance is able to use an underlying see through camera to show the real world.
+* [hasMarkerSupport](http://judax.github.io/webar/doc/webarapi/VRDisplayCapabilities.html): The `VRDisplay` instance is able to use an underlying marker detection technology.
+* [hasADFSupport](http://judax.github.io/webar/doc/webarapi/VRDisplayCapabilities.html): The `VRDisplay` instance is able to use ADFs for relocalization of the pose.
 
 If any of these flags are enabled (true), a new set of functionalities and APIs can be used always using the [VRDisplay](http://judax.github.io/webar/doc/webarapi/VRDisplay.html) as a starting point. The new methods in the `VRDisplay` instance are:
 
@@ -122,6 +134,10 @@ If any of these flags are enabled (true), a new set of functionalities and APIs 
 * [getPointCloud](http://judax.github.io/webar/doc/webarapi/VRDisplay.html): Updates and/or also retrieves the points in the [VRPointCloud](http://judax.github.io/webar/doc/webarapi/VRPointCloud.html) new type.
 * [getPickingPointAndPlaneInPointCloud](http://judax.github.io/webar/doc/webarapi/VRDisplay.html): Allows to calculate a collision represented by the new type [VRPointAndPlane](http://judax.github.io/webar/doc/webarapi/VRPickingPointAndPlane.html) between a normalized 2D position and a ray casted on to the point cloud.
 * [getSeeThroughCamera](http://judax.github.io/webar/doc/webarapi/VRDisplay.html): Retrieves an instance of the new type [VRSeeThroughCamera](http://judax.github.io/webar/doc/webarapi/VRSeeThroughCamera.html) so it can be used for both correct fustrum calculation and for rendering the camera video feed synchronized with the calculated pose.
+* [detectMarkers](http://judax.github.io/webar/doc/webarapi/VRDisplay.html): Detects markers using the video feed. It returns a list of instances of type [VRMarker](http://judax.github.io/webar/doc/webarapi/VRMarker.html) that represent each marker detected. The call has to specify the type of marker to be detected and the physical size in meters of it.
+* [getADFs](http://judax.github.io/webar/doc/webarapi/VRDisplay.html): Return the list of ADFs (Area Description File) that are stored in the device. The list includes instances of type [VRADF](http://judax.github.io/webar/doc/webarapi/VRADF.html) that represent each ADF in the device (created with some other tool like the one provided in the tango c examples in the bin folder). 
+* [enableADF](http://judax.github.io/webar/doc/webarapi/VRDisplay.html): Enables an ADF that is stored in the device. Once the ADF is enabled, if the system is able to localize according to it, the pose will be based upon it. Check the [VRPose](http://judax.github.io/webar/doc/webarapi/VRPose.html) class to see the new flag that allows to know if the pose has been localized against the ADF or not. Only one ADF can be enabled at a time so enabling a different one will cancel the previous one.
+* [disableADF](http://judax.github.io/webar/doc/webarapi/VRDisplay.html): Disables the last ADF that was enabled. Poses won't be localized from that moment on and will be retrieved depending on the start of the execution.
 
 Some new data structures/classes have been created to support some new functionalities as the underlying Tango platform allows new types of interactions/features. Most of the calls are pretty straightforward and the documentation might provide some idea of how they could be integrated in any web application. The one that might need a bit more explanation is the [VRSeeThroughCamera](http://judax.github.io/webar/doc/webarapi/VRSeeThroughCamera.html) class as it provides some useful information about the camera parameters (what are called the camera intrinsics), but it might not be clear how it could be used to render the camera feed in an application. In the current implementation, the approach that has been selected is to create a new overloaded function in the [WebGL API](https://www.khronos.org/registry/webgl/specs/1.0). The [WebGLRenderingContext](https://www.khronos.org/registry/webgl/specs/1.0/#5.14) now exposes the following function:
 
@@ -150,6 +166,8 @@ The best recommendation to better understand the new WebAR API is to review the 
 Please also review the [Known issues](#known_issues) section to better understand some drawbacks in the form of log and warning messages for using this approach.
 
 ## <a name="using_the_webar_apis_in_threejs">Using the WebAR APIs in ThreeJS</a>
+
+**NOTE:** If you are using ThreeJS r86 and above you can stop reading as there is no need to make any modification to ThreeJS to make the Chromium WebAR prototype to work along with it.
 
 As mentioned in the [previous section](#overview_of_the_webar_apis), in order to use the video feed from the underlying Tango platform, there's the need to use a WebGL extension that is not available in the WebGL standard at the moment. The Chromium implementation in this repository activates it so fragment shaders may use it. In the case of ThreeJS, as it internally maps the uniforms in the shaders, a modification to the engine/library is required. It is a simple modification and we are working on making it available in future releases of ThreeJS directly. 
 
@@ -222,8 +240,8 @@ Open a terminal window to be able
 4. Enter the `src` folder: `$ cd src`.
 5. Checkout a specific tag to a new branch. The tag used for this build is `57.0.2987.5`. You can use whatever name you like for the new branch but we recommend `webar_57.0.2987.5` as it states that is webar and the tag is based on: `~/chromium/src$ git checkout -b webar_57.0.2987.5 57.0.2987.5`. Remember the name of the branch (`webar_57.0.2987.5` in our example) as it will be useful in the next step when the output folder is created.
 6. Synchronize the dependencies with this command: `~/chromium/src$ gclient sync --disable-syntax-validation`. **NOTE**: This process may take some time too.
-7. Create a folder where to make the final product compilation using the same name as the branch created in the previous step: `~/chromium/src$ mkdir -p out/webar_57.0.2987.5` in our example.ls
-8. Create and edit a new file `out/webar_57.0.2987.5/args.gn` with the command `~/chromium/src$ gedit out/webar_57.0.2987.5/args.gn` (or any other editor). If you chose to use a different branch/folder name, please, use the name you chose in this step. Copy and paste the following content in the `args.gn` file:
+7. Create a folder where to make the final product compilation using the same name as the branch created in the previous step: `~/chromium/src$ mkdir -p out/webar_57.0.2987.5` in our example.
+8. Create and edit a new file `out/webar_57.0.2987.5/args.gn` with the command `~/chromium/src$ gedit out/webar_57.0.2987.5/args.gn` (or any other editor). If you chose to use a different branch/folder name, please, use that name in this step. Copy and paste the following content in the `args.gn` file:
   ```
   target_os = "android"
   target_cpu = "arm" 
@@ -282,10 +300,10 @@ The current version of Chromium that supports WebAR has been built on top of Tan
   * Tango SDK version: Hopak
 
 * Asus Zenfone AR
-  * Android version:
-  * Tango Core version:
-  * Tango SDK version: Hopak  
-  
+  * Android version: 7.0
+  * Tango Core version: 1.55:2017.06.23-release-m20-release-0-gb571120a1:240016802:stable
+  * Tango SDK version: Hopak
+
 # <a name="license">License</a>
 
 Apache License Version 2.0 (see the `LICENSE' file inside this repo).
@@ -310,7 +328,7 @@ Apache License Version 2.0 (see the `LICENSE' file inside this repo).
 
 * Improve the VRSeeThroughCamera rendering pipeline either making it obscure for the developer or by using regular WebGL textures and shader samplers without having to use the external image texture extension.
 
-* Add more Tango SDK "hidden" features: mesh reconstruction, area description, marker detection, ...
+* Add more Tango SDK "hidden" features: mesh reconstruction, ...
 
 * Develop more examples.
   * 6DOF VR example.
