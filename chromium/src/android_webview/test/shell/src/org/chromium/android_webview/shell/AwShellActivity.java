@@ -531,10 +531,10 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
         }
 
         requestCameraPermission();
-        // requestADFPermission();
         requestExternalStorageReadPermission();
         requestRecordAudioPermission();
         requestLocationPermission();
+        requestADFPermission();
 
         WindowManager windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         Display display = windowManager.getDefaultDisplay();
@@ -751,8 +751,8 @@ public class AwShellActivity extends Activity implements OnRequestPermissionsRes
             public void onGeolocationPermissionsShowPrompt(String origin,
                     GeolocationPermissions.Callback callback) {
                 System.out.println("WebAR: onGeolocationPermissionsShowPrompt");
-                // callback.invoke(origin, true, true);
-                callback.invoke(origin, false, false);
+                callback.invoke(origin, true, true);
+                // callback.invoke(origin, false, false);
             }
 
             @Override
