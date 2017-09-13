@@ -155,7 +155,7 @@ THREE.WebAR.getIndexFromScreenAndSeeThroughCameraOrientations = function(vrDispl
     THREE.WebAR.getIndexFromOrientation(seeThroughCameraOrientation);
   var screenOrientationIndex = 
     THREE.WebAR.getIndexFromOrientation(screenOrientation);
-  ret = screenOrientationIndex - seeThroughCameraOrientationIndex;
+  var ret = screenOrientationIndex - seeThroughCameraOrientationIndex;
   if (ret < 0) {
     ret += 4;
   }
