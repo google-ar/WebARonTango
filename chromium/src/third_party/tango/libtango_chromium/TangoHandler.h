@@ -45,6 +45,12 @@
 
 namespace tango_chromium {
 
+class Hit
+{
+public:
+	float modelMatrix[16];
+};
+
 class ADF 
 {
 public:
@@ -130,15 +136,19 @@ public:
 	void onTangoServiceConnected(JNIEnv* env, jobject binder);
 	void onPause();
 	void onDeviceRotationChanged(int activityOrientation, int sensorOrientation);
+	void resetPose();
+
+	bool updateCameraIntrinsics();
 
 	bool isConnected() const;
 
 	bool getPose(TangoPoseData* tangoPoseData, bool* isLocalized);
 	bool getPoseMatrix(float* matrix);
+	bool getProjectionMatrix(float near, float far, float* porjectionMatrix);
 
 	unsigned getMaxNumberOfPointsInPointCloud() const;
 	bool getPointCloud(uint32_t* numberOfPoints, float* points, bool justUpdatePointCloud, unsigned pointsToSkip, bool transformPoints, float* pointsTransformMatrix);
-	bool getPickingPointAndPlaneInPointCloud(float x, float y, double* point, double* plane);
+	bool hitTest(float x, float y, std::vector<Hit>& hits);
 
 	bool getCameraImageSize(uint32_t* width, uint32_t* height);
 	bool getCameraImageTextureSize(uint32_t* width, uint32_t* height);
@@ -152,13 +162,14 @@ public:
 	
 	void onFrameAvailable(const TangoImageBuffer* imageBuffer);
 
+	int getActivityOrientation() const;
 	int getSensorOrientation() const;
 
 	bool getADFs(std::vector<ADF>& adfs) const;
 	void enableADF(const std::string& uuid);
 	void disableADF();
 
-	bool detectMarkers(TangoSupportMarkerType markerType, float markerSize, std::vector<Marker>& markers);
+	bool getMarkers(TangoSupportMarkerType markerType, float markerSize, std::vector<Marker>& markers);
 
 private:
 	void connect(const std::string& uuid);
@@ -190,9 +201,6 @@ private:
 	int sensorOrientation;
 
 	std::string lastEnabledADFUUID;
-
-	std::mutex tangoBufferIdsMutex;
-	std::queue<TangoBufferId> tangoBufferIds;
 
 	JNIEnv* jniEnv;
 	JavaVM* javaVM;

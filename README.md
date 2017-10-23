@@ -1,3 +1,157 @@
+# WebARonTango
+
+**An experimental browser for Android that lets developers create Augmented Reality (AR) experiences using web technologies. An [ARCore Android version](https://github.com/google-ar/WebARonTango) and an [ARKit iOS version](https://github.com/google-ar/WebARonARKit) are also available.**
+
+<img alt="PointCloud" src="markdown/images/WebARExamplePicking.gif" style="float: left; object-fit: cover; width: 45%; height: 20em; margin-right: 1em; "><img alt="Occlusion" src="markdown/images/WebARExampleOcclusion.gif" style="width: 45%; height: 20em; object-fit: cover;">
+
+**Note:** This is not an official Google product. Nor is it a fully-featured web browser. Nor are the enabling JavaScript APIs standards, or on the standardization path. WebARonARTango is only meant to enable developer experimentation.
+
+## <a name="DifferencesBetweenWebARonTangoAndOthers">Differences between WebARonTango and WebARonARCore/WebARonARKit</a>
+
+All of the prototypes are build on top of the WebVR 1.1 spec and for the basic AR capabilities (motion tracking, camera feed rendering and hit testing) they all share a common workflow. However, WebARonTango exposes some additional functionalities and lacks others compared to the ARCore and ARKit based projects.
+
+### What does WebARonTango have that WebARonARCore/WebARonARKit does not?
+
+* Depth point cloud support: WebARonTango provides access to the depth point cloud that the infrared camera in the Tango spec includes.
+
+* **ADF support**: For now, WebARonTango exposes a very simple access to the Area Description capabilities of Tango. Maybe in the future, WebARonARCore may expose this functionality too.
+
+* **Marker support**: For now, WebARonTango exposes QRCode and AR marker support. Maybe in the future, WebARonARCore may expose this functionality too.
+
+### What does WebARonARCore/WebARonARKit have that WebARonTango does not?
+
+* **Plane support**: ARCore and ARKit provide marker detection capabilities. Tango does not for now as it already includes a depth point cloud support to be able to identify real world poses. 
+
+## Getting started
+
+### <a name="GetATangoDevice">1. Get a Tango enabled device</a>
+
+In order to test this prototype browser, you will need a Tango enabled device. Tango is a hardware and software specification from Google to enable AR on mobile devices. Tango enabled devices include a wide field of view (FOV) camera and an infrared camera on top of the reguar RGB camera to provide advanced AR and real world understanding capabilities. Check out the [Supported Devices](#SupportedDevices) section for futher information.
+
+### <a name="InstallTheWebARonTangoAPK">2. Install the WebARonTango APK</a>
+
+Directly from a Tango enabled device: 
+
+* Visit [this link](https://github.com/google-ar/WebARonTango/raw/master/apk/WebARonTango.apk) from a web browser on your Android device to download and install the WebARonTango APK.
+
+...or by using ADB:
+
+* Download the [WebARonTango APK](https://github.com/google-ar/WebARonTango/raw/master/apk/WebARonTango.apk). 
+* Install the APK to your device:
+  * `$ adb install -r /path/to/WebARonTango.apk`
+
+Alternatively, the WebARonTango APK can be [built and installed from source](#BuildingFromSource).
+
+### <a name="ViewingExamples">3. Viewing examples</a>
+A [list of example scenes](https://developers.google.com/ar/develop/web/getting-started#examples) compatible with WebARonTango and [WebARonARKit](https://github.com/google-ar/WebARonARKit) are available at [developers.google.com](https://developers.google.com/ar/develop/web/getting-started#examples).
+
+### <a name="BuildingScenes">4. Building your own scenes</a>
+To build AR web experiences that work with WebARonTango (or [WebARonARCore for Android](https://github.com/google-ar/WebARonARCore) or [WebARonARKit for iOS](https://github.com/google-ar/WebARonARKit)), we recommend **[three.ar.js](https://github.com/google-ar/three.ar.js)**, a helper library that works with the popular [three.js](http://threejs.org) WebGL framework. [Three.ar.js](https://github.com/google-ar/three.ar.js) provides common AR building blocks, such as a visible reticle that draws on top of real world surfaces, and [example scenes](https://github.com/google-ar/three.ar.js#examples).
+
+There are also some Tango [specific examples](https://github.com/google-ar/three.ar.js/) in the three.ar.js project repo that use the [specific features](#DifferencesBetweenWebARonTangoAndOthers) exposed in this prototype.
+
+### <a name="debugging">5. Debugging</a>
+
+WebARonTango uses WebViews, which is a similar debugging process to debugging Chrome for Android tabs. Check out the prereqs for your device at [Get Started with Remote Debugging Android Devices](https://developers.google.com/web/tools/chrome-devtools/remote-debugging/), and learn more about [Remote Debugging WebViews](https://developers.google.com/web/tools/chrome-devtools/remote-debugging/webviews#open_a_webview_in_devtools) by opening `chrome://inspect` in the desktop browser while your device is connected via USB.
+
+## <a name="BuildingFromSource">Building the WebARonTango APK from source</a>
+
+WebARonTango can optionally be built and installed from source. Instructions for [cloning and building Chromium](https://www.chromium.org/developers/how-tos/android-build-instructions) are available at [chromium.org](https://www.chromium.org/developers/how-tos/android-build-instructions)
+
+Prerequisites:
+
+* Linux machine
+* GIT
+* Python
+
+We recommend the following steps:
+
+1. Open a terminal window
+2. Clone this repo in a folder like "WebARonTango" and remember its location as we will use it in step 8 below: `$ git clone https://github.com/google-ar/WebARonTango.git`
+3. Install depot_tools. You can follow this [tutorial](https://commondatastorage.googleapis.com/chrome-infra-docs/flat/depot_tools/docs/html/depot_tools_tutorial.html#_setting_up) or simply follow these 2 steps:
+  * `git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git`
+  * `export PATH=$PATH:/path/to/depot_tools`
+4. Create a folder to contain `chromium` and move to it: `$ mkdir ~/chromium && cd ~/chromium`
+5. Checkout the Chromium repo: `~/chromium$ fetch --nohooks android`. **Note**: This process may take a long time (an hour?)
+6. Enter the `src` folder: `$ cd src`.
+7. Create a new branch from a specific tag: `$ git checkout -b webarontango_57.0.2987.5 57.0.2987.5`
+8. Copy the content from the `src` folder in the cloned WebARonTango in step 1: `$ cp -r PATH/TO/WEBARONTANGO/chromium/src/* .`
+9. Synchronize the dependencies with this command: `~/chromium/src$ gclient sync --disable-syntax-validation`. **Note**: This process may take some time too.
+10. Create a folder where to make the final product compilation: `~/chromium/src$ mkdir -p out/build`.
+11. Create and edit a new file `out/build/args.gn`. Copy and paste the following content in the `args.gn` file:
+```
+  target_os = "android"
+  target_cpu = "arm64"
+  is_debug = false
+  is_component_build = true
+  enable_webvr = true
+  proprietary_codecs = false
+  ffmpeg_branding = "Chromium"
+  enable_nacl = false
+  remove_webcore_debug_symbols = true
+```
+12. Prepare to build: `~/chromium/src$ gn args out/build`. **Note**: once the command is executed, the vi editor will show you the content of the `args.gn` file just edited a few steps before. Just exit by pressing ESC and typing colon and `x`.
+13. Install the build dependencies: `~/chromium/src$ build/install-build-deps-android.sh`
+14. Synchronize the resources once again: `~/chromium/src$ gclient sync --disable-syntax-validation`
+15. Setup the environment: `~/chromium/src$ . build/android/envsetup.sh`
+
+##### Build, install and run
+
+The line below not only compiles Chromium but also installs the final APK on to a connected device and runs it, so it is convenient that you to connect the device via USB before executing it. The project that will be built by default is the Chromium WebView project, the only one that has been modified to provide AR capabilities.
+```
+~/chromium/src$ ./build_install_run.sh
+```
+You can review the content of the script to see what it does (it is a fairly simple script) but if you would like to compile the final APK on your own you could do it by executing the following command:
+```
+~/chromium/src$ ninja -C out/build
+```
+
+The final APK will be built in the folders `~/chromium/src/apk` and `~/chromium/src/out/build/apks`.
+
+## <a name="HowWebARonTangoWorks">How WebARonTango works</a>
+
+WebARonTango is built of two essential technologies: Tango and Chromium. We also extend the WebVR 1.1 API, which gives us much of what we need for augmented reality, with a few more essentials, such as motion tracking, rendering of the camera's video feed, and basic understanding of the real world. For details, see [WebVR API extension for smartphone AR](https://github.com/google-ar/three.ar.js/blob/master/webvr_ar_extension.md)
+
+## <a name="KnownIssues">Known issues</a>
+* The current implementation of WebAR is built on top of the Chromium WebView flavor. This has some implementation advantages but some performance and use disadvantages. We are working on making the implementation on a full version of Chromium.
+* Pausing/resuming/switching away from the app causes screen to turn black. This is a consequence of having built the implementation on top of the WebView flavor of Chromium. A proper implementation on full Chromium or a rebase to a more recent Chromium WebView version (>57.0.2987.5) might solve this problem.
+* The [Web Speech](https://dvcs.w3.org/hg/speech-api/raw-file/tip/speechapi.html) API is a standard web API for text to speech and speech to text conversion that is available in Chromium. As WebARonTango is built on top of the WebView version of Chromium, does not provide this functionality by default. There is a solution though, using a polyfill we provide, but in order to use it, you need to either a) include the [three.ar.js](https://github.com/google-ar/three.ar.js) library before making any use of the Web Speech API or b) include the [ARSpeechRecognition.js](https://github.com/google-ar/three.ar.js/blob/master/src/ARSpeechRecognition.js) file also before making any reference to the Web Speech API. Only speech recognition is suspported, not speech synthesis for now.
+
+## <a name="FutureWork">Future work</a>
+* Add more AR-related features.
+* Adapt the implementation to the WebVR 2.0 spec proposal.
+* Implement the prototype on full Chromium (not on the WebView flavor) and to a newer tag version (>57.0.2987.5).
+* Improve the VRPassThroughCamera rendering pipeline either making it obscure for the developer or by using regular WebGL textures and shader samplers without having to use the external image texture extension.
+
+## <a name="License">License</a>
+Apache License Version 2.0 (see the `LICENSE` file inside this repo).
+
+# <a name="SupportedDevices">Supported devices</a>
+
+The current prototype that provides AR on the web experimental functionalities has been built on top of Tango and has been tested on the following devices:
+
+* Tango Development Kit Tablet
+  * Android version: 4.4.2
+  * Tango Core version: 1.53:2017.04.28-hopak-release-0-gb1545f34:190015395:stable
+  * Tango SDK version: Hopak
+
+* Lenovo Phab 2 Pro
+  * Android version: 6.0.1
+  * Tango Core version: 1.53:2017.04.28-hopak-release-0-gb1545f34:230015395:stable
+  * Tango SDK version: Hopak
+
+* Asus Zenfone AR
+  * Android version: 7.0
+  * Tango Core version: 1.55:2017.06.23-release-m20-release-0-gb571120a1:240016802:stable
+  * Tango SDK version: Hopak
+
+
+
+
+
+
+
+<!--
 # Index
 
 * [Overview](#overview)
@@ -16,7 +170,7 @@
 
 # <a name="overview">Overview</a>
 
-This project's goal is to provide an initial implementation of a possible Augmented Reality (AR) API for the Web on top of Chromium. The initial prorotype is built on top of the [Tango](https://get.google.com/tango/) platform for Android by Google. Maybe, more platforms will be supported in the future. There is a precompiled and working prototype you can use right away along with documentation of the APIs and some examples. There is also a tutorial on how to build your own version of modified Chromium with the WebAR APIs in it.
+This project's goal is to provide an initial implementation of a possible Augmented Reality (AR) API for the Web on top of Chromium. The initial prorotype is built on top of the [Tango](https://get.google.com/tango/) platform for Android by Google. Other projects provide support for other platforms like ARCore () for Android and ARKit () for iOS with a similar set of features. There is a precompiled and working prototype you can use right away or a tutorial on how to build your own version of modified Chromium prototype with AR capabilities on top of Tango.
 
 A major objective of this project is to get a conversation going on the subject of how to provide Augmented Reality capabilities to the web: WebAR.
 
@@ -333,3 +487,4 @@ Apache License Version 2.0 (see the `LICENSE' file inside this repo).
 * Develop more examples.
   * 6DOF VR example.
   * Fully operational example that shows possibilities of WebAR for online shopping.
+-->

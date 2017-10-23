@@ -5801,50 +5801,9 @@ void GLES2DecoderImpl::DoUpdateTextureExternalOes(GLuint client_id) {
   // Check the texture exists
   if (texture_ref) {
     Texture* texture = texture_ref->texture();
-    // Check that we are not trying to bind it to a different target.
-    // if (texture->target() != 0 && texture->target() != target) {
-    //   LOCAL_SET_GL_ERROR(GL_INVALID_OPERATION,
-    //                      "glBindTexture",
-    //                      "texture bound to more than 1 target.");
-    //   return;
-    // }
     LogClientServiceForInfo(texture, client_id, "glUpdateTextureExternalOes");
-
-    glBindTexture(GL_TEXTURE_EXTERNAL_OES, texture->service_id());
-    // There is a GL error after this bind call because the texture was bound
-    // to GL_TEXTURE2D when it was created (remember, WebGL does not support 
-    // the external image texture extension). For now there is no easy way
-    // to resolve this issue as it involves creating a correct handling of
-    // the external texture and maybe copying it to a regular texture 2d.
-    glGetError();
     TangoHandler::getInstance()->updateCameraImageIntoTexture(texture->service_id());
-    VLOG(0) << "WebAR: The previous error log from Tango cannot be removed for now. There might also be another JS level warning message from the renderer indicating that the used texture index has no texture bound. This is also a known bug in the current WebAR implementation. We are working on trying to resolve these issues. Sorry for the inconveniences with so many log/error messages.";
-
-    // glBindTexture(target, texture->service_id());
-    // if (texture->target() == 0) {
-    //   texture_manager()->SetTarget(texture_ref, target);
-    //   if (!feature_info_->gl_version_info().BehavesLikeGLES() &&
-    //       feature_info_->gl_version_info().IsAtLeastGL(3, 2)) {
-    //     // In Desktop GL core profile and GL ES, depth textures are always
-    //     // sampled to the RED channel, whereas on Desktop GL compatibility
-    //     // proifle, they are sampled to RED, LUMINANCE, INTENSITY, or ALPHA
-    //     // channel, depending on the DEPTH_TEXTURE_MODE value.
-    //     // In theory we only need to apply this for depth textures, but it is
-    //     // simpler to apply to all textures.
-    //     glTexParameteri(target, GL_DEPTH_TEXTURE_MODE, GL_RED);
-    //   }
-    // }
   }
-  // else {
-  //   glBindTexture(target, 0);
-  // }
-
-  // TextureUnit& unit = state_.texture_units[state_.active_texture_unit];
-  // unit.bind_target = target;
-  // unit.GetInfoForTarget(target) = texture_ref;
-
-  // TODO: This call should not be done. It seems that the Tango codea is giving/leaving a GL error behing so this call is here to clean it up.
-  glGetError();
 }
 // WebAR END
 

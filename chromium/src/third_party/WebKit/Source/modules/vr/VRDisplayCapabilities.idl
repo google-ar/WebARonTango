@@ -30,7 +30,7 @@
   readonly attribute unsigned long maxLayers;
 
   readonly attribute boolean hasPointCloud;
-  readonly attribute boolean hasSeeThroughCamera;
+  readonly attribute boolean hasPassThroughCamera;
   readonly attribute boolean hasADFSupport;
   readonly attribute boolean hasMarkerSupport;
 };

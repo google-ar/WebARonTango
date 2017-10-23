@@ -82,12 +82,9 @@ typedef TangoErrorType (*TangoSupport_GetCameraIntrinsicsFn)(
     TangoCameraId camera_id, TangoCameraIntrinsics* intrinsics);
 
 /// @brief Initialize the support library with function pointers required by
-///   the library. Either this version or @c TangoSupport_initializeLibrary
-///   should be called during application initialization, but not both. This
-///   version requires each of the initialization parameters and should only be
-///   used if specialized parameters are necessary.
-///   NOTE: This function must be called after the Android service has been
-///   bound.
+///   the library.
+///   NOTE: This function should be called during application initialization but
+///   must be called after the Android service has been bound.
 ///
 /// @param getPoseAtTime The function to call to retrieve device pose
 ///   information. In practice this is TangoService_getPoseAtTime, except
@@ -98,17 +95,6 @@ typedef TangoErrorType (*TangoSupport_GetCameraIntrinsicsFn)(
 void TangoSupport_initialize(
     TangoSupport_GetPoseAtTimeFn getPoseAtTime,
     TangoSupport_GetCameraIntrinsicsFn getCameraIntrinsics);
-
-/// @brief Initialize the support library with function pointers required by
-///   the library. Either this version or @c TangoSupport_initialize should be
-///   called during application initialization, but not both. Use this version
-///   unless specialized parameters are required.
-///   NOTE: This function must be called after the Android service has been
-///   bound.
-inline void TangoSupport_initializeLibrary() {
-  TangoSupport_initialize(TangoService_getPoseAtTime,
-                          TangoService_getCameraIntrinsics);
-}
 
 void TangoSupport_clearCameraIntrinsicsCache();
 
@@ -511,7 +497,7 @@ TangoErrorType TangoSupport_transformPointCloud(
 ///
 /// @param point_cloud The point cloud to transform.
 /// @param pose The pose with which to transform point_cloud.
-/// @param transformed_point_cloud Replaced with the the transformed point
+/// @param transformed_point_cloud Replaced with the transformed point
 ///   cloud. The caller is expected to manage the memory appropriately by
 ///   preallocating and disposing of the storage space for the point data.
 /// @return @c TANGO_SUCCESS on successful transform, @c TANGO_INVALID if the
@@ -913,11 +899,11 @@ TangoErrorType TangoSupport_initializeDepthBuffer(
 TangoErrorType TangoSupport_freeDepthBuffer(
     TangoSupportDepthBuffer* depth_buffer);
 
-/// @brief Upsamples the depth data to the resolution of the color image. This
+/// @brief Upsamples the depth data to the resolution of the depth buffer. This
 ///   uses the resolution specified by the intrinsics used to construct the
 ///   interpolator. This function fills depth around each sample using a fixed
 ///   radius. The resolution of the intrinsics provided to the interpolator and
-///   the the resolution of the output depth_buffer must match.
+///   the resolution of the output depth_buffer must match.
 ///
 /// @param interpolator A handle to the interpolator object. The intrinsics of
 ///   this interpolator object must match those of the image_buffer. Cannot be
@@ -937,7 +923,7 @@ TangoErrorType TangoSupport_upsampleImageNearestNeighbor(
     const TangoPoseData* color_camera_T_point_cloud,
     TangoSupportDepthBuffer* depth_buffer);
 
-/// @brief Upsamples the depth data to the resolution of the color image. This
+/// @brief Upsamples the depth data to the resolution of the depth buffer. This
 ///   uses the resolution specified by the intrinsics used to construct the
 ///   interpolator. This function fills depth around each sample using a
 ///   bilateral filtering approach. The resolution of the intrinsics provided
@@ -1278,7 +1264,7 @@ typedef struct TangoSupportMarkerList {
 /// @param translation The translation component of the transformation from the
 ///   the input camera space to the output frame. Cannot be NULL.
 /// @param orientation The orientation component (as a quaternion)
-///   of the transformation from the the input camera space to the output frame.
+///   of the transformation from the input camera space to the output frame.
 ///   Cannot be NULL.
 /// @param param The parameters for marker detection. Cannot be NULL.
 /// @param list The output marker list. The caller needs to release the

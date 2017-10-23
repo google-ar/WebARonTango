@@ -54,6 +54,12 @@ Java_org_chromium_android_1webview_shell_TangoJniNative_onConfigurationChanged(J
 	TangoHandler::getInstance()->onDeviceRotationChanged(activityOrientation, sensorOrientation);
 }
 
+JNIEXPORT void JNICALL
+Java_org_chromium_android_1webview_shell_TangoJniNative_resetPose(JNIEnv*, jobject, int activityOrientation, int sensorOrientation) 
+{
+  TangoHandler::getInstance()->resetPose();
+}
+
 #ifdef __cplusplus
 }
 #endif

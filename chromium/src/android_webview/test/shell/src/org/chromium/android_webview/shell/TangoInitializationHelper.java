@@ -93,10 +93,12 @@ public class TangoInitializationHelper {
     }
     if (loadedSoId < ARCH_DEFAULT) {
       try {
+        Log.i("TangoInitializationHelper", "Trying to load armeabi-v7a library!");
         System.load(basePath + "armeabi-v7a/libtango_client_api.so");
         loadedSoId = ARCH_ARM32;
         Log.i("TangoInitializationHelper", "Success! Using armeabi-v7a/libtango_client_api.");
       } catch (UnsatisfiedLinkError e) {
+        e.printStackTrace();
       }
     }
     if (loadedSoId < ARCH_DEFAULT) {

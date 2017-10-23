@@ -17,7 +17,7 @@
 # ==========================================================
 # tango_client_api
 # ==========================================================
-LOCAL_PATH := ../../../../../third_party/tango/libtango_client_api/armeabi-v7a
+LOCAL_PATH := ../../../../../third_party/tango/libtango_client_api/arm64-v8a
 include $(CLEAR_VARS)
 LOCAL_MODULE := tango_client_api
 LOCAL_SRC_FILES := \
@@ -27,7 +27,7 @@ include $(PREBUILT_SHARED_LIBRARY)
 # ==========================================================
 # tango_support_api
 # ==========================================================
-LOCAL_PATH := ../../../../../third_party/tango/libtango_support_api/armeabi-v7a
+LOCAL_PATH := ../../../../../third_party/tango/libtango_support_api/arm64-v8a
 include $(CLEAR_VARS)
 LOCAL_MODULE := tango_support_api
 LOCAL_SRC_FILES := \

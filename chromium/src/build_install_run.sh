@@ -14,9 +14,12 @@
 clear; reset;
 
 # Get the name of the current branch as it will be used to determine the out folder.
-BRANCH_NAME=$(git symbolic-ref -q HEAD)
-BRANCH_NAME=${BRANCH_NAME##refs/heads/}
-BRANCH_NAME=${BRANCH_NAME:-HEAD}
+# BRANCH_NAME=$(git symbolic-ref -q HEAD)
+# BRANCH_NAME=${BRANCH_NAME##refs/heads/}
+# BRANCH_NAME=${BRANCH_NAME:-HEAD}
+
+# Use the branch name "build" for now to avoid having to create different out folders.
+BRANCH_NAME="build"
 
 # Try to identify if goma is being used to
 # a) Make sure the proxy is running.

@@ -26,7 +26,7 @@ class VRDisplayCapabilities final
   unsigned maxLayers() const { return m_maxLayers; }
 
   bool hasPointCloud() const { return m_hasPointCloud; }
-  bool hasSeeThroughCamera() const { return m_hasSeeThroughCamera; }
+  bool hasPassThroughCamera() const { return m_hasPassThroughCamera; }
   bool hasADFSupport() const { return m_hasADFSupport; }
   bool hasMarkerSupport() const { return m_hasMarkerSupport; }
 
@@ -37,7 +37,7 @@ class VRDisplayCapabilities final
   void setMaxLayers(unsigned value) { m_maxLayers = value; }
 
   void setHasPointCloud(bool value) { m_hasPointCloud = value; }
-  void setHasSeeThroughCamera(bool value) { m_hasSeeThroughCamera = value; }
+  void setHasPassThroughCamera(bool value) { m_hasPassThroughCamera = value; }
   void setHasADFSupport(bool value) { m_hasADFSupport = value; }
   void setHasMarkerSupport(bool value) { m_hasMarkerSupport = value; }
 
@@ -51,7 +51,7 @@ class VRDisplayCapabilities final
   unsigned m_maxLayers;
 
   bool m_hasPointCloud;
-  bool m_hasSeeThroughCamera;
+  bool m_hasPassThroughCamera;
   bool m_hasADFSupport;
   bool m_hasMarkerSupport;
 };

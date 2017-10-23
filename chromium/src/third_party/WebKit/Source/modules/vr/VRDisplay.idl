@@ -34,14 +34,13 @@ enum VREye {
     boolean getFrameData(VRFrameData frameData);
     [DeprecateAs=VRDeprecatedGetPose] VRPose getPose();
     void resetPose();
-    long getMaxNumberOfPointsInPointCloud();
     void getPointCloud(VRPointCloud pointCloud, boolean justUpdatePointCloud, unsigned long pointsToSkip, boolean transformPoints);
-    VRPickingPointAndPlane getPickingPointAndPlaneInPointCloud(float x, float y);
-    VRSeeThroughCamera getSeeThroughCamera();
+    sequence<VRHit> hitTest(float x, float y);
+    VRPassThroughCamera getPassThroughCamera();
     sequence<VRADF> getADFs();
     void enableADF(DOMString uuid);
     void disableADF();
-    sequence<VRMarker> detectMarkers(long markerType, float markerSize);
+    sequence<VRMarker> getMarkers(long markerType, float markerSize);
 
     attribute double depthNear;
     attribute double depthFar;

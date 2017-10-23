@@ -103,7 +103,7 @@
 #include "wtf/typed_arrays/ArrayBufferContents.h"
 #include <memory>
 
-#include "modules/vr/VRSeeThroughCamera.h"
+#include "modules/vr/VRPassThroughCamera.h"
 
 namespace blink {
 
@@ -1808,6 +1808,7 @@ void WebGLRenderingContextBase::bindTexture(GLenum target,
   } else if (isWebGL2OrHigher() && target == GL_TEXTURE_3D) {
     m_textureUnits[m_activeTextureUnit].m_texture3DBinding =
         TraceWrapperMember<WebGLTexture>(this, texture);
+  } else if (target == GL_TEXTURE_EXTERNAL_OES) {
   } else {
     synthesizeGLError(GL_INVALID_ENUM, "bindTexture", "invalid target");
     return;
@@ -4852,7 +4853,7 @@ void WebGLRenderingContextBase::texImage2D(GLenum target,
                           0);
 }
 
-void WebGLRenderingContextBase::texImageHelperVRSeeThroughCamera(
+void WebGLRenderingContextBase::texImageHelperVRPassThroughCamera(
   TexImageFunctionID functionID,
   GLenum target, 
   GLint level, 
@@ -4864,12 +4865,12 @@ void WebGLRenderingContextBase::texImageHelperVRSeeThroughCamera(
   GLint xoffset, 
   GLint yoffset, 
   GLint zoffset, 
-  VRSeeThroughCamera* seeThroughCamera)
+  VRPassThroughCamera* passThroughCamera)
 {
   if (m_cameraImageTextureId != 0) 
   {
     contextGL()->UpdateTextureExternalOes(m_cameraImageTextureId);
-    // contextGL()->Finish();
+    contextGL()->Finish();
   }
 }
 
@@ -4878,9 +4879,9 @@ void WebGLRenderingContextBase::texImage2D(GLenum target,
                                            GLint internalformat,
                                            GLenum format, 
                                            GLenum type, 
-                                           VRSeeThroughCamera* seeThroughCamera)
+                                           VRPassThroughCamera* passThroughCamera)
 {
-  texImageHelperVRSeeThroughCamera(TexImage2D, target, level, internalformat, 0, format, type, 1, 0, 0, 0, seeThroughCamera);
+  texImageHelperVRPassThroughCamera(TexImage2D, target, level, internalformat, 0, format, type, 1, 0, 0, 0, passThroughCamera);
 }
 
 void WebGLRenderingContextBase::texImageHelperHTMLImageElement(

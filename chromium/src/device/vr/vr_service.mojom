@@ -33,7 +33,7 @@ struct VRDisplayCapabilities {
   bool hasExternalDisplay;
   bool canPresent;
   bool hasPointCloud;
-  bool hasSeeThroughCamera;
+  bool hasPassThroughCamera;
   bool hasADFSupport;
   bool hasMarkerSupport;
 };
@@ -53,12 +53,11 @@ struct VRPointCloud {
   bool pointsAlreadyTransformed;
 };
 
-struct VRPickingPointAndPlane {
-  array<double, 3> point;
-  array<double, 4> plane;
+struct VRHit {
+  array<float, 16> modelMatrix;
 };
 
-struct VRSeeThroughCamera {
+struct VRPassThroughCamera {
   uint32 width;
   uint32 height;
   uint32 textureWidth;
@@ -132,19 +131,17 @@ interface VRDisplay {
   ResetPose();
 
   [Sync]
-  GetMaxNumberOfPointsInPointCloud() => (uint32 maxNumberOfPointsInPointCloud);
-  [Sync]
   GetPointCloud(bool justUpdatePointCloud, uint32 pointsToSkip, bool transformPoints) => (VRPointCloud? pointCloud);
   [Sync]
-  GetSeeThroughCamera() => (VRSeeThroughCamera? seeThroughCamera);
+  GetPassThroughCamera() => (VRPassThroughCamera? passThroughCamera);
   [Sync]
-  GetPickingPointAndPlaneInPointCloud(float x, float y) => (VRPickingPointAndPlane? pointAndPlane);
+  HitTest(float x, float y) => (array<VRHit> hits);
   [Sync]
   GetADFs() => (array<VRADF> adfs);
   EnableADF(string uuid);
   DisableADF();
   [Sync]
-  DetectMarkers(uint32 markerType, float markerSize) => (array<VRMarker> markers);
+  GetMarkers(uint32 markerType, float markerSize) => (array<VRMarker> markers);
 
   RequestPresent(bool secureOrigin) => (bool success);
   ExitPresent();

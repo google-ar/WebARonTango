@@ -102,7 +102,7 @@ class WebGLVertexArrayObjectBase;
 
 class WebGLRenderingContextErrorMessageCallback;
 
-class VRSeeThroughCamera;
+class VRPassThroughCamera;
 
 // This class uses the color mask to prevent drawing to the alpha channel, if
 // the DrawingBuffer requires RGB emulation.
@@ -387,7 +387,7 @@ class MODULES_EXPORT WebGLRenderingContextBase : public CanvasRenderingContext,
                   GLint internalformat,
                   GLenum format, 
                   GLenum type, 
-                  VRSeeThroughCamera*);
+                  VRPassThroughCamera*);
 
   void texParameterf(GLenum target, GLenum pname, GLfloat param);
   void texParameteri(GLenum target, GLenum pname, GLint param);
@@ -1626,7 +1626,7 @@ class MODULES_EXPORT WebGLRenderingContextBase : public CanvasRenderingContext,
                                  GLsizei,
                                  GLint,
                                  ExceptionState&);
-  void texImageHelperVRSeeThroughCamera(TexImageFunctionID, 
+  void texImageHelperVRPassThroughCamera(TexImageFunctionID, 
                                         GLenum, 
                                         GLint, 
                                         GLint, 
@@ -1637,7 +1637,7 @@ class MODULES_EXPORT WebGLRenderingContextBase : public CanvasRenderingContext,
                                         GLint, 
                                         GLint, 
                                         GLint, 
-                                        VRSeeThroughCamera*);
+                                        VRPassThroughCamera*);
   static const char* getTexImageFunctionName(TexImageFunctionID);
   IntRect sentinelEmptyRect();
   IntRect safeGetImageSize(Image*);

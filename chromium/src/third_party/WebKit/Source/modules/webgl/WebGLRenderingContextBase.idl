@@ -147,6 +147,7 @@ typedef unrestricted float GLclampf;
 
     /* EnableCap */
     const GLenum TEXTURE_2D                     = 0x0DE1;
+    const GLenum TEXTURE_EXTERNAL_OES           = 0x8D65;
     const GLenum CULL_FACE                      = 0x0B44;
     const GLenum BLEND                          = 0x0BE2;
     const GLenum DITHER                         = 0x0BD0;
@@ -635,7 +636,7 @@ typedef unrestricted float GLclampf;
         GLenum format, GLenum type, ImageBitmap bitmap);
     void texImage2D(
         GLenum target, GLint level, GLint internalformat,
-        GLenum format, GLenum type, VRSeeThroughCamera? seeThroughCamera);
+        GLenum format, GLenum type, VRPassThroughCamera? passThroughCamera);
 
     void texSubImage2D(
         GLenum target, GLint level, GLint xoffset, GLint yoffset,

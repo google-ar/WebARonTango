@@ -12,10 +12,13 @@
 
 #define THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API -1
 
+const float RAD_2_DEG = 180.0 / M_PI;
+
 using base::android::AttachCurrentThread;
 using tango_chromium::TangoHandler;
 using tango_chromium::ADF;
 using tango_chromium::Marker;
+using tango_chromium::Hit;
 
 namespace device {
 
@@ -40,7 +43,7 @@ mojom::VRDisplayInfoPtr TangoVRDevice::GetVRDevice() {
   device->capabilities->hasExternalDisplay = false;
   device->capabilities->canPresent = false;
   device->capabilities->hasPointCloud = true;
-  device->capabilities->hasSeeThroughCamera = true;
+  device->capabilities->hasPassThroughCamera = true;
   device->capabilities->hasADFSupport = true;
   device->capabilities->hasMarkerSupport = true;
 
@@ -48,44 +51,101 @@ mojom::VRDisplayInfoPtr TangoVRDevice::GetVRDevice() {
   device->rightEye = mojom::VREyeParameters::New();
   mojom::VREyeParametersPtr& left_eye = device->leftEye;
   mojom::VREyeParametersPtr& right_eye = device->rightEye;
-
   left_eye->fieldOfView = mojom::VRFieldOfView::New();
-  left_eye->fieldOfView->upDegrees = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*fov[0]*/;
-  left_eye->fieldOfView->downDegrees = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*fov[1]*/;
-  left_eye->fieldOfView->leftDegrees = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*fov[2]*/;
-  left_eye->fieldOfView->rightDegrees = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*fov[3]*/;
-
-  // Cardboard devices always assume a mirrored FOV, so this is just the left
-  // eye FOV with the left and right degrees swapped.
   right_eye->fieldOfView = mojom::VRFieldOfView::New();
-  right_eye->fieldOfView->upDegrees = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*fov[0]*/;
-  right_eye->fieldOfView->downDegrees = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*fov[1]*/;
-  right_eye->fieldOfView->leftDegrees = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*fov[3]*/;
-  right_eye->fieldOfView->rightDegrees = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*fov[2]*/;
 
   left_eye->offset.resize(3);
-  left_eye->offset[0] = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*ipd*/ * -0.5f;
+  right_eye->offset.resize(3);
+
+  TangoHandler* tangoHandler = TangoHandler::getInstance();
+  if (!tangoHandler->isConnected()) {
+    // We may not be able to get an instance of TangoHandler right away, so
+    // stub in some data till we have one.
+    left_eye->fieldOfView->upDegrees = 45;
+    left_eye->fieldOfView->downDegrees = 45;
+    left_eye->fieldOfView->leftDegrees = 45;
+    left_eye->fieldOfView->rightDegrees = 45;
+    right_eye->fieldOfView->upDegrees = 45;
+    right_eye->fieldOfView->downDegrees = 45;
+    right_eye->fieldOfView->leftDegrees = 45;
+    right_eye->fieldOfView->rightDegrees = 45;
+
+    left_eye->offset[0] = -0.0;
+    left_eye->offset[1] = -0.0;
+    left_eye->offset[2] = -0.0;
+
+    right_eye->offset[0] = 0.0;
+    right_eye->offset[1] = 0.0;
+    right_eye->offset[2] = 0.0;
+
+    left_eye->renderWidth = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*screen_size[0]*/ / 2.0;
+    left_eye->renderHeight = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*screen_size[1]*/;
+
+    right_eye->renderWidth = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*screen_size[0]*/ / 2.0;
+    right_eye->renderHeight = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*screen_size[1]*/;
+
+    return device;
+  }
+
+  uint32_t iw = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API;
+  uint32_t ih = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API;
+  double fx = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API;
+  double fy = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API;
+  double cx = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API;
+  double cy = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API;
+
+  tangoHandler->getCameraImageSize(&iw, &ih);
+  tangoHandler->getCameraFocalLength(&fx, &fy);
+  tangoHandler->getCameraPoint(&cx, &cy);
+
+  float vDegrees = atan(ih / (2.0 * fy)) * RAD_2_DEG;
+  float hDegrees = atan(iw / (2.0 * fx)) * RAD_2_DEG;
+
+  left_eye->fieldOfView->upDegrees = vDegrees;
+  left_eye->fieldOfView->downDegrees = vDegrees;
+  left_eye->fieldOfView->leftDegrees = hDegrees;
+  left_eye->fieldOfView->rightDegrees = hDegrees;
+
+  right_eye->fieldOfView->upDegrees = vDegrees;
+  right_eye->fieldOfView->downDegrees = vDegrees;
+  right_eye->fieldOfView->leftDegrees = hDegrees;
+  right_eye->fieldOfView->rightDegrees = hDegrees;
+
+  left_eye->offset[0] = 0.0f;
   left_eye->offset[1] = 0.0f;
   left_eye->offset[2] = 0.0f;
 
-  right_eye->offset.resize(3);
-  right_eye->offset[0] = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*ipd*/ * 0.5f;
+  right_eye->offset[0] = 0.0f;
   right_eye->offset[1] = 0.0f;
   right_eye->offset[2] = 0.0f;
 
-  left_eye->renderWidth = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*screen_size[0]*/ / 2.0;
-  left_eye->renderHeight = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*screen_size[1]*/;
+  left_eye->renderWidth = iw;
+  left_eye->renderHeight = ih;
 
-  right_eye->renderWidth = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*screen_size[0]*/ / 2.0;
-  right_eye->renderHeight = THIS_VALUE_NEEDS_TO_BE_OBTAINED_FROM_THE_TANGO_API/*screen_size[1]*/;
+  right_eye->renderWidth = iw;
+  right_eye->renderHeight = ih;
 
-  // device->stageParameters = mojom::VRStageParameters::New();
-  // device->stageParameters->standingTransform = mojo::Array<float>::New(16);
+  // Store the orientation values so we can check in future GetPose()
+  // calls if we need to update camera intrinsics and regenerate the
+  // VRDeviceInfoPtr
+  lastSensorOrientation = tangoHandler->getSensorOrientation();
+  lastActivityOrientation = tangoHandler->getActivityOrientation();
 
   return device;
 }
 
 mojom::VRPosePtr TangoVRDevice::GetPose() {
+
+  // Check to see if orientation has changed, and if so, fire
+  // an OnChanged() so that the VRFieldOfView can be updated,
+  // with the up-to-date VRDeviceInfoPtr sent to WebKit for correct
+  // projection matrix calculations.
+  TangoHandler* tangoHandler = TangoHandler::getInstance();
+  if (tangoHandler->isConnected() &&
+      (lastSensorOrientation  != tangoHandler->getSensorOrientation() ||
+      lastActivityOrientation != tangoHandler->getActivityOrientation())) {
+    VRDevice::OnChanged();
+  }
 
   TangoPoseData tangoPoseData;
 
@@ -116,12 +176,7 @@ mojom::VRPosePtr TangoVRDevice::GetPose() {
 }
 
 void TangoVRDevice::ResetPose() {
-  // TODO
-}
-
-unsigned TangoVRDevice::GetMaxNumberOfPointsInPointCloud()
-{
-  return TangoHandler::getInstance()->getMaxNumberOfPointsInPointCloud();
+  TangoHandler::getInstance()->resetPose();
 }
 
 mojom::VRPointCloudPtr TangoVRDevice::GetPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip, bool transformPoints)
@@ -151,36 +206,44 @@ mojom::VRPointCloudPtr TangoVRDevice::GetPointCloud(bool justUpdatePointCloud, u
   return pointCloudPtr;
 }
 
-mojom::VRSeeThroughCameraPtr TangoVRDevice::GetSeeThroughCamera()
+mojom::VRPassThroughCameraPtr TangoVRDevice::GetPassThroughCamera()
 {
   TangoHandler* tangoHandler = TangoHandler::getInstance();
-  mojom::VRSeeThroughCameraPtr seeThroughCameraPtr = nullptr;
+  mojom::VRPassThroughCameraPtr passThroughCameraPtr = nullptr;
   if (tangoHandler->isConnected())
   {
-    seeThroughCameraPtr = mojom::VRSeeThroughCamera::New();
-    tangoHandler->getCameraImageSize(&(seeThroughCameraPtr->width), &(seeThroughCameraPtr->height));
-    tangoHandler->getCameraImageTextureSize(&(seeThroughCameraPtr->textureWidth), &(seeThroughCameraPtr->textureHeight));
-    tangoHandler->getCameraFocalLength(&(seeThroughCameraPtr->focalLengthX), &(seeThroughCameraPtr->focalLengthY));
-    tangoHandler->getCameraPoint(&(seeThroughCameraPtr->pointX), &(seeThroughCameraPtr->pointY));
-    seeThroughCameraPtr->orientation = tangoHandler->getSensorOrientation();
+    passThroughCameraPtr = mojom::VRPassThroughCamera::New();
+    tangoHandler->getCameraImageSize(&(passThroughCameraPtr->width), &(passThroughCameraPtr->height));
+    tangoHandler->getCameraImageTextureSize(&(passThroughCameraPtr->textureWidth), &(passThroughCameraPtr->textureHeight));
+    tangoHandler->getCameraFocalLength(&(passThroughCameraPtr->focalLengthX), &(passThroughCameraPtr->focalLengthY));
+    tangoHandler->getCameraPoint(&(passThroughCameraPtr->pointX), &(passThroughCameraPtr->pointY));
+    passThroughCameraPtr->orientation = tangoHandler->getSensorOrientation();
   }
-  return seeThroughCameraPtr;
+  return passThroughCameraPtr;
 }
 
-mojom::VRPickingPointAndPlanePtr TangoVRDevice::GetPickingPointAndPlaneInPointCloud(float x, float y)
+std::vector<mojom::VRHitPtr> TangoVRDevice::HitTest(float x, float y)
 {
-  mojom::VRPickingPointAndPlanePtr pickingPointAndPlanePtr = nullptr;
+  std::vector<mojom::VRHitPtr> mojomHits;
   if (TangoHandler::getInstance()->isConnected())
   {
-    pickingPointAndPlanePtr = mojom::VRPickingPointAndPlane::New();
-    pickingPointAndPlanePtr->point = std::vector<double>(3);
-    pickingPointAndPlanePtr->plane = std::vector<double>(4);
-    if (!TangoHandler::getInstance()->getPickingPointAndPlaneInPointCloud(x, y, &(pickingPointAndPlanePtr->point[0]), &(pickingPointAndPlanePtr->plane[0])))
+    std::vector<Hit> hits;
+    if (TangoHandler::getInstance()->hitTest(x, y, hits) && hits.size() > 0)
     {
-      pickingPointAndPlanePtr = nullptr;
+      std::vector<Hit>::size_type size = hits.size();
+      mojomHits.resize(size);
+      for (std::vector<Hit>::size_type i = 0; i < size; i++)
+      {
+        mojomHits[i] = mojom::VRHit::New();
+        mojomHits[i]->modelMatrix.resize(16);
+        for (int j = 0; j < 16; j++)
+        {
+          mojomHits[i]->modelMatrix[j] = hits[i].modelMatrix[j];
+        }
+      }
     }
   }
-  return pickingPointAndPlanePtr;
+  return mojomHits;
 }
 
 std::vector<mojom::VRADFPtr> TangoVRDevice::GetADFs()
@@ -215,7 +278,7 @@ void TangoVRDevice::DisableADF()
   TangoHandler::getInstance()->disableADF();
 }
 
-std::vector<mojom::VRMarkerPtr> TangoVRDevice::DetectMarkers(unsigned markerType, float markerSize)
+std::vector<mojom::VRMarkerPtr> TangoVRDevice::GetMarkers(unsigned markerType, float markerSize)
 {
   std::vector<mojom::VRMarkerPtr> mojomMarkers;
   if (TangoHandler::getInstance()->isConnected())
@@ -234,7 +297,7 @@ std::vector<mojom::VRMarkerPtr> TangoVRDevice::DetectMarkers(unsigned markerType
         return mojomMarkers;
     }
     std::vector<Marker> markers;
-    if (TangoHandler::getInstance()->detectMarkers(mt, markerSize, markers))
+    if (TangoHandler::getInstance()->getMarkers(mt, markerSize, markers))
     {
       std::vector<Marker>::size_type size = markers.size();
       mojomMarkers.resize(size);

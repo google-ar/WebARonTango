@@ -27,12 +27,12 @@ EXIT_CODE=$?
 if [ $EXIT_CODE -ne 0 ]; then 
 	exit $EXIT_CODE
 fi
-mkdir -p ../../../../../third_party/tango/libtango_chromium/armeabi-v7a
+mkdir -p ../../../../../third_party/tango/libtango_chromium/arm64-v8a
 EXIT_CODE=$?
 if [ $EXIT_CODE -ne 0 ]; then 
 	exit $EXIT_CODE
 fi
-cp ../libs/armeabi-v7a/libtango_chromium.so ../../../../../third_party/tango/libtango_chromium/armeabi-v7a/libtango_chromium.so
+cp ../libs/arm64-v8a/libtango_chromium.so ../../../../../third_party/tango/libtango_chromium/arm64-v8a/libtango_chromium.so
 EXIT_CODE=$?
 if [ $EXIT_CODE -ne 0 ]; then 
 	exit $EXIT_CODE
