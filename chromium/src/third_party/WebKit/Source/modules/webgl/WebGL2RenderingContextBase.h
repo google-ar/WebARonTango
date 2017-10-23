@@ -251,7 +251,7 @@ class WebGL2RenderingContextBase : public WebGLRenderingContextBase {
                   GLint internalformat,
                   GLenum format, 
                   GLenum type, 
-                  VRSeeThroughCamera*);
+                  VRPassThroughCamera*);
   void texImage2D(GLenum,
                   GLint,
                   GLint,

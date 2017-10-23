@@ -26,14 +26,13 @@ class DEVICE_VR_EXPORT VRDevice {
   virtual mojom::VRDisplayInfoPtr GetVRDevice() = 0;
   virtual mojom::VRPosePtr GetPose() = 0;
   virtual void ResetPose() = 0;
-  virtual unsigned GetMaxNumberOfPointsInPointCloud() = 0;
   virtual mojom::VRPointCloudPtr GetPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip, bool transformPoints) = 0;
-  virtual mojom::VRSeeThroughCameraPtr GetSeeThroughCamera() = 0;
-  virtual mojom::VRPickingPointAndPlanePtr GetPickingPointAndPlaneInPointCloud(float x, float y) = 0;
+  virtual mojom::VRPassThroughCameraPtr GetPassThroughCamera() = 0;
+  virtual std::vector<mojom::VRHitPtr> HitTest(float x, float y) = 0;
   virtual std::vector<mojom::VRADFPtr> GetADFs() = 0;
   virtual void EnableADF(const std::string& uuid) = 0;
   virtual void DisableADF() = 0;
-  virtual std::vector<mojom::VRMarkerPtr> DetectMarkers(unsigned markerType, float markerSize) = 0;
+  virtual std::vector<mojom::VRMarkerPtr> GetMarkers(unsigned markerType, float markerSize) = 0;
 
   virtual void RequestPresent(const base::Callback<void(bool)>& callback) = 0;
   virtual void SetSecureOrigin(bool secure_origin) = 0;

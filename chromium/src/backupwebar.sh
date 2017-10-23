@@ -12,9 +12,10 @@
 # limitations under the License.
 
 # Get the branch name to know the output folder
-BRANCH_NAME=$(git symbolic-ref -q HEAD)
-BRANCH_NAME=${BRANCH_NAME##refs/heads/}
-BRANCH_NAME=${BRANCH_NAME:-HEAD}
+# BRANCH_NAME=$(git symbolic-ref -q HEAD)
+# BRANCH_NAME=${BRANCH_NAME##refs/heads/}
+# BRANCH_NAME=${BRANCH_NAME:-HEAD}
+BRANCH_NAME="build"
 # Remove the backup folder for the branch
 rm -rf ../Backup_WebAR/$BRANCH_NAME/*
 # WebKit vr
@@ -26,11 +27,11 @@ cp third_party/WebKit/Source/modules/vr/VRDisplay.* ../Backup_WebAR/$BRANCH_NAME
 if [ $? -ne 0 ]; then exit 1; fi
 cp third_party/WebKit/Source/modules/vr/VRPointCloud.* ../Backup_WebAR/$BRANCH_NAME/chromium/src/third_party/WebKit/Source/modules/vr/
 if [ $? -ne 0 ]; then exit 1; fi
-cp third_party/WebKit/Source/modules/vr/VRSeeThroughCamera.* ../Backup_WebAR/$BRANCH_NAME/chromium/src/third_party/WebKit/Source/modules/vr/
+cp third_party/WebKit/Source/modules/vr/VRPassThroughCamera.* ../Backup_WebAR/$BRANCH_NAME/chromium/src/third_party/WebKit/Source/modules/vr/
 if [ $? -ne 0 ]; then exit 1; fi
 cp third_party/WebKit/Source/modules/vr/VRDisplayCapabilities.* ../Backup_WebAR/$BRANCH_NAME/chromium/src/third_party/WebKit/Source/modules/vr/
 if [ $? -ne 0 ]; then exit 1; fi
-cp third_party/WebKit/Source/modules/vr/VRPickingPointAndPlane.* ../Backup_WebAR/$BRANCH_NAME/chromium/src/third_party/WebKit/Source/modules/vr/
+cp third_party/WebKit/Source/modules/vr/VRHit.* ../Backup_WebAR/$BRANCH_NAME/chromium/src/third_party/WebKit/Source/modules/vr/
 if [ $? -ne 0 ]; then exit 1; fi
 cp third_party/WebKit/Source/modules/vr/VRADF.* ../Backup_WebAR/$BRANCH_NAME/chromium/src/third_party/WebKit/Source/modules/vr/
 if [ $? -ne 0 ]; then exit 1; fi
@@ -107,24 +108,14 @@ if [ $? -ne 0 ]; then exit 1; fi
 rm -rf ../Backup_WebAR/$BRANCH_NAME/chromium/src/android_webview/test/shell/VRWebGL
 if [ $? -ne 0 ]; then exit 1; fi
 # APK
-mkdir ../Backup_WebAR/$BRANCH_NAME/bin
+mkdir ../Backup_WebAR/$BRANCH_NAME/apk
 if [ $? -ne 0 ]; then exit 1; fi
-cp out/$BRANCH_NAME/apks/AndroidWebView.apk ../Backup_WebAR/$BRANCH_NAME/bin/ChromiumAR.apk
+cp out/$BRANCH_NAME/apks/AndroidWebView.apk ../Backup_WebAR/$BRANCH_NAME/apk/WebARonARCore.apk
 if [ $? -ne 0 ]; then exit 1; fi
-cp out/$BRANCH_NAME/gen/components/resources/about_credits.html ../Backup_WebAR/$BRANCH_NAME/bin/LICENSE
-if [ $? -ne 0 ]; then exit 1; fi
-# THREE.WebAR.js
-mkdir ../Backup_WebAR/$BRANCH_NAME/THREE.WebAR
-if [ $? -ne 0 ]; then exit 1; fi
-cp ~/Coding/judax.github.io/webar/examples/libs/THREE.WebAR.js ../Backup_WebAR/$BRANCH_NAME/THREE.WebAR
+cp out/$BRANCH_NAME/gen/components/resources/about_credits.html ../Backup_WebAR/$BRANCH_NAME/apk/LICENSE
 if [ $? -ne 0 ]; then exit 1; fi
 # Build script, notes, backup script, examples, license, ... 
 cp build_install_run.sh ../Backup_WebAR/$BRANCH_NAME/chromium/src/
-if [ $? -ne 0 ]; then exit 1; fi
-# cp Notes*.txt ../Backup_WebAR/$BRANCH_NAME/chromium/src/
-mkdir -p ../Backup_WebAR/$BRANCH_NAME/examples
-if [ $? -ne 0 ]; then exit 1; fi
-cp -r ~/Coding/judax.github.io/webar/examples/* ../Backup_WebAR/$BRANCH_NAME/examples
 if [ $? -ne 0 ]; then exit 1; fi
 cp ./backupwebar.sh ../Backup_WebAR/$BRANCH_NAME/chromium/src
 if [ $? -ne 0 ]; then exit 1; fi

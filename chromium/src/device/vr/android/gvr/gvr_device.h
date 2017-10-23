@@ -27,14 +27,13 @@ class GvrDevice : public VRDevice {
   mojom::VRPosePtr GetPose() override;
   void ResetPose() override;
 
-  unsigned GetMaxNumberOfPointsInPointCloud() override;
   mojom::VRPointCloudPtr GetPointCloud(bool justUpdatePointCloud, unsigned pointsToSkip, bool transformPoints) override;
-  mojom::VRSeeThroughCameraPtr GetSeeThroughCamera() override;
-  mojom::VRPickingPointAndPlanePtr GetPickingPointAndPlaneInPointCloud(float x, float y) override;
+  mojom::VRPassThroughCameraPtr GetPassThroughCamera() override;
+  std::vector<mojom::VRHitPtr> HitTest(float x, float y) override;
   std::vector<mojom::VRADFPtr> GetADFs() override;
   void EnableADF(const std::string& uuid) override;
   void DisableADF() override;
-  std::vector<mojom::VRMarkerPtr> DetectMarkers(unsigned markerType, float markerSize) override;
+  std::vector<mojom::VRMarkerPtr> GetMarkers(unsigned markerType, float markerSize) override;
 
   void RequestPresent(const base::Callback<void(bool)>& callback) override;
   void SetSecureOrigin(bool secure_origin) override;

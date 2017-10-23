@@ -64,4 +64,6 @@ public class TangoJniNative {
     public static native void onDestroy();
 
     public static native void onConfigurationChanged(int activityOrientation, int sensorOrientation);
+
+    public static native void resetPose();
 }

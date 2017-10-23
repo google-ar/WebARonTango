@@ -106,15 +106,36 @@ typedef enum {
 } TangoPoseStatusType;
 
 /// Tango Event types.
+// Known TangoEvents are documented below in non-doxygen style. One of the tech
+// writers is welcome to edit and expose later, if desired.
 typedef enum {
-  TANGO_EVENT_UNKNOWN = 0,       ///< Unclassified Event Type
-  TANGO_EVENT_GENERAL,           ///< General uncategorized callbacks
-  TANGO_EVENT_FISHEYE_CAMERA,    ///< Fisheye Camera Event
-  TANGO_EVENT_COLOR_CAMERA,      ///< Color Camera Event
-  TANGO_EVENT_IMU,               ///< IMU Event
+  TANGO_EVENT_UNKNOWN = 0,  ///< Unclassified Event Type
+  TANGO_EVENT_GENERAL,      ///< General uncategorized callbacks
+  // "TangoServiceException" : "Service faulted will restart."
+  // "EXPERIMENTAL_PleaseDisconnect" : ""
+  // "CloudLocalizeSuccess" : ""
+  // "CloudLocalizeFailure" : ""
+  // "TileRequested" : "<s2Token>"
+  // "TileUnavailable" : "<s2Token>"
+  // "TileLoaded" : "<s2Token>"
+  // "TileUnloaded" : "<s2Token>"
+  // "TileDownloadFailed" : "<s2Token>"
+  TANGO_EVENT_FISHEYE_CAMERA,  ///< Fisheye Camera Event
+  // "FisheyeOverExposed" : ""
+  // "FisheyeUnderExposed" : ""
+  TANGO_EVENT_COLOR_CAMERA,  ///< Color Camera Event
+  // "ColorOverExposed" : ""
+  // "ColorUnderExposed" : ""
+  TANGO_EVENT_IMU,  ///< IMU Event
+  // <none>
   TANGO_EVENT_FEATURE_TRACKING,  ///< Feature Tracking Event
-  TANGO_EVENT_AREA_LEARNING,     ///< Area Learning Event
-  TANGO_EVENT_CLOUD_ADF,         ///< Event related to cloud ADFs.
+  // "TooFewFeaturesTracked" : ""
+  TANGO_EVENT_AREA_LEARNING,  ///< Area Learning Event
+  // "AreaDescriptionSaveProgress" : "<fraction complete>"
+  TANGO_EVENT_CLOUD_ADF,  ///< Event related to cloud ADFs.
+                          // "STATUS_READY" : "0"
+                          // "STATUS_NOT_AVAILABLE" : "0"
+                          // "STATUS_FAILURE" : "0"
 } TangoEventType;
 
 /// Tango Camera Calibration types. See TangoCameraIntrinsics for a detailed
