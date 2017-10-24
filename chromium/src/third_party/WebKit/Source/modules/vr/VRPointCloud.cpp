@@ -20,8 +20,7 @@ namespace {
 
 } // namespace
 
-VRPointCloud::VRPointCloud(): m_numberOfPoints(0), m_lastNumberOfPoints(0), m_pointsAlreadyTransformed(false)
-{
+VRPointCloud::VRPointCloud(): m_numberOfPoints(0), m_lastNumberOfPoints(0), m_pointsAlreadyTransformed(false) {
 	m_pointsTransformMatrix = DOMFloat32Array::create(16);
 }
 
@@ -45,8 +44,7 @@ bool VRPointCloud::pointsAlreadyTransformed() const
 	return m_pointsAlreadyTransformed;
 }
 
-void VRPointCloud::setPointCloud(unsigned maxNumberOfPoints, device::mojom::blink::VRPointCloudPtr& pointCloudPtr)
-{
+void VRPointCloud::setPointCloud(unsigned maxNumberOfPoints, device::mojom::blink::VRPointCloudPtr& pointCloudPtr) {
 	if (!m_points)
 	{
 		m_points = DOMFloat32Array::create(maxNumberOfPoints * 3);
@@ -74,8 +72,7 @@ void VRPointCloud::setPointCloud(unsigned maxNumberOfPoints, device::mojom::blin
 	m_lastNumberOfPoints = m_numberOfPoints;
 }
 
-DEFINE_TRACE(VRPointCloud)
-{
+DEFINE_TRACE(VRPointCloud) {
   visitor->trace(m_points);
   visitor->trace(m_pointsTransformMatrix);
 }
