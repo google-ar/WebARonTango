@@ -29,10 +29,10 @@ public:
 
     DECLARE_VIRTUAL_TRACE()
 private:
-	unsigned long m_width;
-	unsigned long m_height;
-	unsigned long m_textureWidth;
-	unsigned long m_textureHeight;
+    unsigned long m_width;
+    unsigned long m_height;
+    unsigned long m_textureWidth;
+    unsigned long m_textureHeight;
     double m_focalLengthX;
     double m_focalLengthY;
     double m_pointX;

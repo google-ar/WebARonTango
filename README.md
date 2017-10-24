@@ -14,9 +14,9 @@ All of the prototypes are build on top of the WebVR 1.1 spec and for the basic A
 
 * Depth point cloud support: WebARonTango provides access to the depth point cloud that the infrared camera in the Tango spec includes.
 
-* **ADF support**: For now, WebARonTango exposes a very simple access to the Area Description capabilities of Tango. Maybe in the future, WebARonARCore may expose this functionality too.
+* **ADF support**: For now, WebARonTango exposes a very simple access to the Area Description capabilities of Tango. Maybe in the future, the other projects may expose this functionality too.
 
-* **Marker support**: For now, WebARonTango exposes QRCode and AR marker support. Maybe in the future, WebARonARCore may expose this functionality too.
+* **Marker support**: For now, WebARonTango exposes QRCode and AR marker support. Maybe in the future, the other projects may expose this functionality too.
 
 ### What does WebARonARCore/WebARonARKit have that WebARonTango does not?
 
