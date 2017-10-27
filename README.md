@@ -48,7 +48,7 @@ A [list of example scenes](https://developers.google.com/ar/develop/web/getting-
 ### <a name="BuildingScenes">4. Building your own scenes</a>
 To build AR web experiences that work with WebARonTango (or [WebARonARCore for Android](https://github.com/google-ar/WebARonARCore) or [WebARonARKit for iOS](https://github.com/google-ar/WebARonARKit)), we recommend **[three.ar.js](https://github.com/google-ar/three.ar.js)**, a helper library that works with the popular [three.js](http://threejs.org) WebGL framework. [Three.ar.js](https://github.com/google-ar/three.ar.js) provides common AR building blocks, such as a visible reticle that draws on top of real world surfaces, and [example scenes](https://github.com/google-ar/three.ar.js#examples).
 
-There are also some Tango [specific examples](https://github.com/google-ar/three.ar.js/) in the three.ar.js project repo that use the [specific features](#DifferencesBetweenWebARonTangoAndOthers) exposed in this prototype.
+There are also some Tango [specific examples](https://github.com/google-ar/three.ar.js/tree/master/examples/tango) in the three.ar.js project repo that use the [specific features](#DifferencesBetweenWebARonTangoAndOthers) exposed in this prototype.
 
 ### <a name="debugging">5. Debugging</a>
 
