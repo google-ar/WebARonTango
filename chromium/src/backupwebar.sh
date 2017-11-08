@@ -110,7 +110,7 @@ if [ $? -ne 0 ]; then exit 1; fi
 # APK
 mkdir ../Backup_WebAR/$BRANCH_NAME/apk
 if [ $? -ne 0 ]; then exit 1; fi
-cp out/$BRANCH_NAME/apks/AndroidWebView.apk ../Backup_WebAR/$BRANCH_NAME/apk/WebARonARCore.apk
+cp out/$BRANCH_NAME/apks/AndroidWebView.apk ../Backup_WebAR/$BRANCH_NAME/apk/WebARonTango.apk
 if [ $? -ne 0 ]; then exit 1; fi
 cp out/$BRANCH_NAME/gen/components/resources/about_credits.html ../Backup_WebAR/$BRANCH_NAME/apk/LICENSE
 if [ $? -ne 0 ]; then exit 1; fi
